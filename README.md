@@ -1,7 +1,6 @@
-# GridReader
-Library for reading (currently) .msh mesh files, and create a Grid object with different objects and methods that facititates aplying the Elements-based Finite Volumes Method.
+#GridReader
 
-## Prerequisites
+##Prerequisites
 
 This project is writen in Python 3
 You may install numpy
@@ -10,7 +9,7 @@ You may install numpy
 pip install numpy
 ```
 
-## Usage
+##Usage
 
 ```python
 from libs.geometry.MSHReader import MSHReader

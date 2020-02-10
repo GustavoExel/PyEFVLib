@@ -1,0 +1,21 @@
+{
+    "A":
+    {
+        "Density":
+        {
+            "scalar": 2700.0
+        },
+        "HeatCapacity":
+        {
+            "scalar": 900.0
+        },
+        "Conductivity":
+        {
+            "scalar": 237.0
+        },
+        "InternalHeatGeneration":
+        {
+        	"scalar": 0.0
+        }
+    }
+}

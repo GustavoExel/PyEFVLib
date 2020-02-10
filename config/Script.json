@@ -1,0 +1,13 @@
+{
+	"Base" : "/home/gustavoe/Documents/Sinmec/GTRelated/GridReader/",
+
+	"Output" : "",
+
+	"Boundary" : "config/BoundaryConditions.json",
+
+	"Property" : "config/PropertyData.json",
+
+	"Numerical" : "config/NumericalSettings.json",
+
+	"Grid" : "meshes/Square.msh"
+}

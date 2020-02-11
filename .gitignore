@@ -1,4 +1,5 @@
 libs/__pycache__
 libs/simulation/__pycache__
 libs/geometry/__pycache__
+/__pycache__
 Results.cgns

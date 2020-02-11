@@ -3,12 +3,12 @@
     "WEST": {
         "condition": "DIRICHLET",
         "type": "CONSTANT",
-        "value": 0.0
+        "value": 20.0
     },
     "EAST": {
         "condition": "DIRICHLET",
         "type": "CONSTANT",
-        "value": 100.0
+        "value": 50.0
     },
     "SOUTH": {
         "condition": "NEUMANN",

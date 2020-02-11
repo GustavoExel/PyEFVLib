@@ -24,4 +24,3 @@ s = HeatTransfer2D("/home/gustavoe/Documents/Sinmec/GTRelated/GridReader/meshes/
 # plt.pcolor(Xi,Yi,nTi, cmap="RdBu")
 # plt.title("Numerical")
 # plt.show()
-

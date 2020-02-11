@@ -11,26 +11,26 @@ class CgnsSaver:
 		self.timer = timer
 		self.grid = grid
 		self.path = outputPath
-		self.timeFields = np.array([])
 		self.timeSteps  = np.array([])
+		self.timeFields = np.zeros((0, grid.vertices.size))
 
 		self.configCgnsFile()
 
 	def save(self, numericalField, currentTime):
 		self.timeSteps	= np.append(self.timeSteps,  currentTime)
-		self.timeFields = np.append(self.timeFields, numericalField)
+		self.timeFields = np.vstack([self.timeFields, numericalField])
 		# Maybe write and read all the time if simulation too big
 
 	def finalize(self):
-		print(len(self.timeSteps))
 		self.attribute("/BASE/TimeIterativeValues", np.array([ len(self.timeSteps) ]) )
 		self.attribute("/BASE/TimeIterativeValues/TimeValues", self.timeSteps)  # Make sure that self.timeSteps is a numpy.Array()
 
-		for count, result in enumerate(self.timeFields):
-			print(f"Saving numerical field #0{str(count)}")
+		for count, result in enumerate(self.timeFields[1:],1):
 			self.copy("/BASE/ZONE", "TimeStep", "TimeStep"+str(count))
 			self.attribute(f"/BASE/ZONE/TimeStep{str(count)}/numerical temperature", result)
 		del self.file["/BASE/ZONE/TimeStep"]
+
+		self.file.close()
 
 	def configCgnsFile(self):
 		self.createFile()

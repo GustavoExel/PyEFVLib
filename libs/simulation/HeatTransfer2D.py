@@ -4,6 +4,7 @@ from libs.geometry.Grid import Grid
 from libs.simulation.ProblemData2D import ProblemData2D
 from libs.simulation.Timer import Timer
 from libs.simulation.CgnsSaver import CgnsSaver
+from libs.simulation.LinearSystemAdders import InternalGenerationAdder, HeatDiffusionAdder, NeumannBoundaryAdder, DirichletBoundaryAdder
 import pandas as pd
 
 class HeatTransfer2D:
@@ -21,6 +22,11 @@ class HeatTransfer2D:
 
 		self.timer = Timer(self.problemData.timeStep)				# Contains dictionary with initial times for different labels: start("assembly"); stop("assembly")
 		self.cgnsSaver = CgnsSaver(self.timer, self.grid, self.problemData.paths["Output"], self.problemData.libraryPath)
+
+		self.internalGenerationAdder = InternalGenerationAdder(self)
+		self.heatDiffusionAdder 	 = HeatDiffusionAdder(self)
+		self.neumannBoundaryAdder 	 = NeumannBoundaryAdder(self)
+		self.dirichletBoundaryAdder  = DirichletBoundaryAdder(self)
 
 		self.calculateInnerFacesGlobalDerivatives()
 		self.numericalTemperature = np.zeros(self.grid.vertices.size)
@@ -53,53 +59,10 @@ class HeatTransfer2D:
 		self.timer.start("assemble")
 		self.independent = np.zeros(self.grid.vertices.size)
 
-		# Internal Heat Generation
-		for region in self.grid.regions:
-			heatGeneration = self.problemData.propertyData[region.handle]["InternalHeatGeneration"]
-			for element in region.elements:
-				for vertex in element.vertices:
-					self.independent[vertex.handle] = vertex.volume * heatGeneration
-
-		# TransientTermAdder and DiffusiveFluxAdder
-		for region in self.grid.regions:
-			density = self.problemData.propertyData[region.handle]["Density"]
-			heatCapacity = self.problemData.propertyData[region.handle]["HeatCapacity"]
-			conductivity = self.problemData.propertyData[region.handle]["Conductivity"]
-			accumulation = density * heatCapacity / self.	timer.timeStep
-
-			for element in region.elements:
-				localMatrixFlux = computeLocalMatrix(element, conductivity,self.iteration==0)
-				local = 0
-				for vertex in element.vertices:
-					index = vertex.handle
-					self.independent[index] += element.subelementVolumes[local] * accumulation * self.oldTemperature[vertex.handle]
-					if self.iteration == 0:
-						self.matrix[index][index] += element.subelementVolumes[local] * accumulation
-						qLocalIndex = 0
-						for q in element.vertices:
-							self.matrix[index][q.handle] += localMatrixFlux[local][qLocalIndex]
-							qLocalIndex += 1
-					local += 1
-
-		# NeumannBoundaryAdder
-		for bCondition in self.problemData.neumannBoundaries:
-			for facet in bCondition.boundary.facets:
-				for outerFace in facet.outerFaces:
-					self.independent[outerFace.vertex.handle] += -1.0 * bCondition.getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
-
-
-		# DirichletBoundaryAdder
-		for bCondition in self.problemData.dirichletBoundaries:
-			for vertex in bCondition.boundary.vertices:
-				self.independent[vertex.handle] = bCondition.getValue(vertex.handle)
-
-		if self.iteration == 0:
-			numberOfVertices = sum([boundary.boundary.vertices.size for boundary in self.problemData.dirichletBoundaries])
-			rows = np.zeros(numberOfVertices)
-			for bCondition in self.problemData.dirichletBoundaries:
-				for vertex in bCondition.boundary.vertices:
-					self.matrix[vertex.handle] = np.zeros(self.grid.vertices.size)
-					self.matrix[vertex.handle][vertex.handle] = 1.0
+		self.internalGenerationAdder.add()
+		self.heatDiffusionAdder.add()
+		self.neumannBoundaryAdder.add()
+		self.dirichletBoundaryAdder.add()
 
 		self.timer.stop("assemble")
 
@@ -150,20 +113,3 @@ class HeatTransfer2D:
 		print("\t{:<12}:{:>12.5f}s".format("total", total))
 
 		print("\n\t\033[1;35mresult:\033[0m", self.problemData.paths["Output"]+"Results.cgns", '\n')
-
-def computeLocalMatrix(element, permeability,b=False):
-	numberOfVertices = element.vertices.size
-	localMatrix = np.zeros([numberOfVertices, numberOfVertices])
-	for innerFace in element.innerFaces:
-		derivatives = innerFace.globalDerivatives
-		if len(derivatives) == 2: derivatives = np.vstack([derivatives, np.zeros(derivatives[0].size)])
-		diffusiveFlux = permeability * np.matmul( np.transpose(derivatives[:-1]) , innerFace.area.getCoordinates()[:-1] )
-
-		backwardVertexLocalHandle = element.shape.innerFaceNeighbourVertices[innerFace.local][0]
-		forwardVertexLocalHandle = element.shape.innerFaceNeighbourVertices[innerFace.local][1]
-
-		for i in range(numberOfVertices):
-			coefficient = -1.0 * diffusiveFlux[i]
-			localMatrix[backwardVertexLocalHandle][i] += coefficient
-			localMatrix[forwardVertexLocalHandle][i] -= coefficient
-	return localMatrix

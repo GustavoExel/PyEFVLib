@@ -1,0 +1,17 @@
+# Break up the LinearSystemAdders
+
+# Ver com Felipe bglh do CGNS
+
+# Fazer documentação
+
+# Pensar em como apresentar saporra
+
+# Estruturar melhor saporra
+
+# Implementar um CGNSReader
+
+# Começar a salvar estados em um log.dat sla
+
+# If there is time make HeatTransfer2D a child of a Simulator class
+
+# Implement a test batch for simulator and pay attention to the subcontrol volumes (make a file that you know the volumes)

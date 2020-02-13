@@ -1,17 +1,14 @@
 import numpy as np
 import h5py
-import os
-
-# In order to save the elements in regions, the connectivities are saved in connectivity files, while the element range (with indexing starting at 1) is saved in a separate file.
-# 
-# 
+import subprocess
 
 class CgnsSaver:
-	def __init__(self, timer, grid, outputPath):
+	def __init__(self, timer, grid, outputPath, basePath):
 		self.timer = timer
 		self.grid = grid
-		self.path = outputPath
-		self.timeSteps  = np.array([])
+		self.outputPath = outputPath + "Results.cgns"
+		self.blankCgnsPath = basePath + "/meshes/cgns/blank.cgns"
+		self.timeSteps  = np.	array([])
 		self.timeFields = np.zeros((0, grid.vertices.size))
 
 		self.configCgnsFile()
@@ -19,7 +16,6 @@ class CgnsSaver:
 	def save(self, numericalField, currentTime):
 		self.timeSteps	= np.append(self.timeSteps,  currentTime)
 		self.timeFields = np.vstack([self.timeFields, numericalField])
-		# Maybe write and read all the time if simulation too big
 
 	def finalize(self):
 		self.attribute("/BASE/TimeIterativeValues", np.array([ len(self.timeSteps) ]) )
@@ -37,8 +33,9 @@ class CgnsSaver:
 		self.setZone()
 
 	def createFile(self):
-		os.system(f"yes | cp {self.path}meshes/blank.cgns {self.path}Results.cgns")
-		self.file = h5py.File(f"{self.path}Results.cgns", "r+")
+		r=subprocess.run(f"yes | cp {self.blankCgnsPath} {self.outputPath}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		print(r.stderr.decode("utf-8"))
+		self.file = h5py.File(self.outputPath, "r+")
 
 	def setZone(self):
 		self.setCoordinates()

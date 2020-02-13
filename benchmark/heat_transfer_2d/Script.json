@@ -1,0 +1,13 @@
+{
+    "Base" : "/home/gustavoe/Documents/Sinmec/GTRelated/GridReader/",
+
+    "Output" : "results/",
+
+    "Boundary" : "benchmark/heat_transfer_2d/boundaryConditions/t.json",
+
+    "Property" : "benchmark/heat_transfer_2d/properties/solid.json",
+
+    "Numerical" : "benchmark/heat_transfer_2d/NumericalSettings.json",
+
+    "Grid" : "meshes/Square.msh"
+}

@@ -1,0 +1,13 @@
+{
+    "SolverParameters":
+    {
+        "Solver": "preonly",
+        "Preconditioner": "lu",
+        "Tolerance": 1e-8
+    },
+
+    "LinearSystemSettings":
+    {
+        "Indexation": "interlaced"
+    }
+}

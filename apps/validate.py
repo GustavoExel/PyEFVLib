@@ -6,9 +6,17 @@ s = HeatTransfer2D()
 # Read benchmark (including solidProperties and boundaryConditions(for printing))
 
 # Define the Analytical Solution
+# def analyticalSolution(x, y):
+# 	# Considering NORTH and SOUTH isolated, 20K in the WEST, and 50K in the EAST
+# 	return 30*x + 20
+k = s.problemData.propertyData[0]["Conductivity"]
+q = s.problemData.propertyData[0]["InternalHeatGeneration"]
+
 def analyticalSolution(x, y):
-	# Considering NORTH and SOUTH isolated, 20K in the WEST, and 50K in the EAST
-	return 30*x + 20
+	c1 = -q/(2*k)
+	c2 = 30 - c1
+	c3 = 20
+	return c1*x*x + c2*x + c3
 
 # Read Results.cgns
 file = h5py.File(s.cgnsSaver.outputPath, "r+")

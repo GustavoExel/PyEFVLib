@@ -16,25 +16,40 @@ class HeatDiffusionAdder:
 		self.simulator = simulator
 
 	def add(self):
+		if self.simulator.iteration == 0:
+			for region in self.simulator.grid.regions:
+				conductivity = self.simulator.problemData.propertyData[region.handle]["Conductivity"]
+				for element in region.elements:
+					localMatrixFlux = computeLocalMatrix(element, conductivity,self.simulator.iteration==0)
+					local = 0
+					for vertex in element.vertices:
+						qLocalIndex = 0
+						for q in element.vertices:
+							self.simulator.matrix[vertex.handle][q.handle] += localMatrixFlux[local][qLocalIndex]
+							qLocalIndex += 1
+						local += 1
+
+class AccumulationAdder:
+	def __init__(self, simulator):
+		self.simulator = simulator
+
+	def add(self):
+		pass
 		for region in self.simulator.grid.regions:
 			density = self.simulator.problemData.propertyData[region.handle]["Density"]
 			heatCapacity = self.simulator.problemData.propertyData[region.handle]["HeatCapacity"]
-			conductivity = self.simulator.problemData.propertyData[region.handle]["Conductivity"]
-			accumulation = density * heatCapacity / self.simulator.	timer.timeStep
+			accumulation = density * heatCapacity / self.simulator.timer.timeStep
 
 			for element in region.elements:
-				localMatrixFlux = computeLocalMatrix(element, conductivity,self.simulator.iteration==0)
 				local = 0
 				for vertex in element.vertices:
 					index = vertex.handle
 					self.simulator.independent[index] += element.subelementVolumes[local] * accumulation * self.simulator.oldTemperature[vertex.handle]
 					if self.simulator.iteration == 0:
 						self.simulator.matrix[index][index] += element.subelementVolumes[local] * accumulation
-						qLocalIndex = 0
-						for q in element.vertices:
-							self.simulator.matrix[index][q.handle] += localMatrixFlux[local][qLocalIndex]
-							qLocalIndex += 1
 					local += 1
+
+
 
 class NeumannBoundaryAdder:
 	def __init__(self, simulator):
@@ -56,8 +71,6 @@ class DirichletBoundaryAdder:
 				self.simulator.independent[vertex.handle] = bCondition.getValue(vertex.handle)
 
 		if self.simulator.iteration == 0:
-			numberOfVertices = sum([boundary.boundary.vertices.size for boundary in self.simulator.problemData.dirichletBoundaries])
-			rows = np.zeros(numberOfVertices)
 			for bCondition in self.simulator.problemData.dirichletBoundaries:
 				for vertex in bCondition.boundary.vertices:
 					self.simulator.matrix[vertex.handle] = np.zeros(self.simulator.grid.vertices.size)

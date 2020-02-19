@@ -4,7 +4,7 @@ from libs.geometry.Grid import Grid
 from libs.simulation.ProblemData2D import ProblemData2D
 from libs.simulation.Timer import Timer
 from libs.simulation.CgnsSaver import CgnsSaver
-from libs.simulation.LinearSystemAdders import InternalGenerationAdder, HeatDiffusionAdder, NeumannBoundaryAdder, DirichletBoundaryAdder
+from libs.simulation.LinearSystemAdders import InternalGenerationAdder, HeatDiffusionAdder, AccumulationAdder, NeumannBoundaryAdder, DirichletBoundaryAdder
 import pandas as pd
 
 class HeatTransfer2D:
@@ -25,6 +25,7 @@ class HeatTransfer2D:
 
 		self.internalGenerationAdder = InternalGenerationAdder(self)
 		self.heatDiffusionAdder 	 = HeatDiffusionAdder(self)
+		self.accumulationAdder 		 = AccumulationAdder(self)
 		self.neumannBoundaryAdder 	 = NeumannBoundaryAdder(self)
 		self.dirichletBoundaryAdder  = DirichletBoundaryAdder(self)
 
@@ -61,6 +62,7 @@ class HeatTransfer2D:
 
 		self.internalGenerationAdder.add()
 		self.heatDiffusionAdder.add()
+		self.accumulationAdder.add()
 		self.neumannBoundaryAdder.add()
 		self.dirichletBoundaryAdder.add()
 

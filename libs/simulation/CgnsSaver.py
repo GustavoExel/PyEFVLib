@@ -27,6 +27,8 @@ class CgnsSaver:
 		del self.file["/BASE/ZONE/TimeStep"]
 
 		self.file.close()
+		del self.timeFields
+		del self.timeSteps
 
 	def configCgnsFile(self):
 		self.createFile()

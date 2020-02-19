@@ -4,9 +4,12 @@ from libs.geometry.Vertex import Vertex
 from libs.geometry.Element import Element
 from libs.geometry.Region import Region
 from libs.geometry.Boundary import Boundary, BoundaryBuilder
+from libs.geometry.GridData import GridData
 
 class Grid:
 	def __init__(self, gridData):
+		if gridData.__class__ != GridData:
+			raise Exception("Grid argument must be of class GridData")
 		self.gridData = gridData
 		self.build()
 

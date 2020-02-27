@@ -1,3 +1,5 @@
+#!/usr/bin/python3.7
+
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 from libs.geometry.MSHReader import MSHReader

@@ -5,3 +5,4 @@
 /libs/geometry/__pycache__
 meshes/cgns/blank.cgns.bak
 ToDo.txt
+results/*.py

@@ -24,6 +24,9 @@ class CgnsSaver:
 		for count, result in enumerate(self.timeFields[1:],1):
 			self.copy("/BASE/ZONE", "TimeStep", "TimeStep"+str(count))
 			self.attribute(f"/BASE/ZONE/TimeStep{str(count)}/numerical temperature", result)
+			t = self.file[f"/BASE/ZONE/TimeStep{str(count)}"]
+			t.attrs["label"] = np.string_("FlowSolution_t".ljust(33,"\x00"))
+			t.attrs["type"] = np.string_("MT".ljust(3,"\x00"))
 		del self.file["/BASE/ZONE/TimeStep"]
 
 		self.file.close()
@@ -43,6 +46,9 @@ class CgnsSaver:
 		self.setCoordinates()
 		self.setRegions()
 		self.setBoundaries()
+
+		self.attribute("/BASE/ZONE", np.array([[len(self.grid.gridData.vertices)],[	len(sum(self.grid.gridData.regionElements,[]))],[0]], dtype=np.int32))
+		
 		del self.file["/BASE/ZONE/PHYSICAL_NAME"]
 
 	def setCoordinates(self):
@@ -50,6 +56,7 @@ class CgnsSaver:
 		self.attribute("/BASE/ZONE/GridCoordinates/CoordinateX", np.array(X, dtype=np.float64))
 		self.attribute("/BASE/ZONE/GridCoordinates/CoordinateY", np.array(Y, dtype=np.float64))
 		self.attribute("/BASE/ZONE/GridCoordinates/CoordinateZ", np.array(Z, dtype=np.float64))
+		self.numberOfVertices = len(X)
 
 	def setRegions(self):
 		i=1
@@ -57,6 +64,7 @@ class CgnsSaver:
 			self.copy("/BASE/ZONE", "PHYSICAL_NAME", rName )
 
 			elements = [self.grid.gridData.elemConnectivity[index] for index in rElements]
+			elements = [[nI+1 for nI in e] for e in elements]
 			lower_r = len(sum(([[0]]+self.grid.gridData.regionElements)[:i],[]))
 			upper_r = lower_r+len(elements)-1
 

@@ -18,8 +18,8 @@ class CgnsSaver:
 		self.timeFields = np.vstack([self.timeFields, numericalField])
 
 	def finalize(self):
-		self.attribute("/BASE/TimeIterativeValues", np.array([ len(self.timeSteps) ]) )
-		self.attribute("/BASE/TimeIterativeValues/TimeValues", self.timeSteps)  # Make sure that self.timeSteps is a numpy.Array()
+		self.attribute("/BASE/TimeIterativeValues", np.array([ len(self.timeSteps) - 1 ]) )
+		self.attribute("/BASE/TimeIterativeValues/TimeValues", self.timeSteps[:-1])  # Make sure that self.timeSteps is a numpy.Array()
 
 		for count, result in enumerate(self.timeFields[1:],1):
 			self.copy("/BASE/ZONE", "TimeStep", "TimeStep"+str(count))
@@ -27,7 +27,29 @@ class CgnsSaver:
 			t = self.file[f"/BASE/ZONE/TimeStep{str(count)}"]
 			t.attrs["label"] = np.string_("FlowSolution_t".ljust(33,"\x00"))
 			t.attrs["type"] = np.string_("MT".ljust(3,"\x00"))
+			t.attrs["flags"] = np.array([1], dtype=np.int32)
+			t.attrs["name"] = f"TimeStep{count}".encode("utf-8") #np.string_(f"TimeStep{count}".ljust(33,"\x00"))
 		del self.file["/BASE/ZONE/TimeStep"]
+		
+
+		# for count, result in enumerate(self.timeFields[1:],1):
+		# 	ts = self.file["/BASE/ZONE"].create_group(f"TimeStep{count}")
+		# 	ts.attrs["flags"] = np.array([1], dtype=np.int32)
+		# 	ts.attrs["label"] = np.string_("FlowSolution_t".ljust(33, "\x00")) #b'FlowSolution_t'
+		# 	ts.attrs["name"]  = np.string_("TimeStep1".ljust(33, "\x00")) #b'TimeStep1'
+		# 	ts.attrs["type"]  = np.string_("MT".ljust(3, "\x00")) #b'MT'
+
+		# 	nt = ts.create_group("numerical temperature")
+		# 	nt.attrs["flags"] = np.array([1], dtype=np.int32)
+		# 	ts.attrs["label"] = np.string_("DataArray_t".ljust(33, "\x00"))
+		# 	ts.attrs["name"]  = np.string_("numerical temperature".ljust(33, "\x00"))
+		# 	ts.attrs["type"]  = np.string_("R8".ljust(3, "\x00"))
+
+
+		# 	self.attribute(f"/BASE/ZONE/TimeStep{count}/numerical temperature", result)
+		# del self.file["/BASE/ZONE/TimeStep"]
+
+
 
 		self.file.close()
 		del self.timeFields
@@ -90,7 +112,9 @@ class CgnsSaver:
 			i+=1
 
 	def attribute(self, path, data):
-		del self.file[path+"/ data"]
+		try:
+			del self.file[path+"/ data"]
+		except: pass
 		self.file[path].create_dataset(" data", data=data)
 
 	def copy(self, root, group, name):

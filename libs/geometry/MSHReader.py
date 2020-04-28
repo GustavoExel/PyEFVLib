@@ -108,13 +108,13 @@ class MSHReader:
 		regionElements = [self.regionElements[key] for key in self.regionElements]
 
 		boundaryNames = [self.boundaryNames[key] for key in self.boundaryNames]
-		boundaryElements = [self.boundaries[key] for key in self.boundaries]
+		boundaries = [self.boundaries[key] for key in self.boundaries]
 
 		gridData = GridData(self.path)
 		gridData.setVertices(self.nodes)
 		gridData.setElementConnectivity(self.elements)
 		gridData.setRegions(regionNames, regionElements)
-		gridData.setBoundaries(boundaryNames, boundaryElements, self.boundaryElements)
+		gridData.setBoundaries(boundaryNames, boundaries, self.boundaryElements)
 		gridData.setShapes([self.lines, self.triangles, self.quadrilaterals, self.tetrahedrons, self.hexahedrons, self.prisms, self.pyramids])
 
 		return gridData

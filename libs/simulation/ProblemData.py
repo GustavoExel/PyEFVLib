@@ -14,7 +14,7 @@ class PropertyData:
 		if not set(gridRegionNames).issubset(set(jsonRegionNames)):
 			raise Exception(f"Not enougth regions in PropertyData.json. Must contain {' '.join(gridRegionNames)}")
 
-		self.propertyData = [ { _property : data[regionName][_property]["scalar"] for _property in data[regionName].keys()  } for regionName in gridRegionNames ]
+		self.propertyData = [ { _property : data[regionName][_property] for _property in data[regionName].keys()  } for regionName in gridRegionNames ]
 
 class NumericalSettings:
 	def __init__(self):
@@ -59,23 +59,23 @@ class BoundaryConditions:
 				raise Exception("Boundary condition not supported")
 
 
-class ProblemData2D(PropertyData, NumericalSettings, BoundaryConditions):
+class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 	def __init__(self, simulatorName):
 		self.simulatorName = simulatorName
 		self.getPaths()
 
-	def init(self):
+	def read(self):
 		PropertyData.__init__(self)
 		NumericalSettings.__init__(self)
 		BoundaryConditions.__init__(self)
 
 	def setGrid(self, grid):
 		self.grid = grid
-		self.init()
+		self.read()
 
 	def getPaths(self):
 		self.libraryPath = '/'.join(os.path.realpath(__file__).split('/')[:-3])		# this is the GridReader path
-		self.scriptPath  = f"{ self.libraryPath }/benchmark/{ self.simulatorName }/Script.json"
+		self.scriptPath  = f"{ self.libraryPath }/workspace/{ self.simulatorName }/Script.json"
 
 		with open(self.scriptPath, "r") as f:
 			self.paths = json.load(f)

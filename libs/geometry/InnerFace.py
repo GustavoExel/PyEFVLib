@@ -8,6 +8,7 @@ class InnerFace:
 		self.element = element
 		self.area = 0.0
 		self.evalCentroid()
+		self.calculateGlobalDerivatives()
 
 	def evalCentroid(self):
 		shapeFunctionValues = self.element.shape.innerFaceShapeFunctionValues[self.local]
@@ -15,3 +16,7 @@ class InnerFace:
 		for vertex, weight in zip(self.element.vertices, shapeFunctionValues):
 			coords += weight * vertex.getCoordinates()
 		self.centroid = Point(*coords)
+
+	def calculateGlobalDerivatives(self):
+		derivatives = self.element.shape.innerFaceShapeFunctionDerivatives[self.local]
+		self.globalDerivatives = np.matmul(np.linalg.inv(self.element.getTransposeJacobian(derivatives)) , np.transpose(derivatives))

@@ -3,8 +3,7 @@ import h5py
 import subprocess
 
 class CgnsSaver:
-	def __init__(self, timer, grid, outputPath, basePath):
-		self.timer = timer
+	def __init__(self, grid, outputPath, basePath):
 		self.grid = grid
 		self.outputPath = outputPath + "Results.cgns"
 		self.blankCgnsPath = basePath + "/meshes/cgns/blank.cgns"
@@ -29,18 +28,6 @@ class CgnsSaver:
 			# t.attrs["name"] = np.string_(f"TimeStep{str(count)}".ljust(33,"\x00"))
 			t.attrs["type"] = np.string_("MT".ljust(3,"\x00"))
 			
-			# self.file["/BASE/ZONE"].create_group(f"TimeStep{count}")
-			# self.file["/BASE/ZONE"][f"TimeStep{count}"].create_group("numerical temperature")
-			# self.file["/BASE/ZONE"][f"TimeStep{count}/numerical temperature"].create_dataset(" data", data=result)
-			# self.file["/BASE/ZONE"][f"TimeStep{count}/numerical temperature"].attrs["label"] = np.string_('DataArray_t'.ljust(33,'\x00'))
-			# # self.file["/BASE/ZONE"][f"TimeStep{count}/numerical temperature"].attrs["name"] = np.string_('numerical temperature'.ljust(33,'\x00'))
-			# self.file["/BASE/ZONE"][f"TimeStep{count}/numerical temperature"].attrs["type"] = np.string_('R8\x00')
-			# self.file["/BASE/ZONE"][f"TimeStep{count}/numerical temperature"].attrs["flags"] = np.array([1])
-			# self.file["/BASE/ZONE"][f"TimeStep{count}"].attrs["label"] = np.string_("FlowSolution_t".ljust(33, '\x00'))
-			# # self.file["/BASE/ZONE"][f"TimeStep{count}"].attrs["name"]  = np.string_(f"TimeStep{count}".ljust(33, '\x00'))
-			# self.file["/BASE/ZONE"][f"TimeStep{count}"].attrs["type"]  = np.string_("MT".ljust(3, '\x00'))
-			# self.file["/BASE/ZONE"][f"TimeStep{count}"].attrs["flags"] = np.array([1])
-
 		del self.file["/BASE/ZONE/TimeStep"]
 
 		self.file.close()

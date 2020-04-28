@@ -1,7 +1,7 @@
 import numpy as np
 from libs.geometry.MSHReader import MSHReader
 from libs.geometry.Grid import Grid
-from libs.simulation.ProblemData2D import ProblemData2D
+from libs.simulation.ProblemData import ProblemData
 from libs.simulation.Timer import Timer
 from libs.simulation.CgnsSaver import CgnsSaver
 from libs.simulation.LinearSystemAdders import InternalGenerationAdder, HeatDiffusionAdder, AccumulationAdder, NeumannBoundaryAdder, DirichletBoundaryAdder
@@ -14,14 +14,14 @@ class HeatTransfer2D:
 		self.finalize()
 
 	def settings(self):
-		self.problemData = ProblemData2D('heat_transfer_2d')
+		self.problemData = ProblemData('heat_transfer_2d')
 		
 		reader = MSHReader(self.problemData.paths["Grid"])
 		self.grid = Grid(reader.getData())
 		self.problemData.setGrid(self.grid)
 
 		self.timer = Timer(self.problemData.timeStep)				# Contains dictionary with initial times for different labels: start("assembly"); stop("assembly")
-		self.cgnsSaver = CgnsSaver(self.timer, self.grid, self.problemData.paths["Output"], self.problemData.libraryPath)
+		self.cgnsSaver = CgnsSaver(self.grid, self.problemData.paths["Output"], self.problemData.libraryPath)
 
 		self.internalGenerationAdder = InternalGenerationAdder(self)
 		self.heatDiffusionAdder 	 = HeatDiffusionAdder(self)
@@ -29,7 +29,6 @@ class HeatTransfer2D:
 		self.neumannBoundaryAdder 	 = NeumannBoundaryAdder(self)
 		self.dirichletBoundaryAdder  = DirichletBoundaryAdder(self)
 
-		self.calculateInnerFacesGlobalDerivatives()
 		self.numericalTemperature = np.zeros(self.grid.vertices.size)
 		self.oldTemperature = np.repeat(self.problemData.initialValue, self.grid.vertices.size)
 
@@ -49,12 +48,6 @@ class HeatTransfer2D:
 			self.converged = self.checkConvergence()
 
 			self.iteration += 1   
-
-	def calculateInnerFacesGlobalDerivatives(self):
-		for element in self.grid.elements:
-			for innerFace in element.innerFaces:
-				derivatives = innerFace.element.shape.innerFaceShapeFunctionDerivatives[innerFace.local]
-				innerFace.globalDerivatives = np.matmul(np.linalg.inv(element.getJacobian(derivatives)) , np.transpose(derivatives))
 
 	def addToLinearSystem(self):
 		self.timer.start("assemble")

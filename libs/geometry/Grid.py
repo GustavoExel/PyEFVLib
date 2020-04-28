@@ -40,23 +40,13 @@ class Grid:
 		handle = 0
 		self.regions = np.array([])
 		for iRegion, regionName in zip(self.gridData.regionElements, self.gridData.regionNames):
-			region = Region([self.elements[iElem] for iElem in iRegion], regionName, handle)
-			region.setGrid(self)
+			region = Region([self.elements[iElem] for iElem in iRegion], regionName, self, handle)
 			self.regions = np.append(self.regions, region)
 			handle += 1
 
 	def buildBoundaries(self):
 		self.boundaries = np.array([])
 		BoundaryBuilder(self)
-
-	def getVertices(self):
-		return self.vertices
-
-	def getElements(self):
-		return self.elements
-
-	def getRegions(self):
-		return self.regions
 
 	def getShapes(self):
 		return [Triangle, Quadrilateral]

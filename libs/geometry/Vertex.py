@@ -10,9 +10,3 @@ class Vertex(Point):
 
 	def addElement(self, element):
 		self.elements = np.append(self.elements, element)
-
-	def getElements(self):
-		return self.elements
-
-	def getIndedx(self):
-		return self.handle

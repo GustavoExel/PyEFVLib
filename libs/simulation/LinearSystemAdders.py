@@ -6,7 +6,7 @@ class InternalGenerationAdder:
 
 	def add(self):
 		for region in self.simulator.grid.regions:
-			heatGeneration = self.simulator.problemData.propertyData[region.handle]["InternalHeatGeneration"]
+			heatGeneration = self.simulator.problemData.propertyData[region.handle]["HeatGeneration"]
 			for element in region.elements:
 				for vertex in element.vertices:
 					self.simulator.independent[vertex.handle] = vertex.volume * heatGeneration
@@ -86,8 +86,8 @@ def computeLocalMatrix(element, permeability,b=False):
 		if len(derivatives) == 2: derivatives = np.vstack([derivatives, np.zeros(derivatives[0].size)])
 		diffusiveFlux = permeability * np.matmul( np.transpose(derivatives[:-1]) , innerFace.area.getCoordinates()[:-1] )
 
-		backwardVertexLocalHandle = element.shape.innerFaceNeighbourVertices[innerFace.local][0]
-		forwardVertexLocalHandle = element.shape.innerFaceNeighbourVertices[innerFace.local][1]
+		backwardVertexLocalHandle = element.shape.innerFaceNeighborVertices[innerFace.local][0]
+		forwardVertexLocalHandle = element.shape.innerFaceNeighborVertices[innerFace.local][1]
 
 		for i in range(numberOfVertices):
 			coefficient = -1.0 * diffusiveFlux[i]

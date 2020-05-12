@@ -3,11 +3,11 @@
 
     "Output" : "results/",
 
-    "Boundary" : "workspace/heat_transfer_1d/boundaryConditions/temperature.json",
+    "Boundary" : "workspace/heat_transfer_2d/boundaryConditions/temperature.json",
 
-    "Property" : "workspace/heat_transfer_1d/properties.json",
+    "Property" : "workspace/heat_transfer_2d/properties.json",
 
-    "Numerical" : "workspace/heat_transfer_1d/NumericalSettings.json",
+    "Numerical" : "workspace/heat_transfer_2d/NumericalSettings.json",
 
     "Grid" : "meshes/Fine.msh"
 }

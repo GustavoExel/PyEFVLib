@@ -1,15 +1,11 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
-from libs.geometry.MSHReader import MSHReader
-from libs.geometry.Grid import Grid
-from libs.simulation.ProblemData import ProblemData
-from libs.simulation.CgnsSaver import CgnsSaver
+
+from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver
 import numpy as np
-import time
 
 #-------------------------SETTINGS----------------------------------------------
-initialTime = time.time()
-problemData = ProblemData('heat_transfer_1d')
+problemData = ProblemData('heat_transfer_2d')
 
 reader = MSHReader(problemData.paths["Grid"])
 grid = Grid(reader.getData())
@@ -29,17 +25,7 @@ difference = 0.0
 iteration = 0
 converged = False
 
-
-for key,path in zip( ["input", "output", "grids"] , [problemData.libraryPath+"/benchmark/heat_transfer_2d/" , problemData.paths["Output"], problemData.paths["Grid"]] ):
-	print(f"\t\033[1;35m{key}\033[0m\n\t\t{path}\n")
-print(f"\t\033[1;35msolid\033[0m")
-for region in grid.regions:
-	print(f"\t\t\033[36m{region.name}\033[0m")
-	for _property in problemData.propertyData[region.handle].keys():
-		print(f"\t\t\t{_property}   : {problemData.propertyData[region.handle][_property]}")
-	print("")
-print("\n{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
-
+print("{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
 #-------------------------------------------------------------------------------
 #-------------------------SIMULATION MAIN LOOP----------------------------------
 #-------------------------------------------------------------------------------
@@ -51,8 +37,10 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 	for region in grid.regions:
 		heatGeneration = problemData.propertyData[region.handle]["HeatGeneration"]
 		for element in region.elements:
+			local = 0
 			for vertex in element.vertices:
-				independent[vertex.handle] = vertex.volume * heatGeneration
+				independent[vertex.handle] += element.subelementVolumes[local] * heatGeneration
+				local += 1
 
 	# Diffusion Term
 	if iteration == 0:
@@ -77,10 +65,13 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 		heatCapacity = problemData.propertyData[region.handle]["HeatCapacity"]
 		accumulation = density * heatCapacity / timeStep
 
-		for vertex in grid.vertices:
-			independent[vertex.handle] += vertex.volume * accumulation * prevTemperatureField[vertex.handle]
-			if iteration == 0:
-					matrix[vertex.handle][vertex.handle] += vertex.volume * accumulation
+		for element in region.elements:
+			local = 0
+			for vertex in element.vertices:
+				independent[vertex.handle] += element.subelementVolumes[local] * accumulation * prevTemperatureField[vertex.handle]
+				if iteration == 0:
+						matrix[vertex.handle][vertex.handle] += element.subelementVolumes[local] * accumulation
+				local += 1
 
 	# Neumann Boundary Condition
 	for bCondition in problemData.neumannBoundaries:
@@ -109,8 +100,7 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 	currentTime += timeStep
 
 	#-------------------------SAVE RESULTS--------------------------------------
-	cgnsSaver.timeSteps	= np.append(cgnsSaver.timeSteps,  currentTime)
-	cgnsSaver.timeFields  = np.vstack([cgnsSaver.timeFields, temperatureField])
+	cgnsSaver.save(temperatureField, currentTime)
 
 	#-------------------------CHECK CONVERGENCE---------------------------------
 	converged = False
@@ -124,49 +114,25 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 	#-------------------------INCREMENT ITERATION-------------------------------
 	iteration += 1   
 
-
 #-------------------------------------------------------------------------------
 #-------------------------AFTER END OF MAIN LOOP ITERATION------------------------
 #-------------------------------------------------------------------------------
-finalSimulationTime = time.time()
-print("Ended Simultaion, elapsed {:.2f}s".format(finalSimulationTime-initialTime))
-
 cgnsSaver.finalize()
-print("Saved file: elapsed {:.2f}s".format(time.time()-finalSimulationTime))
 
 print("\n\t\033[1;35mresult:\033[0m", problemData.paths["Output"]+"Results.cgns", '\n')
 #-------------------------------------------------------------------------------
 #-------------------------SHOW RESULTS GRAPHICALY-------------------------------
 #-------------------------------------------------------------------------------
-import matplotlib
-from matplotlib import pyplot as plt
-from matplotlib import cm
-from matplotlib.colors import ListedColormap as CM, Normalize
+from matplotlib import pyplot as plt, colors, cm
 from scipy.interpolate import griddata
-from workspace.heat_transfer_1d.analyticalSolution import analyticalSolution_X
 
 X,Y = zip(*[v.getCoordinates()[:-1] for v in grid.vertices])
 
 Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), max(Y), len(Y)) )
 nTi = griddata((X,Y), temperatureField, (Xi,Yi), method='linear')
 
-plt.pcolor(Xi,Yi,nTi, cmap=CM( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) )) # Makes BuRd instead of RdBu
+plt.pcolor(Xi,Yi,nTi, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
+# plt.pcolor(Xi,Yi,nTi, cmap="RdBu")
 plt.title("Numerical Temperature")
 plt.colorbar()	
-
-plt.figure()
-
-x=np.linspace(0,1,15)
-X,T = zip(*sorted(zip(X,temperatureField), key=lambda t:t[0]))
-plt.plot(X,T, color='k', label='Numerical Results')
-plt.scatter(x,[analyticalSolution_X(xx) for xx in x], marker='X', color='r', label='Analytical Results')
-plt.xlabel("X")
-plt.ylabel("Temperature")
-plt.legend()
-
 plt.show()
-
-err = [abs(T - analyticalSolution_X(v.getCoordinates()[0])) for v,T in zip(grid.vertices,temperatureField)]
-print("Max Error: {:.3e}".format(max(err)))
-print("Mean Error: {:.3e}".format(sum(err)/len(err)))
-print("Euclidean Error: {:.3e}".format(np.sqrt(sum([v.volume*e**2 for v,e in zip(grid.vertices, err)]))))

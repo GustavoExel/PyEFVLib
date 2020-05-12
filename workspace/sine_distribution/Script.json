@@ -1,0 +1,13 @@
+{
+    "Root" : "/home/gustavoe/Documents/Sinmec/GTRelated/GridReader/",
+
+    "Output" : "results/",
+
+    "Boundary" : "workspace/sine_distribution/boundaryConditions/temperature.json",
+
+    "Property" : "workspace/sine_distribution/properties.json",
+
+    "Numerical" : "workspace/sine_distribution/NumericalSettings.json",
+
+    "Grid" : "meshes/Fine.msh"
+}

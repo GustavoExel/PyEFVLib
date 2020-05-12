@@ -1,9 +1,7 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
-from libs.geometry.MSHReader import MSHReader
-from libs.geometry.Grid import Grid
-from libs.geometry.Vertex import Point
+from PyEFVLib import MSHReader, Grid, Point
 import os, numpy as np
 
 path = [os.path.dirname(__file__), os.path.pardir, "meshes", "Square.msh"]

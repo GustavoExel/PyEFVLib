@@ -1,5 +1,5 @@
 {
-    "InitialValue": 0.0,
+    "InitialValue": 300.0,
     "WEST": {
         "condition": "DIRICHLET",
         "type": "CONSTANT",
@@ -8,16 +8,16 @@
     "EAST": {
         "condition": "DIRICHLET",
         "type": "CONSTANT",
-        "value": 350.0
+        "value": 300.0
     },
     "SOUTH": {
-        "condition": "NEUMANN",
+        "condition": "DIRICHLET",
         "type": "CONSTANT",
-        "value": 0.0
+        "value": 300.0
     },
     "NORTH": {
-        "condition": "NEUMANN",
+        "condition": "DIRICHLET",
         "type": "CONSTANT",
-        "value": 0.0
+        "value": 100.0
     }
 }

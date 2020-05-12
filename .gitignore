@@ -1,8 +1,8 @@
 /__pycache__
-/libs/__pycache__
+/PyEFVLib/__pycache__
 /apps/__pycache__
-/libs/simulation/__pycache__
-/libs/geometry/__pycache__
-meshes/cgns/blank.cgns.bak
-ToDo.txt
-results/*.py
+/PyEFVLib/simulation/__pycache__
+/PyEFVLib/geometry/__pycache__
+/PyEFVLib/simulation/CGNS/build/CMakeCache.txt
+/PyEFVLib/simulation/CGNS/build/CMakeFiles
+/PyEFVLib/simulation/CGNS/build/cmake_install.cmake

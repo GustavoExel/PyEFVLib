@@ -2,10 +2,11 @@
 #include <fstream>
 #include <sstream>
 #include <boost/filesystem.hpp>
+#include <unordered_map>
 #include <cgnslib.h>
 #include <cgns_io.h>
 
-void readData(std::string basePath, std::string &filePath, int *sizes, std::vector<double> &timeSteps, std::vector<std::vector<double> > &transientFields) {
+void readData(std::string basePath, std::string &filePath, int *sizes, std::vector<double> &timeSteps, std::unordered_map<std::string, std::vector< std::vector<double> > > &transientFields) {
     std::vector< std::string > fieldsNames;
     std::string fieldName;
 
@@ -16,20 +17,26 @@ void readData(std::string basePath, std::string &filePath, int *sizes, std::vect
     data >> *(sizes+2);
     getline(data, fieldName);
     
-    while (getline(data, fieldName)) fieldsNames.emplace_back( fieldName );
+    while (getline(data, fieldName)) {
+        fieldsNames.emplace_back( fieldName );
+        transientFields[fieldName] = std::vector< std::vector<double> >(0);
+    }
 
-    std::ifstream fields(basePath + "/fields.txt");
-    std::string line;
-    std::stringstream ss;
-    std::vector<double> field;
-    double val;
-    while ( getline(fields, line) )
-    {
-        ss.clear(); ss << line;
-        field.clear();
-        while (ss >> val) field.emplace_back( val );
-        transientFields.emplace_back( field );
-        line="";
+    for ( auto fieldName : fieldsNames ) {
+        std::ifstream fields(basePath + "/" + fieldName + ".txt");
+        std::string line;
+        std::stringstream ss;
+        std::vector<double> field;
+        double val;
+        while ( getline(fields, line) )
+        {
+            ss.clear(); ss << line;
+            field.clear();
+            while (ss >> val) field.emplace_back( val );
+            transientFields[fieldName].emplace_back( field );
+            line="";
+        }
+        fields.close();
     }
 
     std::ifstream steps(basePath + "/steps.txt");
@@ -37,37 +44,7 @@ void readData(std::string basePath, std::string &filePath, int *sizes, std::vect
     while ( steps >> timeStep ) timeSteps.emplace_back( timeStep );
 
     data.close();
-    fields.close();
-    steps.close();
-}
-
-void readData2(std::string basePath, std::string &filePath, int *sizes, std::vector<double> &timeSteps, std::vector<std::vector<double> > &transientFields) {
-    std::ifstream data(basePath + "/data.txt");
-    data >> filePath;
-    data >> *sizes;
-    data >> *(sizes+1);
-    data >> *(sizes+2);
-
-    std::ifstream fields(basePath + "/fields.txt");
-    std::string line;
-    std::stringstream ss;
-    std::vector<double> field;
-    double val;
-    while ( getline(fields, line) )
-    {
-        ss.clear(); ss << line;
-        field.clear();
-        while (ss >> val) field.emplace_back( val );
-        transientFields.emplace_back( field );
-        line="";
-    }
-
-    std::ifstream steps(basePath + "/steps.txt");
-    double timeStep;
-    while ( steps >> timeStep ) timeSteps.emplace_back( timeStep );
-
-    data.close();
-    fields.close();
+    // fields.close();
     steps.close();
 }
 
@@ -83,7 +60,7 @@ int main(int argc, char *argv[]) {
 
     char buffer[1024];
     std::vector<double> timeValues;
-    std::vector< std::vector<double> > transientFields;
+    std::unordered_map<std::string, std::vector< std::vector<double> > > transientFields;
 
     readData(basePath, filePath, &sizes[0], timeValues, transientFields);
     file = filePath;
@@ -120,9 +97,12 @@ int main(int argc, char *argv[]) {
         std::string solutionName = std::string("TimeStep") + std::to_string(counter);
         cg_sol_write(fileIndex, baseIndex, zoneIndex, solutionName.c_str(), GridLocation_t(2), &solutionIndex);
         
-        for (unsigned j = 0; j < counter; ++j) {
-            cg_field_write(fileIndex, baseIndex, zoneIndex, solutionIndex, RealDouble, fieldName.c_str(), &transientFields[j][0], &fieldIndex);
-        }    
+        for (auto kv : transientFields) {
+            for (unsigned j = 0; j < counter; ++j) {
+                char* fieldName;
+                cg_field_write(fileIndex, baseIndex, zoneIndex, solutionIndex, RealDouble, fieldName, &transientFields[fieldName][j][0], &fieldIndex);
+            } 
+        }
     }
 
     int numberOfTimeSteps = timeValues.size();

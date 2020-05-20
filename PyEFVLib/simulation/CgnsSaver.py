@@ -24,16 +24,18 @@ class CgnsSaver:
 		if not self.finalize:
 			self.finalize()
 	def finalize(self):
-		with open(self.binPath + "fields.txt", "w") as f:
-			f.write( '\n'.join([' '.join([str(x) for x in field]) for field in self.fields['temperature field']]) )
+		for fieldName in self.fieldsNames:
+			with open(self.binPath + f"{fieldName}.txt", "w") as f:
+				f.write( '\n'.join([' '.join([str(x) for x in field]) for field in self.fields[fieldName]]) )
 
 		with open(self.binPath + "steps.txt", "w") as f:
 			f.write( ' '.join([ str(ts) for ts in self.timeSteps ]) )
 
 		subprocess.run([self.binPath + "save"])
 		os.remove(self.binPath + "data.txt")
-		os.remove(self.binPath + "fields.txt")
 		os.remove(self.binPath + "steps.txt")
+		for fieldName in self.fieldsNames:
+			os.remove(self.binPath + f"{fieldName}.txt")
 
 		self.finalize = True
 

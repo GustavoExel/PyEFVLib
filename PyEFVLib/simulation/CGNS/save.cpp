@@ -6,6 +6,42 @@
 #include <cgns_io.h>
 
 void readData(std::string basePath, std::string &filePath, int *sizes, std::vector<double> &timeSteps, std::vector<std::vector<double> > &transientFields) {
+    std::vector< std::string > fieldsNames;
+    std::string fieldName;
+
+    std::ifstream data(basePath + "/data.txt");
+    getline(data, filePath);
+    data >> *(sizes+0);
+    data >> *(sizes+1);
+    data >> *(sizes+2);
+    getline(data, fieldName);
+    
+    while (getline(data, fieldName)) fieldsNames.emplace_back( fieldName );
+
+    std::ifstream fields(basePath + "/fields.txt");
+    std::string line;
+    std::stringstream ss;
+    std::vector<double> field;
+    double val;
+    while ( getline(fields, line) )
+    {
+        ss.clear(); ss << line;
+        field.clear();
+        while (ss >> val) field.emplace_back( val );
+        transientFields.emplace_back( field );
+        line="";
+    }
+
+    std::ifstream steps(basePath + "/steps.txt");
+    double timeStep;
+    while ( steps >> timeStep ) timeSteps.emplace_back( timeStep );
+
+    data.close();
+    fields.close();
+    steps.close();
+}
+
+void readData2(std::string basePath, std::string &filePath, int *sizes, std::vector<double> &timeSteps, std::vector<std::vector<double> > &transientFields) {
     std::ifstream data(basePath + "/data.txt");
     data >> filePath;
     data >> *sizes;

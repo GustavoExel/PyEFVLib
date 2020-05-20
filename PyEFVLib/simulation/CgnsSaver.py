@@ -2,28 +2,30 @@ import numpy as np
 import subprocess, os, sys
 
 class CgnsSaver:
-	def __init__(self, grid, outputPath, basePath): 
+	def __init__(self, grid, outputPath, basePath, fieldsNames): 
 		self.grid = grid
 		self.outputPath = outputPath + "Results.cgns"
 		self.basePath = basePath
 		self.binPath = os.path.join( basePath, "PyEFVLib", "simulation" ) + "/"
+		self.fieldsNames = fieldsNames
 
-		self.timeSteps  = np.	array([])
-		self.fields = np.zeros((0, grid.vertices.size))
+		self.timeSteps  = np.array([])
+		self.fields = { fieldName : np.zeros((0, grid.vertices.size)) for fieldName in fieldsNames }
 		self.createCgns()
 		self.finalized = False
 
 
-	def save(self, field, currentTime):
-		self.timeSteps = np.append( self.timeSteps, currentTime )
-		self.fields = np.vstack([self.fields, field])
+	def save(self, fieldName, fieldValues, currentTime):
+		if not self.timeSteps.size or self.timeSteps[-1] != currentTime:
+			self.timeSteps = np.append( self.timeSteps, currentTime )
+		self.fields[fieldName] = np.vstack([self.fields[fieldName], fieldValues])
 
 	def __del__(self):
 		if not self.finalize:
 			self.finalize()
 	def finalize(self):
 		with open(self.binPath + "fields.txt", "w") as f:
-			f.write( '\n'.join([' '.join([str(x) for x in field]) for field in self.fields]) )
+			f.write( '\n'.join([' '.join([str(x) for x in field]) for field in self.fields['temperature field']]) )
 
 		with open(self.binPath + "steps.txt", "w") as f:
 			f.write( ' '.join([ str(ts) for ts in self.timeSteps ]) )
@@ -50,7 +52,8 @@ class CgnsSaver:
 	def export(self):
 		with open(self.binPath + "data.txt", "w") as f:
 			t = self.basePath + "/results/Results.cgns\n"
-			t += str(self.grid.vertices.size) + "\n" + str(self.grid.elements.size) + "\n"
+			t += str(self.grid.vertices.size) + " " + str(self.grid.elements.size) + " 0\n"
+			t += '\n'.join(self.fieldsNames) + "\n";
 			f.write(t)
 
 		with open(self.binPath + "coords.txt", "w") as f:

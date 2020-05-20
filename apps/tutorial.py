@@ -15,7 +15,7 @@ problemData.read()
 timeStep = problemData.timeStep
 currentTime = 0.0
 
-cgnsSaver = CgnsSaver(grid, problemData.paths["Output"], problemData.libraryPath)
+cgnsSaver = CgnsSaver(grid, problemData.paths["Output"], problemData.libraryPath, ['temperature field'])
 
 temperatureField = np.repeat(problemData.initialValue, grid.vertices.size)
 prevTemperatureField = np.repeat(problemData.initialValue, grid.vertices.size)
@@ -100,7 +100,7 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 	currentTime += timeStep
 
 	#-------------------------SAVE RESULTS--------------------------------------
-	cgnsSaver.save(temperatureField, currentTime)
+	cgnsSaver.save('temperature field', temperatureField, currentTime)
 
 	#-------------------------CHECK CONVERGENCE---------------------------------
 	converged = False

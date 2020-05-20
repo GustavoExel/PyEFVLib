@@ -44,7 +44,7 @@ class HeatTransfer2D:
 			self.print()
 
 			self.timer.incrementTime()
-			self.cgnsSaver.save(self.numericalTemperature, self.timer.getCurrentTime())
+			self.cgnsSaver.save('temperature field', self.numericalTemperature, self.timer.getCurrentTime())
 			self.converged = self.checkConvergence()
 
 			self.iteration += 1   

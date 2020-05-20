@@ -1,18 +1,6 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 3.14)
 
 set (CMAKE_CXX_STANDARD 17)
-# set (CMAKE_C_COMPILER $ENV{OPENMPI_DIR}/bin/mpicc)
-# set (CMAKE_CXX_COMPILER $ENV{OPENMPI_DIR}/bin/mpicxx)
-
-# include ($ENV{CMAKE_INCLUDES}/Configure.cmake.in)
-
-# set (CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG} "-g -DDEBUG" CACHE STRING "Debug compiler flags")
-# set (CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE} "-O3 -DNDEBUG" CACHE STRING "Release compiler flags")
-
-# # add_definitions("-DTEST_INPUT_DIRECTORY=\"${CMAKE_SOURCE_DIR}/Zeta/Test/\"")
-
-# set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/static_libs)
-# set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/shared_libs)
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/..)
 
 ##################################################################

@@ -56,17 +56,17 @@ class CgnsSaver:
 		with open(self.binPath + "coords.txt", "w") as f:
 			f.write( '\n'.join( [ ' '.join([str(c) for c in coord]) for coord in zip(*self.grid.gridData.vertices) ] ) )
 
-		# Later create a way of guaranteeing that regionElements is a range (in MSHReader)
+		# Later create a way of guaranteeing that regionsElementsIndexes is a range (in MSHReader)
 		with open(self.binPath + "connectivity.txt", "w") as f:
-			t =  '\n'.join( [ ' '.join([str(e) for e in elem]) for elem in self.grid.gridData.elemConnectivity ] )
+			t =  '\n'.join( [ ' '.join([str(e) for e in elem]) for elem in self.grid.gridData.elementsConnectivities ] )
 			t += '\n'
-			t += '\n'.join( [ ' '.join([str(e) for e in elem]) for elem in self.grid.gridData.boundaryElementsConnectivity ] ) 
+			t += '\n'.join( [ ' '.join([str(e) for e in elem]) for elem in self.grid.gridData.boundariesConnectivities ] ) 
 			f.write(t)
 
 		with open(self.binPath + "sections.txt", "w") as f:
 			t=""
-			for regionName, regionElements in zip( self.grid.gridData.regionNames, self.grid.gridData.regionElements ):
-				t += regionName + ' ' + str( len(self.grid.gridData.elemConnectivity[ regionElements[0] ]) ) + ' ' + str(regionElements[0]) + ' ' + str(regionElements[-1]) + '\n'
-			for boundaryName, boundaryElements in zip( self.grid.gridData.boundaryNames, self.grid.gridData.boundaryElements ):
-				t += boundaryName + ' ' + str( len(self.grid.gridData.boundaryElementsConnectivity[ boundaryElements[0] ]) ) + ' ' + str(len(self.grid.gridData.elemConnectivity) + boundaryElements[0]) + ' ' + str(len(self.grid.gridData.elemConnectivity) + boundaryElements[-1]) + "\n"
+			for regionName, regionsElementsIndexes in zip( self.grid.gridData.regionsNames, self.grid.gridData.regionsElementsIndexes ):
+				t += regionName + ' ' + str( len(self.grid.gridData.elementsConnectivities[ regionsElementsIndexes[0] ]) ) + ' ' + str(regionsElementsIndexes[0]) + ' ' + str(regionsElementsIndexes[-1]) + '\n'
+			for boundaryName, boundariesIndexes in zip( self.grid.gridData.boundariesNames, self.grid.gridData.boundariesIndexes ):
+				t += boundaryName + ' ' + str( len(self.grid.gridData.boundariesConnectivities[ boundariesIndexes[0] ]) ) + ' ' + str(len(self.grid.gridData.elementsConnectivities) + boundariesIndexes[0]) + ' ' + str(len(self.grid.gridData.elementsConnectivities) + boundariesIndexes[-1]) + "\n"
 			f.write(t)

@@ -77,6 +77,8 @@ class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 	def getPaths(self):
 		self.libraryPath = '/'.join(os.path.realpath(__file__).split('/')[:-3])		# this is the GridReader path
 		self.scriptPath  = f"{ self.libraryPath }/workspace/{ self.simulatorName }/Script.json"
+		if not os.path.isfile(self.scriptPath):
+			raise(Exception(f"File {self.scriptPath} not found"))
 
 		with open(self.scriptPath, "r") as f:
 			self.paths = json.load(f)

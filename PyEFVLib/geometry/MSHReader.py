@@ -2,119 +2,65 @@ from PyEFVLib.geometry.GridData import GridData
 
 # Msh format encodes elements in the following manner:
 # i x x p e v1 v2 v3 - i[index], xx[shape code], p[physical index], e[elementary index], vi[vertex]
-#
 
 class MSHReader:
 	def __init__(self, path):
 		self.path = path
+
+		self.open()
+		self.checkFileVersion()
 		self.read()
 
-
-	def init(self):
-		self.nodes 			 				= []
-		self.elements 			 			= []
-		self.regionNames 					= dict()
-		self.regionElements 	 			= dict()
-		self.boundaryElements 			 	= []
-		self.boundaryNames 					= dict()
-		self.boundaries						= dict()
-		self.lines							= []
-		self.triangles 						= []
-		self.quadrilaterals 				= []
-		self.tetrahedrons 					= []
-		self.hexahedrons					= []
-		self.prisms							= []
-		self.pyramids						= []
-
-		self.shapeCodes = {'1 2' : 'line', '2 2' : 'triangle', '3 2' : 'quadrilateral', '4 2' : 'tetrahedron'}
-		self.dimensionDict = {'line' : 1, 'triangle' : 2, 'quadrilateral' : 2, 'tetrahedron' : 3}
-
-		with open(self.path, "r") as f:
-			self.fileLines = f.readlines()
-		self.fields = {'physicalNames' : self.fileLines.index("$PhysicalNames\n"), 'nodes' : self.fileLines.index("$Nodes\n"), 'elements' : self.fileLines.index("$Elements\n")}
-
-	def defineDimension(self):
-		self.dimension = max([ int(line.split()[0]) for line in self.fileLines[ self.fields['physicalNames']+2 : self.fields['nodes']-1 ] ])
+	def open(self):
+		with open(self.path, 'r') as f:
+			fileLines = f.read().split('$')
+		self.fileData = [ [ line.split() for line in fileLines[i].split('\n')[1:-1] ] for i in range(1,8,2) ]
+		
+	def checkFileVersion(self):
+		fileVersion = float(self.fileData[0][0][0])
+		if fileVersion < 2.0 or fileVersion > 2.2:
+			raise( Exception("MSH version must be ") )
 
 	def read(self):
-		self.init()
-		self.defineDimension()
-		self.readPhysicalEntities()
-		self.readNodes()
-		self.readElements()
+		self.numberOfSections = int( self.fileData[1][0][0] )
+		self.numberOfVertices = int( self.fileData[2][0][0] )
+		self.numberOfConnectivities = int( self.fileData[3][0][0] )
 
-	def readPhysicalEntities(self):
-		for line in self.fileLines[ self.fields['physicalNames']+2 : self.fields['nodes']-1 ]:
-			index = int(line.split()[1])
-			if int(line.split()[0]) == self.dimension:
-				self.regionNames[index] = line.split()[-1][1:-1]
-				self.regionElements[index] = []
-			else:
-				self.boundaryNames[index] =  line.split()[-1][1:-1]
-				self.boundaries[index] = []
+		self.sectionsFileData = [ ( int(dimension), int(index) , name[1:-1] ) for dimension, index, name in self.fileData[1][1:] ]
+		self.verticesFileData = [ (float(x), float(y), float(z)) for idx,x,y,z in self.fileData[2][1:] ]
+		self.connectivitiesFileData = [ ( ''.join([c1,c2]), int(p_id), [ int(v)-1 for v in nodes ] ) for idx, c1, c2, p_id, e_id, *nodes in self.fileData[3][1:] ]
 
-	def readNodes(self):
-		for line in self.fileLines[ self.fields['nodes']+2 : self.fields['elements']-1 ]:
-			idx,x,y,z = line.split()
-			self.nodes.append([float(x), float(y), float(z)])
+		self.sectionElements = [ [ e[2] for e in self.connectivitiesFileData if e[1] == section[1] ] for section in self.sectionsFileData]
 
-	def readElements(self):
-		for line in self.fileLines[ self.fields['elements']+2 : -1 ]:
-			code = ' '.join(line.split()[1:3])
+		shapeCodes = {"line":"12", "triangle":"22", "quadrilateral":"32", "tetrahedron":"42"}
+		self.shapes = { shape : [ (e[1],e[2]) for e in self.connectivitiesFileData if e[0] == shapeCodes[shape] ] for shape in shapeCodes.keys() }
 
-			if self.dimensionDict[ self.shapeCodes[code] ] == self.dimension:
-				# This is an element of the grid. If grid is 3D then this element is 3D and the same for 2D.
-				# It will be appended to the elements list of connectivity, and its index of elements list will be stored in region elements in the right region key.
-				self.elements.append([int(v)-1 for v in line.split()[5:]])
-
-				regionId = int(line.split()[3])
-				elementId = len(self.elements)-1
-				self.regionElements[regionId].append(elementId)
-
-			else:
-				self.boundaryElements.append([int(v)-1 for v in line.split()[5:]])
-				boundaryId = int(line.split()[3])
-				elementId = len(self.boundaryElements)-1
-				self.boundaries[boundaryId].append(elementId)
-
-			if self.dimension == 2:
-				if self.shapeCodes[code] == 'triangle':
-					self.triangles.append( len(self.elements)-1 )
-
-				if self.shapeCodes[code] == 'quadrilateral':
-					self.quadrilaterals.append( len(self.elements)-1 )
-
-			elif self.dimension == 3:
-				if self.shapeCodes[code] == 'triangle':
-					self.triangles.append( len(self.boundaryElements)-1 )
-
-				if self.shapeCodes[code] == 'quadrilateral':
-					self.quadrilaterals.append( len(self.boundaryElements)-1 )
-
-				if self.shapeCodes[code] == 'tetrahedron':
-					self.tetrahedrons.append( len(self.elements)-1 )
-
-				if self.shapeCodes[code] == 'hexahedron':
-					self.hexahedrons.append( len(self.elements)-1 )
-
-				if self.shapeCodes[code] == 'prism':
-					self.prisms.append( len(self.elements)-1 )
-
-				if self.shapeCodes[code] == 'pyramid':
-					self.pyramids.append( len(self.elements)-1 )
 
 	def getData(self):
-		regionNames = [self.regionNames[key] for key in self.regionNames]
-		regionElements = [self.regionElements[key] for key in self.regionElements]
+		elementsConnectivities, regionNames, regionsElementsIndexes = [], [], []
+		boundariesConnectivities, boundaryNames, boundariesIndexes = [], [], []
 
-		boundaryNames = [self.boundaryNames[key] for key in self.boundaryNames]
-		boundaries = [self.boundaries[key] for key in self.boundaries]
+		maxDimension = max([dimension for dimension, index, name in self.sectionsFileData])
+		for [dimension, index, name], sectionElements in zip( self.sectionsFileData, self.sectionElements ):
+			if dimension == maxDimension:
+				indexOfFirstConnectivity = len(elementsConnectivities)
+				
+				elementsConnectivities += sectionElements
+				regionNames.append(name)
+				regionsElementsIndexes.append( list(range(indexOfFirstConnectivity, indexOfFirstConnectivity+len(sectionElements))) )
+
+			else:
+				indexOfFirstConnectivity = len(boundariesConnectivities)
+				
+				boundariesConnectivities += sectionElements
+				boundaryNames.append(name)
+				boundariesIndexes.append( list(range(indexOfFirstConnectivity, indexOfFirstConnectivity+len(sectionElements))) )
 
 		gridData = GridData(self.path)
-		gridData.setVertices(self.nodes)
-		gridData.setElementConnectivity(self.elements)
-		gridData.setRegions(regionNames, regionElements)
-		gridData.setBoundaries(boundaryNames, boundaries, self.boundaryElements)
-		gridData.setShapes([self.lines, self.triangles, self.quadrilaterals, self.tetrahedrons, self.hexahedrons, self.prisms, self.pyramids])
+		gridData.setVertices(self.verticesFileData)
+		gridData.setElementConnectivity(elementsConnectivities)
+		gridData.setRegions(regionNames, regionsElementsIndexes)
+		gridData.setBoundaries(boundaryNames, boundariesIndexes, boundariesConnectivities)
+		gridData.setShapes([ self.shapes['line'], self.shapes['triangle'], self.shapes['quadrilateral'], self.shapes['tetrahedron'], [], [], [] ])
 
 		return gridData

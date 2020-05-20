@@ -31,7 +31,7 @@ class Grid:
 		self.innerFaceCounter = 0
 		handle = 0
 		self.elements = np.array([])
-		for iElem in self.gridData.elemConnectivity:
+		for iElem in self.gridData.elementsConnectivities:
 			elem = Element([self.vertices[iVertex] for iVertex in iElem], self, handle)
 			self.elements = np.append(self.elements, elem)
 			handle += 1
@@ -39,7 +39,7 @@ class Grid:
 	def buildRegions(self):
 		handle = 0
 		self.regions = np.array([])
-		for iRegion, regionName in zip(self.gridData.regionElements, self.gridData.regionNames):
+		for iRegion, regionName in zip(self.gridData.regionsElementsIndexes, self.gridData.regionsNames):
 			region = Region([self.elements[iElem] for iElem in iRegion], regionName, self, handle)
 			self.regions = np.append(self.regions, region)
 			handle += 1

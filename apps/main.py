@@ -49,10 +49,6 @@ if not '-s' in sys.argv:
 		print("")
 	print("\n{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
 
-lb = [i for i,bc in enumerate(grid.boundaries) if bc.name=="NORTH"][0]
-def f(handle): return 300-200*np.sin(np.pi * grid.vertices[handle].getCoordinates()[0])
-problemData.dirichletBoundaries[lb].getValue = f
-
 #-------------------------------------------------------------------------------
 #-------------------------SIMULATION MAIN LOOP----------------------------------
 #-------------------------------------------------------------------------------

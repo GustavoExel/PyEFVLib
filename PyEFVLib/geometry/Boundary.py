@@ -19,9 +19,9 @@ class BoundaryBuilder:
 	def buildBoundaryData(self):
 		self.boundaries = []
 
-		names = self.grid.gridData.boundaryNames
-		connectivities = self.grid.gridData.boundaryElementsConnectivity
-		boundaries = self.grid.gridData.boundaryElements
+		names = self.grid.gridData.boundariesNames
+		connectivities = self.grid.gridData.boundariesConnectivities
+		boundaries = self.grid.gridData.boundariesIndexes
 
 		i = 0
 		for name, boundary in zip(names, boundaries):
@@ -64,19 +64,19 @@ class BoundaryBuilder:
 
 	def scanElements(self, boundaryData):
 		# Keeps track of which elements share faces with the boundary
-		self.boundaryElementsVertices = []
-		self.boundaryElements = []
-		for element, elementVertices in zip(self.grid.elements, self.grid.gridData.elemConnectivity):
+		self.boundariesIndexesVertices = []
+		self.boundariesIndexes = []
+		for element, elementVertices in zip(self.grid.elements, self.grid.gridData.elementsConnectivities):
 			if len(set(elementVertices).intersection(boundaryData.vertices)) >= element.shape.dimension:
-				self.boundaryElementsVertices.append(elementVertices)
-				self.boundaryElements.append(element)
+				self.boundariesIndexesVertices.append(elementVertices)
+				self.boundariesIndexes.append(element)
 
 	def buildFacet(self, facetConnectivity):
 		# boundaryElement 	 : Element which contains the facet
 		# localFacetVertices : facet's vertices local indices at the element
 		# elemFacetIndex	 : facet's local index of the element
 
-		for boundaryElement, boundaryElementVertices in zip(self.boundaryElements, self.boundaryElementsVertices):
+		for boundaryElement, boundaryElementVertices in zip(self.boundariesIndexes, self.boundariesIndexesVertices):
 			if set(facetConnectivity).issubset(boundaryElementVertices):
 				localFacetVertices = [boundaryElementVertices.index(globalHandle) for globalHandle in facetConnectivity]
 				

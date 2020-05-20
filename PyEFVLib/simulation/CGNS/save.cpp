@@ -96,12 +96,12 @@ int main(int argc, char *argv[]) {
     for ( unsigned counter = 1; counter <= timeValues.size(); ++counter ) {
         std::string solutionName = std::string("TimeStep") + std::to_string(counter);
         cg_sol_write(fileIndex, baseIndex, zoneIndex, solutionName.c_str(), GridLocation_t(2), &solutionIndex);
-        
+
         for (auto kv : transientFields) {
+            std::string fieldName = kv.first;
             for (unsigned j = 0; j < counter; ++j) {
-                char* fieldName;
-                cg_field_write(fileIndex, baseIndex, zoneIndex, solutionIndex, RealDouble, fieldName, &transientFields[fieldName][j][0], &fieldIndex);
-            } 
+                cg_field_write(fileIndex, baseIndex, zoneIndex, solutionIndex, RealDouble, fieldName.c_str(), &transientFields[fieldName][j][0], &fieldIndex);
+            }
         }
     }
 

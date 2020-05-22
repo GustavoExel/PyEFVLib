@@ -12,7 +12,7 @@ class PropertyData:
 		gridRegionNames = [r.name for r in self.grid.regions]
 
 		if not set(gridRegionNames).issubset(set(jsonRegionNames)):
-			raise Exception(f"Not enougth regions in PropertyData.json. Must contain {' '.join(gridRegionNames)}")
+			raise Exception("Not enougth regions in PropertyData.json. Must contain {}".format(' '.join(gridRegionNames)) )
 
 		self.propertyData = [ { _property : data[regionName][_property] for _property in data[regionName].keys()  } for regionName in gridRegionNames ]
 
@@ -47,7 +47,7 @@ class BoundaryConditions:
 		i = 0
 		for boundary in self.grid.boundaries:
 			if boundary.name not in self.boundaryConditionData.keys():
-				raise Exception(f"There is no boundary entry {boundary.name} in {self.path}") 
+				raise Exception("There is no boundary entry {} in {}".format(boundary.name, self.path))
 
 			bData = self.boundaryConditionData[boundary.name]
 			if bData["condition"] == "DIRICHLET":
@@ -76,9 +76,9 @@ class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 
 	def getPaths(self):
 		self.libraryPath = '/'.join(os.path.realpath(__file__).split('/')[:-3])		# this is the GridReader path
-		self.scriptPath  = f"{ self.libraryPath }/workspace/{ self.simulatorName }/Script.json"
+		self.scriptPath  = "{}/workspace/{}/Script.json".format( self.libraryPath, self.simulatorName )
 		if not os.path.isfile(self.scriptPath):
-			raise(Exception(f"File {self.scriptPath} not found"))
+			raise(Exception("File {} not found".format(self.scriptPath)))
 
 		with open(self.scriptPath, "r") as f:
 			self.paths = json.load(f)

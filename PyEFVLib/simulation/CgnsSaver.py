@@ -25,7 +25,7 @@ class CgnsSaver:
 			self.finalize()
 	def finalize(self):
 		for fieldName in self.fieldsNames:
-			with open(self.binPath + f"{fieldName}.txt", "w") as f:
+			with open(self.binPath + fieldName + ".txt", "w") as f:
 				f.write( '\n'.join([' '.join([str(x) for x in field]) for field in self.fields[fieldName]]) )
 
 		with open(self.binPath + "steps.txt", "w") as f:
@@ -35,7 +35,7 @@ class CgnsSaver:
 		os.remove(self.binPath + "data.txt")
 		os.remove(self.binPath + "steps.txt")
 		for fieldName in self.fieldsNames:
-			os.remove(self.binPath + f"{fieldName}.txt")
+			os.remove(self.binPath + fieldName + ".txt")
 
 		self.finalize = True
 

@@ -40,12 +40,12 @@ converged = False
 
 if not '-s' in sys.argv:
 	for key,path in zip( ["input", "output", "grids"] , [problemData.libraryPath+"/workspace/"+model , problemData.paths["Output"], problemData.paths["Grid"]] ):
-		print(f"\t\033[1;35m{key}\033[0m\n\t\t{path}\n")
-	print(f"\t\033[1;35msolid\033[0m")
+		print("\t\033[1;35m{}\033[0m\n\t\t{}\n".format(key, path))
+	print("\t\033[1;35msolid\033[0m")
 	for region in grid.regions:
-		print(f"\t\t\033[36m{region.name}\033[0m")
+		print("\t\t\033[36m{}\033[0m".format(region.name))
 		for _property in problemData.propertyData[region.handle].keys():
-			print(f"\t\t\t{_property}   : {problemData.propertyData[region.handle][_property]}")
+			print("\t\t\t{}   : {}".format(_property, problemData.propertyData[region.handle][_property]))
 		print("")
 	print("\n{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
 

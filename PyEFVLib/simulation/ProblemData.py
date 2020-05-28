@@ -23,8 +23,11 @@ class NumericalSettings:
 	def readNumericalData(self):
 		with open(self.paths["Numerical"], "r") as f:
 			data = json.load(f)
-		self.timeStep = data["TimeStep"]
-		self.finalTime = data["FinalTime"]
+		try:
+			self.timeStep = data["TimeStep"]
+			self.finalTime = data["FinalTime"]
+		except:
+			self.steady=True
 		self.tolerance = data["Tolerance"]
 		self.maxNumberOfIterations = data["MaximumNumberOfIterations"]
 

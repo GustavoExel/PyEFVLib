@@ -20,3 +20,9 @@ class InnerFace:
 	def calculateGlobalDerivatives(self):
 		derivatives = self.element.shape.innerFaceShapeFunctionDerivatives[self.local]
 		self.globalDerivatives = np.matmul(np.linalg.inv(self.element.getTransposeJacobian(derivatives)) , np.transpose(derivatives))
+
+	def getVoigtGradientOperator(self):
+		zero = np.zeros( self.globalDerivatives.shape[1] )
+		Nx,Ny,Nz = self.globalDerivatives
+		self.voigtGradientOperator = np.array( [[Nx,zero,zero],[zero,Ny,zero],[zero,zero,Nz],[Ny,Nx,zero],[zero,Nz,Ny],[Nz,zero,Nx]] )
+		return self.voigtGradientOperator

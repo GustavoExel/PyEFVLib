@@ -3,7 +3,7 @@
 
     "Output" : "results/",
 
-    "Boundary" : "workspace/sine_distribution/boundaryConditions/temperature.json",
+    "Boundary" : "workspace/sine_distribution/boundaryConditions/",
 
     "Property" : "workspace/sine_distribution/properties.json",
 

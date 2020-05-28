@@ -3,7 +3,7 @@
 
     "Output" : "results/",
 
-    "Boundary" : "workspace/test/boundaryConditions/temperature.json",
+    "Boundary" : "workspace/test/boundaryConditions/",
 
     "Property" : "workspace/test/properties.json",
 

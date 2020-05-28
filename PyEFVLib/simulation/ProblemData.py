@@ -37,31 +37,43 @@ class BoundaryConditions:
 		self.build()
 
 	def readBoundaryConditionsData(self):
-		with open(self.paths["Boundary"], "r") as f:
-			data = json.load(f)
+		# with open(self.paths["Boundary"], "r") as f:
+		# 	data = json.load(f)
+		self.boundaryConditionData = dict()
+		self.initialValue = dict()
+		for path in list( os.walk(self.paths["Boundary"]) )[0][2]:
+			with open( os.path.join(self.paths["Boundary"], path) , "r") as f:
+				data = json.load(f)
 
-		self.boundaryConditionData = {key : data[key] for key in data.keys() if key != "InitialValue"}
-		self.initialValue = data["InitialValue"]
+			variableName = path.strip(".json") 
+			self.boundaryConditionData[variableName] = {key : data[key] for key in data.keys() if key != "InitialValue"}
+			self.initialValue[variableName] = data["InitialValue"]
 
 	def build(self):
-		self.dirichletBoundaries = np.array([])
-		self.neumannBoundaries = np.array([])
+		self.dirichletBoundaries = dict()
+		self.neumannBoundaries = dict()
+		for variableName in self.boundaryConditionData.keys():
+			dirichletBoundaries = np.array([])
+			neumannBoundaries = np.array([])
 
-		i = 0
-		for boundary in self.grid.boundaries:
-			if boundary.name not in self.boundaryConditionData.keys():
-				raise Exception("There is no boundary entry {} in {}".format(boundary.name, self.path))
+			i = 0
+			for boundary in self.grid.boundaries:
+				if boundary.name not in self.boundaryConditionData[variableName].keys():
+					raise Exception("There is no boundary entry {} in {}".format(boundary.name, self.paths["Boundary"]))
 
-			bData = self.boundaryConditionData[boundary.name]
-			if bData["condition"] == "DIRICHLET":
-				self.dirichletBoundaries = np.append(self.dirichletBoundaries, DirichletBoundaryCondition(boundary, bData["value"], i) )
+				bData = self.boundaryConditionData[variableName][boundary.name]
+				if bData["condition"] == "DIRICHLET":
+					dirichletBoundaries = np.append(dirichletBoundaries, DirichletBoundaryCondition(boundary, bData["value"], i) )
 
-			elif bData["condition"] == "NEUMANN":
-				self.neumannBoundaries = np.append(self.neumannBoundaries, NeumannBoundaryCondition(boundary, bData["value"], i) )
+				elif bData["condition"] == "NEUMANN":
+					neumannBoundaries = np.append(neumannBoundaries, NeumannBoundaryCondition(boundary, bData["value"], i) )
 
-			else:
-				raise Exception("Boundary condition not supported")
-			i+=1
+				else:
+					raise Exception("Boundary condition not supported")
+				i+=1
+
+			self.dirichletBoundaries[variableName] = dirichletBoundaries
+			self.neumannBoundaries[variableName] = neumannBoundaries
 
 class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 	def __init__(self, simulatorName):

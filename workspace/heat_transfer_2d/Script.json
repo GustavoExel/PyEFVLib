@@ -3,7 +3,7 @@
 
     "Output" : "results/",
 
-    "Boundary" : "workspace/heat_transfer_2d/boundaryConditions/temperature.json",
+    "Boundary" : "workspace/heat_transfer_2d/boundaryConditions/",
 
     "Property" : "workspace/heat_transfer_2d/properties.json",
 

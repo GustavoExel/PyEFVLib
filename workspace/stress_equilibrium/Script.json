@@ -3,7 +3,7 @@
 
     "Output" : "results/",
 
-    "Boundary" : "workspace/stress_equilibrium/boundaryConditions/temperature.json",
+    "Boundary" : "workspace/stress_equilibrium/boundaryConditions/",
 
     "Property" : "workspace/stress_equilibrium/properties.json",
 

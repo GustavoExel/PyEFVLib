@@ -108,7 +108,7 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 		for vertex in bCondition.boundary.vertices:
 			independent[vertex.handle] = bCondition.getValue(vertex.handle)
 	if iteration == 0:
-		for bCondition in problemData.dirichletBoundaries:
+		for bCondition in problemData.dirichletBoundaries["temperature"]:
 			for vertex in bCondition.boundary.vertices:
 				matrix[vertex.handle] = np.zeros(grid.vertices.size)
 				matrix[vertex.handle][vertex.handle] = 1.0

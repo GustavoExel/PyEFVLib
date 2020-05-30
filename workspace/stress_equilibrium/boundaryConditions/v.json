@@ -1,23 +1,23 @@
 {
     "InitialValue": 0.0,
     "WEST": {
-        "condition": "DIRICHLET",
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "EAST": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "SOUTH": {
+        "condition": "NEUMANN",
         "type": "CONSTANT",
         "value": 100.0
     },
-    "EAST": {
-        "condition": "DIRICHLET",
+    "NORTH": {
+        "condition": "NEUMANN",
         "type": "CONSTANT",
         "value": -100.0
-    },
-    "SOUTH": {
-        "condition": "DIRICHLET",
-        "type": "CONSTANT",
-        "value": 0.0
-    },
-    "NORTH": {
-        "condition": "DIRICHLET",
-        "type": "CONSTANT",
-        "value": 0.0
     }
 }

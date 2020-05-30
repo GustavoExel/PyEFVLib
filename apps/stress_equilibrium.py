@@ -48,11 +48,11 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 
 	# Gravity Term
 	for region in grid.regions:
-		# heatGeneration = problemData.propertyData[region.handle]["HeatGeneration"]
+		volumetricForce = problemData.propertyData[region.handle]["Density"] * problemData.propertyData[region.handle]["Gravity"]
 		for element in region.elements:
 			local = 0
 			for vertex in element.vertices:
-				# independent[vertex.handle] += element.subelementVolumes[local] * heatGeneration
+				# independent[vertex.handle + numberOfVertices] += -element.subelementVolumes[local] * volumetricForce
 				local += 1
 
 	# Stress Term
@@ -141,6 +141,7 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 	cgnsSaver.save('v', displacements[numberOfVertices:], 0.0)
 	cgnsSaver.save('exx', normal_stain_x, 0.0)
 	cgnsSaver.save('eyy', normal_stain_y, 0.0)
+	cgnsSaver.save('exy', shear_strain, 0.0)
 
 	#-------------------------CHECK CONVERGENCE---------------------------------
 	converged = False
@@ -161,21 +162,28 @@ print("\n\t\033[1;35mresult:\033[0m", problemData.paths["Output"]+"Results.cgns"
 #-------------------------------------------------------------------------------
 #-------------------------SHOW RESULTS GRAPHICALY-------------------------------
 #-------------------------------------------------------------------------------
-from matplotlib import pyplot as plt, colors, cm
-from scipy.interpolate import griddata
+if "-g" in sys.argv:
+	from matplotlib import pyplot as plt, colors, cm
+	from scipy.interpolate import griddata
 
-X,Y = zip(*[v.getCoordinates()[:-1] for v in grid.vertices])
-Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), 2*len(X)), np.linspace(min(Y), max(Y), 2*len(Y)) )
-def show(fieldValues, name):
-	plt.figure()
-	gridValues = griddata((X,Y), fieldValues, (Xi,Yi), method='linear')
-	plt.pcolor(Xi,Yi,gridValues, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
-	plt.title(name)
-	plt.colorbar()
+	X,Y = zip(*[v.getCoordinates()[:-1] for v in grid.vertices])
+	Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), max(Y), int(len(Y)/2)) )
+	def show(fieldValues, name):
+		plt.figure()
+		gridValues = griddata((X,Y), fieldValues, (Xi,Yi), method='linear')
+		plt.pcolor(Xi,Yi,gridValues, cmap="RdBu")#, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
+		plt.title(name)
+		plt.colorbar()
 
-show(displacements[:numberOfVertices], "X displacement (u)")
-show(displacements[numberOfVertices:], "Y displacement (v)")
-show(normal_stain_x, "X normal strain (exx)")
-show(normal_stain_y, "Y normal strain (eyy)")
+	show(displacements[:numberOfVertices], "X displacement (u)")
+	show(displacements[numberOfVertices:], "Y displacement (v)")
+	show(normal_stain_x, "X normal strain (exx)")
+	show(normal_stain_y, "Y normal strain (eyy)")
+	show(shear_strain, "Shear strain (γxy)")
 
-plt.show()
+	plt.show()
+else:
+	try:
+		os.system("/usr/bin/paraview %sResults.cgns" % problemData.paths["Output"])
+	except:
+		print("Could not launch /usr/bin/paraview")

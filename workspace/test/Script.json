@@ -1,7 +1,7 @@
 {
     "Root" : "/home/gustavoe/Documents/Sinmec/GTRelated/GridReader/",
 
-    "Output" : "results/",
+    "Output" : "results/test/",
 
     "Boundary" : "workspace/test/boundaryConditions/",
 

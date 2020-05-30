@@ -3,6 +3,7 @@
     {
     	"Density": 2700,
         "PoissonsRatio": 2.0e-1,
-        "ShearModulus": 6.0e+9
+        "ShearModulus": 6.0e+9,
+        "Gravity": 9.81
     }
 }

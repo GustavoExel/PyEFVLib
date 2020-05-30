@@ -38,7 +38,7 @@ class Element:
 		self.volume = 0.0
 		for local in range(self.vertices.size):
 			shapeFunctionDerivatives = self.shape.subelementShapeFunctionDerivatives[local]
-			volume = self.shape.subelementTransformedVolumes[local] * np.linalg.det(self.getTransposeJacobian(shapeFunctionDerivatives))
+			volume = self.shape.subelementTransformedVolumes[local] * np.linalg.det(self.getTransposedJacobian(shapeFunctionDerivatives))
 
 			self.volume += volume 
 			self.vertices[local].volume += volume
@@ -47,6 +47,6 @@ class Element:
 	def setRegion(self, region):
 		self.region = region
 
-	def getTransposeJacobian(self, shapeFunctionDerivatives):	# shapeFunctionDerivatives must be already a numpy array
+	def getTransposedJacobian(self, shapeFunctionDerivatives):	# shapeFunctionDerivatives must be already a numpy array
 		vertices = np.array([[vertex.getCoordinates()[k] for k in range(self.shape.dimension)] for vertex in self.vertices])
 		return np.matmul(np.transpose(shapeFunctionDerivatives), vertices)

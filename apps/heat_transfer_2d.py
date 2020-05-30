@@ -14,7 +14,7 @@ if '--help' in sys.argv:
 	exit(0)
 
 
-model = 'sine_distribution'
+model = 'heat_transfer_2d'
 if len(sys.argv)>1 and not '-' in sys.argv[1]: model=sys.argv[1]
 #-------------------------SETTINGS----------------------------------------------
 initialTime = time.time()
@@ -28,7 +28,7 @@ problemData.read()
 timeStep = problemData.timeStep
 currentTime = 0.0
 
-cgnsSaver = CgnsSaver(grid, problemData.paths["Output"], problemData.libraryPath, ['temperature field'])
+cgnsSaver = CgnsSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
 temperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)
 prevTemperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)
@@ -108,7 +108,7 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 		for vertex in bCondition.boundary.vertices:
 			independent[vertex.handle] = bCondition.getValue(vertex.handle)
 	if iteration == 0:
-		for bCondition in problemData.dirichletBoundaries:
+		for bCondition in problemData.dirichletBoundaries["temperature"]:
 			for vertex in bCondition.boundary.vertices:
 				matrix[vertex.handle] = np.zeros(grid.vertices.size)
 				matrix[vertex.handle][vertex.handle] = 1.0

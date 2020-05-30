@@ -1,7 +1,7 @@
 {
     "Root" : "/home/gustavoe/Documents/Sinmec/GTRelated/GridReader/",
 
-    "Output" : "results/",
+    "Output" : "results/heat_transfer_2d/",
 
     "Boundary" : "workspace/heat_transfer_2d/boundaryConditions/",
 

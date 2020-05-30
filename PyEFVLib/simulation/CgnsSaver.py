@@ -2,15 +2,13 @@ import numpy as np
 import subprocess, os, sys
 
 class CgnsSaver:
-	def __init__(self, grid, outputPath, basePath, fieldsNames): 
+	def __init__(self, grid, outputPath, basePath): 
 		self.grid = grid
 		self.outputPath = outputPath + "Results.cgns"
 		self.basePath = basePath
 		self.binPath = os.path.join( basePath, "PyEFVLib", "simulation" ) + "/"
-		self.fieldsNames = fieldsNames
-
 		self.timeSteps  = np.array([])
-		self.fields = { fieldName : np.zeros((0, grid.vertices.size)) for fieldName in fieldsNames }
+		self.fields = dict()
 		self.createCgns()
 		self.finalized = False
 
@@ -18,13 +16,20 @@ class CgnsSaver:
 	def save(self, fieldName, fieldValues, currentTime):
 		if not self.timeSteps.size or self.timeSteps[-1] != currentTime:
 			self.timeSteps = np.append( self.timeSteps, currentTime )
+		if not fieldName in self.fields.keys():
+			self.fields[fieldName] = np.zeros((0, self.grid.vertices.size))
+
 		self.fields[fieldName] = np.vstack([self.fields[fieldName], fieldValues])
 
 	def __del__(self):
 		if not self.finalize:
 			self.finalize()
 	def finalize(self):
-		for fieldName in self.fieldsNames:
+		with open(self.binPath + "data.txt", "a") as f:
+			t = '\n'.join(self.fields.keys()) + "\n";
+			f.write(t)
+
+		for fieldName in self.fields.keys():
 			with open(self.binPath + fieldName + ".txt", "w") as f:
 				f.write( '\n'.join([' '.join([str(x) for x in field]) for field in self.fields[fieldName]]) )
 
@@ -34,13 +39,16 @@ class CgnsSaver:
 		subprocess.run([self.binPath + "save"])
 		os.remove(self.binPath + "data.txt")
 		os.remove(self.binPath + "steps.txt")
-		for fieldName in self.fieldsNames:
+		for fieldName in self.fields.keys():
 			os.remove(self.binPath + fieldName + ".txt")
 
 		self.finalize = True
 
 	def createCgns(self):
 		# Check existing Results.cgns, if so remove it
+		if not os.path.isdir(os.path.dirname(self.outputPath)):
+			os.makedirs(os.path.dirname(self.outputPath))
+
 		if os.path.isfile(self.outputPath):
 			os.remove(self.outputPath)
 		self.export()
@@ -53,9 +61,8 @@ class CgnsSaver:
 
 	def export(self):
 		with open(self.binPath + "data.txt", "w") as f:
-			t = self.basePath + "/results/Results.cgns\n"
+			t = self.outputPath +"\n"
 			t += str(self.grid.vertices.size) + " " + str(self.grid.elements.size) + " 0\n"
-			t += '\n'.join(self.fieldsNames) + "\n";
 			f.write(t)
 
 		with open(self.binPath + "coords.txt", "w") as f:

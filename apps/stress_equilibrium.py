@@ -115,16 +115,21 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 
 	normal_stain_x = np.zeros(numberOfVertices)
 	normal_stain_y = np.zeros(numberOfVertices)
+	shear_strain = np.zeros(numberOfVertices)
 	for element in grid.elements:
-		for innerFace in element.innerFaces:
-			b = element.vertices[element.shape.innerFaceNeighborVertices[innerFace.local][0]].handle
-			f = element.vertices[element.shape.innerFaceNeighborVertices[innerFace.local][1]].handle
+		element_u = np.array([ displacements[vertex.handle] for vertex in element.vertices ])
+		element_v = np.array([ displacements[vertex.handle+numberOfVertices] for vertex in element.vertices ])
 
-			normal_stain_x[b] += np.dot( innerFace.globalDerivatives[0], np.array([displacements[vertex.handle] for vertex in element.vertices]) )
-			normal_stain_x[f] -= np.dot( innerFace.globalDerivatives[0], np.array([displacements[vertex.handle] for vertex in element.vertices]) )
-			normal_stain_y[b] += np.dot( innerFace.globalDerivatives[0], np.array([displacements[vertex.handle+numberOfVertices] for vertex in element.vertices]) )
-			normal_stain_y[f] -= np.dot( innerFace.globalDerivatives[0], np.array([displacements[vertex.handle+numberOfVertices] for vertex in element.vertices]) )
+		for local in range(element.vertices.size):
+			localDerivatives = element.shape.subelementShapeFunctionDerivatives[local]
+			globalDerivatives = np.matmul(np.linalg.inv(element.getTransposedJacobian(localDerivatives)) , np.transpose(localDerivatives))
 
+			u_grad = np.matmul( globalDerivatives, element_u )
+			v_grad = np.matmul( globalDerivatives, element_v )
+
+			normal_stain_x[element.vertices[local].handle] += u_grad[0]
+			normal_stain_y[element.vertices[local].handle] += v_grad[1]
+			shear_strain[element.vertices[local].handle] += u_grad[1] + v_grad[0]
 
 	#-------------------------PRINT ITERATION DATA------------------------------
 	if iteration > 0:
@@ -160,31 +165,17 @@ from matplotlib import pyplot as plt, colors, cm
 from scipy.interpolate import griddata
 
 X,Y = zip(*[v.getCoordinates()[:-1] for v in grid.vertices])
+Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), 2*len(X)), np.linspace(min(Y), max(Y), 2*len(Y)) )
+def show(fieldValues, name):
+	plt.figure()
+	gridValues = griddata((X,Y), fieldValues, (Xi,Yi), method='linear')
+	plt.pcolor(Xi,Yi,gridValues, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
+	plt.title(name)
+	plt.colorbar()
 
-Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), max(Y), len(Y)) )
-
-u = griddata((X,Y), displacements[:numberOfVertices], (Xi,Yi), method='linear')
-plt.pcolor(Xi,Yi,u, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
-plt.title("X displacement (u)")
-plt.colorbar()
-
-plt.figure()
-v = griddata((X,Y), displacements[numberOfVertices:], (Xi,Yi), method='linear')
-plt.pcolor(Xi,Yi,v, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
-plt.title("Y displacement (v)")
-plt.colorbar()
-
-plt.figure()
-exx = griddata((X,Y), normal_stain_x, (Xi,Yi), method='linear')
-plt.pcolor(Xi,Yi,exx, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
-plt.title("X normal strain (exx)")
-plt.colorbar()
-
-plt.figure()
-eyy = griddata((X,Y), normal_stain_y, (Xi,Yi), method='linear')
-plt.pcolor(Xi,Yi,eyy, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
-plt.title("Y normal strain (eyy)")
-plt.colorbar()
-
+show(displacements[:numberOfVertices], "X displacement (u)")
+show(displacements[numberOfVertices:], "Y displacement (v)")
+show(normal_stain_x, "X normal strain (exx)")
+show(normal_stain_y, "Y normal strain (eyy)")
 
 plt.show()

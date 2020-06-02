@@ -121,7 +121,7 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 		element_v = np.array([ displacements[vertex.handle+numberOfVertices] for vertex in element.vertices ])
 
 		for local in range(element.vertices.size):
-			localDerivatives = element.shape.subelementShapeFunctionDerivatives[local]
+			localDerivatives = element.shape.vertexShapeFunctionDerivatives[local]
 			globalDerivatives = np.matmul(np.linalg.inv(element.getTransposedJacobian(localDerivatives)) , np.transpose(localDerivatives))
 
 			u_grad = np.matmul( globalDerivatives, element_u )
@@ -170,6 +170,9 @@ if "-g" in sys.argv:
 	Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), max(Y), int(len(Y)/2)) )
 	def show(fieldValues, name):
 		plt.figure()
+		# for element in grid.elements:
+		# 	x,y=zip(*[v.getCoordinates()[:-1] for v in element.vertices])
+		# 	plt.plot(x,y, color='k')
 		gridValues = griddata((X,Y), fieldValues, (Xi,Yi), method='linear')
 		plt.pcolor(Xi,Yi,gridValues, cmap="RdBu")#, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
 		plt.title(name)

@@ -19,5 +19,10 @@
         "condition": "NEUMANN",
         "type": "CONSTANT",
         "value": 0.0
+    },
+    "RIP": {
+        "condition":"NEUMANN",
+    	"type": "CONSTANT",
+    	"value": 100.0
     }
 }

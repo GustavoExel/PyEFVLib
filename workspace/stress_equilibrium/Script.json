@@ -1,7 +1,7 @@
 {
     "Root" : "/home/gustavoe/Documents/Sinmec/GTRelated/GridReader/",
 
-    "Output" : "results/stress_equilibrium/",
+    "Output" : "results/stress_equilibrium/quad/",
 
     "Boundary" : "workspace/stress_equilibrium/boundaryConditions/",
 
@@ -9,5 +9,5 @@
 
     "Numerical" : "workspace/stress_equilibrium/NumericalSettings.json",
 
-    "Grid" : "meshes/Fine.msh"
+    "Grid" : "meshes/FineQuad.msh"
 }

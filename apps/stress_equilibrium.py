@@ -25,7 +25,61 @@ difference = 0.0
 iteration = 0
 converged = False
 
-def computeLocalMatrixCoefficient(innerFace, G, poissonsRatio):
+
+def computeLocalMatrixCoefficient(innerFace, shearModulus, poissonsRatio):
+	Sx, Sy, Sz = innerFace.area.getCoordinates()
+	voigtAreaMatrix = np.array([[Sx, 0],[0, Sy],[Sy, Sx]])
+
+	lameParameter=l=2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
+	b=l*(1-poissonsRatio)/poissonsRatio
+	G=shearModulus
+
+	Nx, Ny = innerFace.globalDerivatives
+	zero=np.zeros(Nx.size)
+	voigtGradientOperator = np.array([[Nx, zero],[Ny, zero],[Ny, Nx]])
+
+	constitutiveMatrix = np.array([[lameParameter*(1-poissonsRatio)/poissonsRatio,lameParameter 							   ,0			],
+								   [lameParameter								 ,lameParameter*(1-poissonsRatio)/poissonsRatio,0			],
+								   [0			 								 ,0											   ,shearModulus]])
+	
+	coefficient = np.zeros([2,2,innerFace.element.vertices.size])
+	coefficient[0][0] = np.matmul( np.array([ Sx*b, Sy*G ]), innerFace.globalDerivatives )
+	coefficient[0][1] = np.matmul( np.array([ Sy*G, Sx*l ]), innerFace.globalDerivatives )
+	coefficient[1][0] = np.matmul( np.array([ Sy*l, Sx*G ]), innerFace.globalDerivatives )
+	coefficient[1][1] = np.matmul( np.array([ Sx*G, Sy*b ]), innerFace.globalDerivatives )
+	
+	t1=np.zeros((2,3))
+	# c2 = np.einsum()
+	
+	# voigtGradientOperator.shape = N_var, dimension, n_vtx | i/k i/d n
+	# voigtAreaMatrix.shape 	  = N_var, dimension		| i/k i/d
+	# constitutiveMatrix.shape 	  = N_var, N_var			| i/k i/k
+
+	c1=np.einsum("ki,kj,jdn->jd", voigtAreaMatrix, constitutiveMatrix, voigtGradientOperator)
+	
+	c1=np.zeros([2,2,innerFace.element.vertices.size])
+	for i in range(voigtAreaMatrix.shape[1]): # dimension
+		for j in range(constitutiveMatrix.shape[1]): # N_var
+			for k in range(3):	# N_var
+				for d in range(voigtGradientOperator.shape[1]): # dimension
+					for n in range(voigtGradientOperator.shape[2]):
+						c1[i][d] += voigtAreaMatrix[k][i] * constitutiveMatrix[k][j] * voigtGradientOperator[j][d][n]
+
+	if '--debug' in sys.argv:
+		print("Not Voigt")
+		print(c1)
+		print("\nVoigt:")
+		print(coefficient)
+		print("\nAre them equal?:")
+		try:
+			print(c1==coefficient)
+		except:
+			print("Different sizes")
+
+	return coefficient
+
+
+def computeLocalMatrixCoefficient2(innerFace, G, poissonsRatio):
 	Sx, Sy, Sz = innerFace.area.getCoordinates()
 	l=2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
 	b=l*(1-poissonsRatio)/poissonsRatio
@@ -44,24 +98,21 @@ def computeLocalMatrixCoefficient(innerFace, G, poissonsRatio):
 
 	voigtAreaMatrix = np.array([[Sx, 0],[0, Sy],[Sy, Sx]])
 	voigtGradientOperator = np.array([[Nx, zero],[Ny, zero],[Ny, Nx]])
-	constitutiveMatrix = np.array([[lameParameter*(1-poissonsRatio)/poissonsRatio,lame_parameter 							   ,0			],
+	constitutiveMatrix = np.array([[lameParameter*(1-poissonsRatio)/poissonsRatio,lameParameter 							   ,0			],
 								   [lameParameter								 ,lameParameter*(1-poissonsRatio)/poissonsRatio,0			],
 								   [0			 								 ,0											   ,shearModulus]])
 
 	# coefficient = np.einsum('ik,kjn->ijn',np.matmul(voigtAreaMatrix.T, constitutiveMatrix),voigtGradientOperator)
 	
-	t1=np.zeros((2,3))
-	c1=np.zeros([2,2,innerFace.element.vertices.size])
 	
-	for i in range(voigtAreaMatrix.shape[1]):
-		for j in range(constitutiveMatrix.shape[1]):
-			for k in range(3):
-				t1[i][j] += voigtAreaMatrix[k][i]*constitutiveMatrix[k][j]
-
-	for i in range(t1.shape[0]):
-		for j in range(voigtGradientOperator.shape[1]):
-			for k in range(3):
-				c1[i][j] += t1[i][k] * voigtGradientOperator[k][j]
+	c1=np.einsum("ki,kj,jdn->jd", voigtAreaMatrix, constitutiveMatrix, voigtGradientOperator)
+	c1=np.zeros([2,2,innerFace.element.vertices.size])
+	for i in range(voigtAreaMatrix.shape[1]): # dimension
+		for j in range(constitutiveMatrix.shape[1]): # N_var
+			for k in range(3):	# N_var
+				for d in range(voigtGradientOperator.shape[1]): # dimension
+					for n in range(voigtGradientOperator.shape[2]):
+						c1[i][d] += voigtAreaMatrix[k][i] * constitutiveMatrix[k][j] * voigtGradientOperator[j][d][n]
 
 	if '--debug' in sys.argv:
 		print("Not Voigt")
@@ -202,13 +253,13 @@ if "-g" in sys.argv:
 		top_stress = problemData.boundaryConditionData["v"]["NORTH"]["value"]
 		shear_modulus = problemData.propertyData[region.handle]["ShearModulus"]
 		poissonsRatio = problemData.propertyData[region.handle]["PoissonsRatio"]
-		lame_parameter = 2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
+		lameParameter = 2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
 
 		y, vals = zip(*[ (vertex.getCoordinates()[1], val) for vertex, val in zip(grid.vertices, fieldValues) if 0.1 > np.abs(vertex.getCoordinates()[0]-0.5)])
 		y, vals = zip(*( sorted( zip(y, vals), key=lambda p:p[0] ) ))
 		y, vals = np.array(y), np.array(vals)
 		
-		a_vals=	-y*top_stress/(2*shear_modulus+lame_parameter)
+		a_vals=	-y*top_stress/(2*shear_modulus+lameParameter)
 		print("sum(vals): ", sum(vals)) 
 		print("max(vals): ", max(vals)) 
 		print("min(vals): ", min(vals)) 

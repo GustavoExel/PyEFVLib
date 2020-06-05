@@ -43,8 +43,10 @@ def computeLocalMatrixCoefficient(innerFace, G, poissonsRatio):
 	lameParameter=2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
 
 	voigtAreaMatrix = np.array([[Sx, 0],[0, Sy],[Sy, Sx]])
-	constitutiveMatrix = np.array([[lameParameter*(1-poissonsRatio)/poissonsRatio,lameParameter,0],[lameParameter,lameParameter*(1-poissonsRatio)/poissonsRatio,0],[0,0,shearModulus]])
 	voigtGradientOperator = np.array([[Nx, zero],[Ny, zero],[Ny, Nx]])
+	constitutiveMatrix = np.array([[lameParameter*(1-poissonsRatio)/poissonsRatio,lame_parameter 							   ,0			],
+								   [lameParameter								 ,lameParameter*(1-poissonsRatio)/poissonsRatio,0			],
+								   [0			 								 ,0											   ,shearModulus]])
 
 	# coefficient = np.einsum('ik,kjn->ijn',np.matmul(voigtAreaMatrix.T, constitutiveMatrix),voigtGradientOperator)
 	
@@ -61,17 +63,18 @@ def computeLocalMatrixCoefficient(innerFace, G, poissonsRatio):
 			for k in range(3):
 				c1[i][j] += t1[i][k] * voigtGradientOperator[k][j]
 
-	print("Not Voigt")
-	print(c1)
-	print("\nVoigt:")
-	print(coefficient)
-	print("\nAre them equal?:")
-	try:
-		print(c1==coefficient)
-	except:
-		print("Different sizes")
+	if '--debug' in sys.argv:
+		print("Not Voigt")
+		print(c1)
+		print("\nVoigt:")
+		print(coefficient)
+		print("\nAre them equal?:")
+		try:
+			print(c1/coefficient)
+		except:
+			print("Different sizes")
 
-	return c1
+	return coefficient
 
 #-------------------------ADD TO LINEAR SYSTEM------------------------------
 independent = np.zeros(2*numberOfVertices)
@@ -196,22 +199,23 @@ if "-g" in sys.argv:
 		plt.colorbar()
 
 	def show_1d(fieldValues, name):
-		def analytical(y):
-			top_stress = problemData.boundaryConditionData["v"]["NORTH"]["value"]
-			shear_modulus = problemData.propertyData[region.handle]["ShearModulus"]
-			poissonsRatio = problemData.propertyData[region.handle]["PoissonsRatio"]
-			lame_parameter = 2*shearModulus*poissonsRatio/(1-poissonsRatio)
-			young_modulus = 2*shear_modulus*(1+poissonsRatio)
-			yield -np.array(y)*top_stress/young_modulus#(lame_parameter+2*shear_modulus)
-			yield -np.array(y)*top_stress/(lame_parameter+2*shear_modulus)
+		top_stress = problemData.boundaryConditionData["v"]["NORTH"]["value"]
+		shear_modulus = problemData.propertyData[region.handle]["ShearModulus"]
+		poissonsRatio = problemData.propertyData[region.handle]["PoissonsRatio"]
+		lame_parameter = 2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
 
-		plt.figure()
 		y, vals = zip(*[ (vertex.getCoordinates()[1], val) for vertex, val in zip(grid.vertices, fieldValues) if 0.1 > np.abs(vertex.getCoordinates()[0]-0.5)])
-		plt.scatter(y,vals, marker='.')
-		y=sorted(y)
-		ays=analytical(y)
-		plt.plot(y,next(ays), label="E")
-		plt.plot(y,next(ays), label="2G+lambda")
+		y, vals = zip(*( sorted( zip(y, vals), key=lambda p:p[0] ) ))
+		y, vals = np.array(y), np.array(vals)
+		
+		a_vals=	-y*top_stress/(2*shear_modulus+lame_parameter)
+		print("sum(vals): ", sum(vals)) 
+		print("max(vals): ", max(vals)) 
+		print("min(vals): ", min(vals)) 
+		print("avg(vals): ", sum(vals)/len(vals))
+		plt.figure()
+		plt.scatter(y,vals, marker='.', color='k')
+		plt.plot(y, a_vals)
 		plt.legend()	
 		plt.title(name)
 

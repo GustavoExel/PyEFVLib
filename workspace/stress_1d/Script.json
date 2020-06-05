@@ -1,0 +1,13 @@
+{
+    "Root" : "/home/gustavoe/Documents/Sinmec/GTRelated/GridReader/",
+
+    "Output" : "results/stress_1d/",
+
+    "Boundary" : "workspace/stress_1d/boundaryConditions/",
+
+    "Property" : "workspace/stress_1d/properties.json",
+
+    "Numerical" : "workspace/stress_1d/NumericalSettings.json",
+
+    "Grid" : "meshes/Fine.msh"
+}

@@ -1,3 +1,4 @@
+
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
@@ -25,9 +26,38 @@ difference = 0.0
 iteration = 0
 converged = False
 
+def show3dArray(arr):
+	t=""
+	ll=[]
+	i=0
+	for l in arr:
+		lll=[]
+		for e in l:
+			ttt=', '.join([str(round(ee, 3)) for ee in e])
+			ttt="[%s]" % ttt
+			lll.append(ttt)
+		tt=", ".join(lll)
+		tt="[%s]" % tt
+		if i != arr.shape[1]:
+			tt += ','
+		if i != 0:
+			tt = "  "+tt
+
+		ll.append(tt)
+		i+=1
+	t='\n'.join(ll)
+	return "[%s]" % t
+
+
+
 
 def computeLocalMatrixCoefficient(innerFace, shearModulus, poissonsRatio):
 	Sx, Sy, Sz = innerFace.area.getCoordinates()
+
+	if '--debug' in sys.argv: Sx, Sy = 1 , 2
+	if '--debug' in sys.argv: innerFace.globalDerivatives = np.array([ [1,2,3],[4,5,6] ])
+	if '--debug' in sys.argv: shearModulus, poissonsRatio = 10,1/3
+	# v=l/2(G+l)
 	voigtAreaMatrix = np.array([[Sx, 0],[0, Sy],[Sy, Sx]])
 
 	lameParameter=l=2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
@@ -36,47 +66,50 @@ def computeLocalMatrixCoefficient(innerFace, shearModulus, poissonsRatio):
 
 	Nx, Ny = innerFace.globalDerivatives
 	zero=np.zeros(Nx.size)
-	voigtGradientOperator = np.array([[Nx, zero],[Ny, zero],[Ny, Nx]])
+	voigtGradientOperator = np.array([[Nx, zero],[zero, Ny],[Ny, Nx]])
 
 	constitutiveMatrix = np.array([[lameParameter*(1-poissonsRatio)/poissonsRatio,lameParameter 							   ,0			],
 								   [lameParameter								 ,lameParameter*(1-poissonsRatio)/poissonsRatio,0			],
 								   [0			 								 ,0											   ,shearModulus]])
 	
+	if '--debug' in sys.argv:
+		print('-'*100)
+		print("𝜆 = ", round(lameParameter))
+		print("𝛽 = ", b)
+		print("G = ", shearModulus)
+		print("Nx = ", Nx)
+		print("Ny = ", Ny, end='\n\n')
+		print("voigtAreaMatrix =\n", voigtAreaMatrix, end='\n\n')
+		print("voigtGradientOperator =\n", show3dArray(voigtGradientOperator), end='\n\n')
+		print("constitutiveMatrix =\n", constitutiveMatrix, end='\n\n')
+		print('-'*100)
+
 	coefficient = np.zeros([2,2,innerFace.element.vertices.size])
 	coefficient[0][0] = np.matmul( np.array([ Sx*b, Sy*G ]), innerFace.globalDerivatives )
 	coefficient[0][1] = np.matmul( np.array([ Sy*G, Sx*l ]), innerFace.globalDerivatives )
 	coefficient[1][0] = np.matmul( np.array([ Sy*l, Sx*G ]), innerFace.globalDerivatives )
 	coefficient[1][1] = np.matmul( np.array([ Sx*G, Sy*b ]), innerFace.globalDerivatives )
 	
-	t1=np.zeros((2,3))
-	# c2 = np.einsum()
-	
-	# voigtGradientOperator.shape = N_var, dimension, n_vtx | i/k i/d n
-	# voigtAreaMatrix.shape 	  = N_var, dimension		| i/k i/d
-	# constitutiveMatrix.shape 	  = N_var, N_var			| i/k i/k
-
-	c1=np.einsum("ki,kj,jdn->jd", voigtAreaMatrix, constitutiveMatrix, voigtGradientOperator)
-	
 	c1=np.zeros([2,2,innerFace.element.vertices.size])
-	for i in range(voigtAreaMatrix.shape[1]): # dimension
-		for j in range(constitutiveMatrix.shape[1]): # N_var
-			for k in range(3):	# N_var
+	for i in range(voigtAreaMatrix.shape[1]): 					# dimension
+		for j in range(constitutiveMatrix.shape[1]): 			# N_var
+			for k in range(3):									# N_var
 				for d in range(voigtGradientOperator.shape[1]): # dimension
 					for n in range(voigtGradientOperator.shape[2]):
 						c1[i][d] += voigtAreaMatrix[k][i] * constitutiveMatrix[k][j] * voigtGradientOperator[j][d][n]
 
 	if '--debug' in sys.argv:
 		print("Not Voigt")
-		print(c1)
+		print(show3dArray(c1))
 		print("\nVoigt:")
-		print(coefficient)
+		print(show3dArray(coefficient))
 		print("\nAre them equal?:")
 		try:
 			print(c1==coefficient)
 		except:
 			print("Different sizes")
 
-	return coefficient
+	return c1
 
 
 def computeLocalMatrixCoefficient2(innerFace, G, poissonsRatio):
@@ -97,7 +130,7 @@ def computeLocalMatrixCoefficient2(innerFace, G, poissonsRatio):
 	lameParameter=2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
 
 	voigtAreaMatrix = np.array([[Sx, 0],[0, Sy],[Sy, Sx]])
-	voigtGradientOperator = np.array([[Nx, zero],[Ny, zero],[Ny, Nx]])
+	voigtGradientOperator = np.array([[Nx, zero],[zero, Ny],[Ny, Nx]])
 	constitutiveMatrix = np.array([[lameParameter*(1-poissonsRatio)/poissonsRatio,lameParameter 							   ,0			],
 								   [lameParameter								 ,lameParameter*(1-poissonsRatio)/poissonsRatio,0			],
 								   [0			 								 ,0											   ,shearModulus]])

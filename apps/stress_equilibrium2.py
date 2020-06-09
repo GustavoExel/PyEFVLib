@@ -54,7 +54,10 @@ for bc in problemData.boundaryConditions:
 			independent[vertex.handle+numberOfVertices]=0.0
 		for facet in boundary.facets:
 			for outerFace in facet.outerFaces:
-				# Tx isn't necessare
+				# Tx isn't necessarily xNormalStress because the boundary may not be
+				# parallel with the x or y axis, and that's why we're calculating
+				# normal and shear stresses. In theory at least it shouldn't affect when 
+				# the boundaries are parallel with the axis
 				sx, sy, sz = outerFace.area.getCoordinates()
 				Tx = bc["u"].getValue(outerFace.vertex.handle)
 				Ty = bc["v"].getValue(outerFace.vertex.handle)
@@ -76,15 +79,16 @@ for bc in problemData.boundaryConditions:
 			independent[vertex.handle+numberOfVertices] = 0.0
 
 		for facet in boundary.facets:
-			for outerFace in facet.outerFaces:
-				Sx, Sy, Sz = outerFace.area.getCoordinates()
-				Tx, Ty = bc["u"].getValue(outerFace.vertex.handle), bc["v"].getValue(outerFace.vertex.handle)
-				yNormalStress=Sy*(Tx*Sx+Ty*Sy)/(Sx**2+Sy**2)
+			for outerFcae in facet.outerFaces:
+				sx, sy, sz = outerFace.area.getCoordinates()
+				Tx = bc["u"].getValue(outerFace.vertex.handle)
+				Ty = bc["v"].getValue(outerFace.vertex.handle)
+				yNormalStress=sy*(Tx*sx+Ty*sy)/(sx**2+sy**2)
 
 				independent["v"] += Sy*yNormalStress
 
-		for vertex in outerFace.element.vertices:
-			Nx,Ny=outerFace.globalShapeFunctionDerivatives[vertex]
+		for innerFace in outerFace.element.innerFaces:
+			Nx,Ny=innerFace.globalShapeFunctionDerivatives.T[vertex]
 			matrix["u"][outerFace][vertex] -= Sy*shearModulus*Ny
 			matrix["v"][outerFace][vertex] -= Sy*shearModulus*Nx
 

@@ -194,7 +194,7 @@ for region in grid.regions:
 				matrix[backwardVertexHandle + numberOfVertices][vertex.handle + numberOfVertices] += coefficient[1][1][i]	# eq: v, var: v
 				matrix[forwardVertexHandle + numberOfVertices][vertex.handle + numberOfVertices] -= coefficient[1][1][i]	# eq: v, var: v
 				i+=1
-				if '--debug' in sys.argv: exit()
+				if '--debug' in sys.argv: exit(0)
 
 
 

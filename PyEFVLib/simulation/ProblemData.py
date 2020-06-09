@@ -52,6 +52,7 @@ class BoundaryConditions:
 	def build(self):
 		self.dirichletBoundaries = dict()
 		self.neumannBoundaries = dict()
+		boundaryConditions = { boundary.name:dict() for boundary in self.grid.boundaries }
 		for variableName in self.boundaryConditionData.keys():
 			dirichletBoundaries = np.array([])
 			neumannBoundaries = np.array([])
@@ -64,9 +65,11 @@ class BoundaryConditions:
 				bData = self.boundaryConditionData[variableName][boundary.name]
 				if bData["condition"] == "DIRICHLET":
 					dirichletBoundaries = np.append(dirichletBoundaries, DirichletBoundaryCondition(boundary, bData["value"], i) )
+					boundaryConditions[boundary.name][variableName] = dirichletBoundaries[-1]#{"boundary":dirichletBoundaries[-1], 'type':"DIRICHLET"}
 
 				elif bData["condition"] == "NEUMANN":
 					neumannBoundaries = np.append(neumannBoundaries, NeumannBoundaryCondition(boundary, bData["value"], i) )
+					boundaryConditions[boundary.name][variableName] = neumannBoundaries[-1]#{"boundary":neumannBoundaries[-1], 'type':"NEUMANN"}
 
 				else:
 					raise Exception("Boundary condition not supported")
@@ -74,6 +77,7 @@ class BoundaryConditions:
 
 			self.dirichletBoundaries[variableName] = dirichletBoundaries
 			self.neumannBoundaries[variableName] = neumannBoundaries
+		self.boundaryConditions = list( boundaryConditions.values() )
 
 class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 	def __init__(self, simulatorName):

@@ -34,59 +34,83 @@ independent = np.zeros(2*numberOfVertices)
 
 # Neumann Boundary Condition
 # Dirichlet Boundary Condition
-for boundary in boundaries:
-    if boundary["u"].type == "Dirichlet" && boundary["v"].type == "Dirichlet":
+for bc in problemData.boundaryConditions:
+	boundary=bc["u"].boundary
+
+	if bc["u"].__type__ == "DIRICHLET" and bc["v"].__type__ == "DIRICHLET":
+		for vertex in bc.boundary.vertices:
+			# Assigns the displacement to both u and v
+			matrix[vertex.handle] = 				  np.zeros(2*numberOfVertices)
+			matrix[vertex.handle][vertex.handle] = 1.0
+			matrix[vertex.handle+numberOfVertices] = np.zeros(2*numberOfVertices)
+			matrix[vertex.handle+numberOfVertices][vertex.handle+numberOfVertices] = 1.0
+			independent[vertex.handle] = 				  bc["u"].getValue(vertex.handle)
+			independent[vertex.handle+numberOfVertices] = bc["v"].getValue(vertex.handle)
+
+	elif bc["u"].__type__ == "NEUMANN" and bc["v"].__type__ == "NEUMANN":
 		for vertex in boundary.vertices:
-			matrix["u"][vertex] = [0] * (2*numberOfVertices)
-			matrix["v"][vertex] = [0] * (2*numberOfVertices)
-			independent["u"][vertex] = u_boundaryCondition
-			independent["v"][vertex] = v_boundaryCondition
+			# Clears the gravity term in both u and v in order to assign the tension
+			independent[vertex.handle]=0.0
+			independent[vertex.handle+numberOfVertices]=0.0
+		for facet in boundary.facets:
+			for outerFace in facet.outerFaces:
+				# Tx isn't necessare
+				sx, sy, sz = outerFace.area.getCoordinates()
+				Tx = bc["u"].getValue(outerFace.vertex.handle)
+				Ty = bc["v"].getValue(outerFace.vertex.handle)
+				xNormalStress=sx*(Tx*sx+Ty*sy)/(sx**2+sy**2)
+				yNormalStress=sy*(Tx*sx+Ty*sy)/(sx**2+sy**2)
+				shearStress=np.linalg.norm(np.array([Tx,Ty])-np.array([xNormalStress, yNormalStress]))
 
-    Sx, Sy = outerFace.area
-    elif boundary["u"].type == "Neumann" && boundary["v"].type == "Neumann":
-    	for vertex in boundary.vertices:
-    		independent["u"][vertex]=0.0
-    		independent["v"][vertex]=0.0
-		for outerFace in boundary.outerFaces:
-			xNormalStress=Sx*(Tx*Sx+Ty*Sy)/(Sx**2+Sy**2)
-			yNormalStress=Sy*(Tx*Sx+Ty*Sy)/(Sx**2+Sy**2)
-			shearStress=sqrt((Tx-xNormalStress)**2+(Ty-yNormalStress)**2)
+				independent[outerFace.vertex.handle] += sx*xNormalStress+sy*shearStress
+				independent[outerFace.vertex.handle+numberOfVertices] += sx*shearStress+sy*yNormalStress
 
-			independent["u"] += Sx*xNormalStress+Sy*shearStress
-			independent["v"] += Sx*shearStress+Sy*yNormalStress
+	elif bc["u"].__type__ == "DIRICHLET" and bc["v"].__type__ == "NEUMANN":
+		for vertex in boundary.vertices:
+			# Assigns the displacement in that vertex
+			matrix[vertex.handle] = np.zeros(2*numberOfVertices)
+			matrix[vertex.handle][vertex.handle] = 1.0
+			independent[vertex.handle] = bc["u"].getValue(vertex.handle)
 
-    elif boundary["u"].type == "Dirichlet" && boundary["v"].type == "Neumann":
-    	for vertex in boundary.vertices:
-			matrix["u"][vertex] = [0] * (2*numberOfVertices)
-			independent["u"][vertex] = u_boundaryCondition
-			independent["v"][vertex] = 0.0
+			# Clears the gravity term in order to keep only the b.c. summatory
+			independent[vertex.handle+numberOfVertices] = 0.0
 
-		for outerFace in boundary.outerFaces:
-			yNormalStress=Sy*(Tx*Sx+Ty*Sy)/(Sx**2+Sy**2)
-			independent["v"] += Sy*yNormalStress
+		for facet in boundary.facets:
+			for outerFace in facet.outerFaces:
+				Sx, Sy, Sz = outerFace.area.getCoordinates()
+				Tx, Ty = bc["u"].getValue(outerFace.vertex.handle), bc["v"].getValue(outerFace.vertex.handle)
+				yNormalStress=Sy*(Tx*Sx+Ty*Sy)/(Sx**2+Sy**2)
 
-			for vertex in outerFace.element.vertices:
+				independent["v"] += Sy*yNormalStress
+
+		for vertex in outerFace.element.vertices:
+			Nx,Ny=outerFace.globalShapeFunctionDerivatives[vertex]
+			matrix["u"][outerFace][vertex] -= Sy*shearModulus*Ny
+			matrix["v"][outerFace][vertex] -= Sy*shearModulus*Nx
+
+	elif bc["u"].__type__ == "NEUMANN" and bc["v"].__type__ == "DIRICHLET":
+		for vertex in boundary.vertices:
+			matrix[vertex.handle+numberOfVertices] = np.zeros(2*numberOfVertices)
+			matrix[vertex.handle+numberOfVertices][vertex.handle+numberOfVertices] = 1.0
+			independent[vertex.handle+numberOfVertices] = bc["v"].getValue(vertex.handle)
+			independent[vertex.handle] = 0.0
+
+		for facet in boundary.facets:
+			for outerFace in facet.outerFaces:
+				Sx, Sy, Sz = outerFace.area.getCoordinates()
+				Tx, Ty = bc["u"].getValue(outerFace.vertex.handle), bc["v"].getValue(outerFace.vertex.handle)
+				xNormalStress=Sx*(Tx*Sx+Ty*Sy)/(Sx**2+Sy**2)
+
+				independent[outerFace.vertex.handle] += Sx*xNormalStress
+
+			for vertex in facet.element.vertices:
 				Nx,Ny=outerFace.globalShapeFunctionDerivatives[vertex]
 				matrix["u"][outerFace][vertex] -= Sy*shearModulus*Ny
 				matrix["v"][outerFace][vertex] -= Sy*shearModulus*Nx
 
-    elif boundary["u"].type == "Neumann" && boundary["v"].type == "Dirichlet":
-    	for vertex in boundary.vertices:
-			matrix["v"][vertex] = [0] * (2*numberOfVertices)
-			independent["v"][vertex] = v_boundaryCondition
-			independent["u"][vertex] = 0.0
 
-		for outerFace in boundary.outerFaces:
-			xNormalStress=Sx*(Tx*Sx+Ty*Sy)/(Sx**2+Sy**2)
-			independent["u"] += Sx*xNormalStress
-			for vertex in outerFace.element.vertices:
-				Nx,Ny=outerFace.globalShapeFunctionDerivatives[vertex]
-				matrix["u"][outerFace][vertex] -= Sy*shearModulus*Ny
-				matrix["v"][outerFace][vertex] -= Sy*shearModulus*Nx
-
-
-#-------------------------SOLVE LINEAR SYSTEM-------------------------------
-# displacements = np.linalg.solve(matrix, independent)
+-------------------------SOLVE LINEAR SYSTEM-------------------------------
+displacements = np.linalg.solve(matrix, independent)
 
 #-------------------------SAVE RESULTS--------------------------------------
 # ACTUALLY DISPLACEMENTS WILL BE ONE MATRIX
@@ -143,6 +167,6 @@ if "-g" in sys.argv:
 else:
 	try:
 		print("Opening Paraview...")
-		os.system("/usr/bin/paraview %sResults.cgns" % problemData.paths["Output"])
+		# os.system("/usr/bin/paraview %sResults.cgns" % problemData.paths["Output"])
 	except:
 		print("Could not launch /usr/bin/paraview")

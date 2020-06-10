@@ -90,8 +90,7 @@ def computeLocalMatrixCoefficient(innerFace, shearModulus, poissonsRatio):
 	coefficient[1][0] = np.matmul( np.array([ Sy*l, Sx*G ]), innerFace.globalDerivatives )
 	coefficient[1][1] = np.matmul( np.array([ Sx*G, Sy*b ]), innerFace.globalDerivatives )
 
-	c1=np.einsum("ki,kj,jdn->jd", voigtAreaMatrix, constitutiveMatrix, voigtGradientOperator)
-	print(c1.shape)
+	c11=np.einsum("ji,jk,kmn->imn", voigtAreaMatrix, constitutiveMatrix, voigtGradientOperator)
 	c1=np.zeros([2,2,innerFace.element.vertices.size])
 	for i in range(voigtAreaMatrix.shape[1]): 					# dimension
 		for j in range(constitutiveMatrix.shape[1]): 			# N_var
@@ -99,7 +98,7 @@ def computeLocalMatrixCoefficient(innerFace, shearModulus, poissonsRatio):
 				for d in range(voigtGradientOperator.shape[1]): # dimension
 					for n in range(voigtGradientOperator.shape[2]):
 						c1[i][d] += voigtAreaMatrix[k][i] * constitutiveMatrix[k][j] * voigtGradientOperator[j][d][n]
-	print(c1)
+	print(coefficient.all()==c11.all())
 	if '--debug' in sys.argv:
 		print("Not Voigt")
 		print(show3dArray(c1))

@@ -114,27 +114,22 @@ for bc in problemData.boundaryConditions:
 
 		for facet in boundary.facets:
 			shearModulus = problemData.propertyData[region.handle]["ShearModulus"]
-			constitutiveMatrix = getConstitutiveMatrix(facet.element.region)
 			for outerFace in facet.outerFaces:
 				globalDerivatives = getOuterFaceGlobalDerivatives(outerFace)
 				Nx, Ny = globalDerivatives
 
 				Sx,Sy,_ = outerFace.area.getCoordinates()
-
 				normalArea = [Sx,Sy][neumannIndex]
 				shearArea = [Sx,Sy][dirichletIndex]
-
 				transposedVoigtArea = getTransposedVoigtArea(outerFace)
 				voigtGradientOperator = getVoigtGradientOperator(globalDerivatives)
 				coefficient = np.einsum("ij,jk,kmn->imn", transposedVoigtArea, constitutiveMatrix, voigtGradientOperator)
 
 				local=0
 				for vertex in facet.element.vertices:
-					matrix[N(outerFace.vertex)][U(vertex.handle)] += coefficient[neumannIndex][0][local]
-					matrix[N(outerFace.vertex)][V(vertex.handle)] += coefficient[neumannIndex][1][local]
-					matrix[N(outerFace.vertex)][U(vertex.handle)] -= shearArea * shearModulus * Ny[local]
-					matrix[N(outerFace.vertex)][V(vertex.handle)] -= shearArea * shearModulus * Nx[local]
-					independent[N(outerFace.vertex)] += normalArea * bc[neumannLabel].getValue( outerFace.vertex.handle )
+					matrix[N(outerFace.vertex)][U(vertex.handle)] += shearModulus * Ny[local]
+					matrix[N(outerFace.vertex)][V(vertex.handle)] += shearModulus * Nx[local]
+					independent[N(outerFace.vertex)] +=  bc[neumannLabel].getValue( outerFace.vertex.handle )
 					local+=1
 
 
@@ -188,7 +183,7 @@ cgnsSaver.save('v', displacements[numberOfVertices:], currentTime)
 cgnsSaver.finalize()
 
 print("\n\t\033[1;35mresult:\033[0m", problemData.paths["Output"]+"Results.cgns", '\n')
-# os.system("/usr/bin/paraview %sResults.cgns" % problemData.paths["Output"])
+os.system("/usr/bin/paraview %sResults.cgns" % problemData.paths["Output"])
 
 from matplotlib import pyplot as plt, colors, cm
 def show_1d(fieldValues, name):
@@ -207,10 +202,10 @@ def show_1d(fieldValues, name):
 	print("min(vals): ", min(vals)) 
 	print("avg(vals): ", sum(vals)/len(vals))
 	plt.figure()
-	plt.scatter(y,vals, marker='.', color='k')
-	plt.plot(y, a_vals)
+	plt.scatter(y,vals, marker='.', color='k', label="Numerical y displacement")
+	plt.plot(y, a_vals, label="Analytical solution")
 	plt.legend()	
 	plt.title(name)
+	plt.show()
 
-show_1d(displacements[numberOfVertices:], "Y displacement (v) along beam")
-plt.show()
+# show_1d(displacements[numberOfVertices:], "Y displacement (v) along beam")

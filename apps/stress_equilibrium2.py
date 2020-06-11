@@ -81,114 +81,115 @@ for region in grid.regions:
 				i+=1
 
 # Boundary Conditions
-for bc in problemData.boundaryConditions:
-	boundary=bc["u"].boundary
-	uBoundaryType = bc["u"].__type__
-	vBoundaryType = bc["v"].__type__
+# for bc in problemData.boundaryConditions:
+# 	boundary=bc["u"].boundary
+# 	uBoundaryType = bc["u"].__type__
+# 	vBoundaryType = bc["v"].__type__
 
-	if uBoundaryType == vBoundaryType == "DIRICHLET":
-		for vertex in boundary.vertices:
-			matrix[U(vertex.handle)] = np.zeros(2*numberOfVertices)
-			matrix[V(vertex.handle)] = np.zeros(2*numberOfVertices)
-			matrix[U(vertex.handle)][U(vertex.handle)] = 1.0
-			matrix[V(vertex.handle)][V(vertex.handle)] = 1.0
-			independent[U(vertex.handle)] = u_boundaryCondition
-			independent[V(vertex.handle)] = v_boundaryCondition
+# 	if uBoundaryType == vBoundaryType == "DIRICHLET":
+# 		for vertex in boundary.vertices:
+# 			matrix[U(vertex.handle)] = np.zeros(2*numberOfVertices)
+# 			matrix[V(vertex.handle)] = np.zeros(2*numberOfVertices)
+# 			matrix[U(vertex.handle)][U(vertex.handle)] = 1.0
+# 			matrix[V(vertex.handle)][V(vertex.handle)] = 1.0
+# 			independent[U(vertex.handle)] = u_boundaryCondition
+# 			independent[V(vertex.handle)] = v_boundaryCondition
 
-	if uBoundaryType == vBoundaryType == "NEUMANN":
-		pass
-		for vertex in boundary.vertices:
-			matrix[U(vertex.handle)] = np.zeros(2*numberOfVertices)
-			matrix[V(vertex.handle)] = np.zeros(2*numberOfVertices)
-			independent[U(vertex.handle)] = 0.0
-			independent[V(vertex.handle)] = 0.0
+# 	if uBoundaryType == vBoundaryType == "NEUMANN":
+# 		pass
+# 		for vertex in boundary.vertices:
+# 			matrix[U(vertex.handle)] = np.zeros(2*numberOfVertices)
+# 			matrix[V(vertex.handle)] = np.zeros(2*numberOfVertices)
+# 			independent[U(vertex.handle)] = 0.0
+# 			independent[V(vertex.handle)] = 0.0
 
-		for facet in boundary.facets: # Same as for element in boundary.elements (but belongs to boundary)
-			element=facet.element
-			for outerFace in facet.outerFaces: # Same as for vertex in element.vertices (but belongs to boundary)
-				vertex=outerFace.vertex
+# 		for facet in boundary.facets: # Same as for element in boundary.elements (but belongs to boundary)
+# 			element=facet.element
+# 			for outerFace in facet.outerFaces: # Same as for vertex in element.vertices (but belongs to boundary)
+# 				vertex=outerFace.vertex
 
-				sx,sy,_ = outerFace.area.getCoordinates()
+# 				sx,sy,_ = outerFace.area.getCoordinates()
 
-				Tx = bc["u"].getValue(vertex.handle)
-				Ty = bc["v"].getValue(vertex.handle)
-				xNormalStress=sx*(Tx*sx+Ty*sy)/(sx**2+sy**2)
-				yNormalStress=sy*(Tx*sx+Ty*sy)/(sx**2+sy**2)
-				shearStress=((Tx-xNormalStress)**2+(Ty-yNormalStress)**2)**(1/2)
+# 				Tx = bc["u"].getValue(vertex.handle)
+# 				Ty = bc["v"].getValue(vertex.handle)
+# 				xNormalStress=sx*(Tx*sx+Ty*sy)/(sx**2+sy**2)
+# 				yNormalStress=sy*(Tx*sx+Ty*sy)/(sx**2+sy**2)
+# 				shearStress=((Tx-xNormalStress)**2+(Ty-yNormalStress)**2)**(1/2)
 
-				transposedVoigtArea = getVoigtArea(outerFace).T
-				constitutiveMatrix = getConstitutiveMatrix(element.region)
-				globalDerivatives = element.getGlobalDerivatives(element.shape.vertexShapeFunctionDerivatives[ list(element.vertices).index(vertex) ])
-				voigtGradientOperator = getVoigtGradientOperator(globalDerivatives)
+# 				transposedVoigtArea = getVoigtArea(outerFace).T
+# 				constitutiveMatrix = getConstitutiveMatrix(element.region)
+# 				globalDerivatives = element.getGlobalDerivatives(element.shape.vertexShapeFunctionDerivatives[ list(element.vertices).index(vertex) ])
+# 				voigtGradientOperator = getVoigtGradientOperator(globalDerivatives)
 
-				matrixCoefficient=np.einsum( "ij,jk,kmn->imn", transposedVoigtArea, constitutiveMatrix, voigtGradientOperator )
-				independentCoefficient=transposedVoigtArea @ [xNormalStress, yNormalStress, shearStress]
+# 				matrixCoefficient=np.einsum( "ij,jk,kmn->imn", transposedVoigtArea, constitutiveMatrix, voigtGradientOperator )
+# 				independentCoefficient=transposedVoigtArea @ [xNormalStress, yNormalStress, shearStress]
 
-				local=0
-				for vertex in element.vertices:
-					matrix[U(vertex.handle)][U(vertex.handle)] += matrixCoefficient[0][0][local]
-					matrix[U(vertex.handle)][V(vertex.handle)] += matrixCoefficient[0][1][local]
-					matrix[V(vertex.handle)][U(vertex.handle)] += matrixCoefficient[1][0][local]
-					matrix[V(vertex.handle)][V(vertex.handle)] += matrixCoefficient[1][1][local]
+# 				local=0
+# 				for vertex in element.vertices:
+# 					matrix[U(vertex.handle)][U(vertex.handle)] += matrixCoefficient[0][0][local]
+# 					matrix[U(vertex.handle)][V(vertex.handle)] += matrixCoefficient[0][1][local]
+# 					matrix[V(vertex.handle)][U(vertex.handle)] += matrixCoefficient[1][0][local]
+# 					matrix[V(vertex.handle)][V(vertex.handle)] += matrixCoefficient[1][1][local]
 
-					independent[U(vertex.handle)] += independentCoefficient[0]
-					independent[V(vertex.handle)] += independentCoefficient[1]
+# 					independent[U(vertex.handle)] += independentCoefficient[0]
+# 					independent[V(vertex.handle)] += independentCoefficient[1]
 
-					local += 1
+# 					local += 1
 
-	else:
-		dirichletLabel = "u" if uBoundaryType=="DIRICHLET" else "v"
-		neumannLabel = "u" if uBoundaryType=="NEUMANN" else "v"
+# 	else:
+# 		dirichletLabel = "u" if uBoundaryType=="DIRICHLET" else "v"
+# 		neumannLabel = "u" if uBoundaryType=="NEUMANN" else "v"
 
-		dirichletIndex = 0 if uBoundaryType=="DIRICHLET" else 1
-		neumannIndex = 0 if uBoundaryType=="NEUMANN" else 1
+# 		dirichletIndex = 0 if uBoundaryType=="DIRICHLET" else 1
+# 		neumannIndex = 0 if uBoundaryType=="NEUMANN" else 1
 
-		D=lambda vertex: int( vertex.handle + numberOfVertices * dirichletIndex )
-		N=lambda vertex: int( vertex.handle + numberOfVertices * neumannIndex )
+# 		D=lambda vertex: int( vertex.handle + numberOfVertices * dirichletIndex )
+# 		N=lambda vertex: int( vertex.handle + numberOfVertices * neumannIndex )
 
-		for vertex in boundary.vertices:
-			matrix[D(vertex)] = np.zeros(2*numberOfVertices)
-			matrix[D(vertex)][D(vertex)] = 1.0
-			independent[D(vertex)] = bc[dirichletLabel].value
+# 		for vertex in boundary.vertices:
+# 			matrix[D(vertex)] = np.zeros(2*numberOfVertices)
+# 			matrix[D(vertex)][D(vertex)] = 1.0
+# 			independent[D(vertex)] = bc[dirichletLabel].value
 
-			matrix[N(vertex)] = np.zeros(2*numberOfVertices)
-			independent[N(vertex)] = 0.0
+# 			matrix[N(vertex)] = np.zeros(2*numberOfVertices)
+# 			independent[N(vertex)] = 0.0
 
-		for facet in boundary.facets:
-			element=facet.element
-			shearModulus = problemData.propertyData[element.region.handle]["ShearModulus"]
-			for outerFace in facet.outerFaces:
-				vertex=outerFace.vertex
+# 		for facet in boundary.facets:
+# 			element=facet.element
+# 			shearModulus = problemData.propertyData[element.region.handle]["ShearModulus"]
+# 			for outerFace in facet.outerFaces:
+# 				vertex=outerFace.vertex
 
-				sx,sy,_ = outerFace.area.getCoordinates()
-				Tx = bc["u"].getValue(vertex.handle) if neumannLabel=="u" else 0.0
-				Ty = bc["v"].getValue(vertex.handle) if neumannLabel=="v" else 0.0
+# 				sx,sy,_ = outerFace.area.getCoordinates()
+# 				Tx = bc["u"].getValue(vertex.handle) if neumannLabel=="u" else 0.0
+# 				Ty = bc["v"].getValue(vertex.handle) if neumannLabel=="v" else 0.0
 
-				# Note that the way we are calculating the normal stress, the only case
-				# the result is going to be accurate is when the boundary is orthogonal
-				# with the tension applied. Otherwise prefer to use the same boundary
-				# condition formulation (Dirichlet/Neumann) in order to get an accurate Results
-				normalArea = [sx, sy][ neumannIndex ]
-				normalStress=normalArea*(Tx*sx+Ty*sy)/(sx**2+sy**2)
+# 				# Note that the way we are calculating the normal stress, the only case
+# 				# the result is going to be accurate is when the boundary is orthogonal
+# 				# with the tension applied. Otherwise prefer to use the same boundary
+# 				# condition formulation (Dirichlet/Neumann) in order to get an accurate Results
+# 				normalArea = [sx, sy][ neumannIndex ]
+# 				normalStress=normalArea*(Tx*sx+Ty*sy)/(sx**2+sy**2)
 
-				transposedVoigtArea = getVoigtArea(outerFace).T
-				constitutiveMatrix = getConstitutiveMatrix(facet.element.region)
-				globalDerivatives = element.getGlobalDerivatives(element.shape.vertexShapeFunctionDerivatives[ list(element.vertices).index(vertex) ])
-				voigtGradientOperator = getVoigtGradientOperator(globalDerivatives)
+# 				transposedVoigtArea = getVoigtArea(outerFace).T
+# 				constitutiveMatrix = getConstitutiveMatrix(facet.element.region)
+# 				globalDerivatives = element.getGlobalDerivatives(element.shape.vertexShapeFunctionDerivatives[ list(element.vertices).index(vertex) ])
+# 				voigtGradientOperator = getVoigtGradientOperator(globalDerivatives)
 
-				matrixCoefficient = np.einsum("ij,jk,kmn->imn", transposedVoigtArea, constitutiveMatrix, voigtGradientOperator)
+# 				matrixCoefficient = np.einsum("ij,jk,kmn->imn", transposedVoigtArea, constitutiveMatrix, voigtGradientOperator)
 
-				local=0
-				for vertex in facet.element.vertices:
-					matrix[N(vertex)][U(vertex.handle)] += matrixCoefficient[neumannIndex][0][local]
-					matrix[N(vertex)][V(vertex.handle)] += matrixCoefficient[neumannIndex][1][local]
+# 				local=0
+# 				for vertex in facet.element.vertices:
+# 					matrix[N(vertex)][U(vertex.handle)] += matrixCoefficient[neumannIndex][0][local]
+# 					matrix[N(vertex)][V(vertex.handle)] += matrixCoefficient[neumannIndex][1][local]
 
-					matrix[N(vertex)][U(vertex.handle)] -= sy * shearModulus
-					matrix[N(vertex)][V(vertex.handle)] -= sx * shearModulus
+# 					matrix[N(vertex)][U(vertex.handle)] -= sy * shearModulus
+# 					matrix[N(vertex)][V(vertex.handle)] -= sx * shearModulus
 
-					independent[N(vertex)] += normalArea * normalStress
+# 					independent[N(vertex)] += normalArea * normalStress
 
-					local += 1
+# 					local += 1
+
 
 #-------------------------SOLVE LINEAR SYSTEM-------------------------------
 displacements = np.linalg.solve(matrix, independent)

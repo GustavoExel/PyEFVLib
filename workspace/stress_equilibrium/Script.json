@@ -9,5 +9,5 @@
 
     "Numerical" : "workspace/stress_equilibrium/NumericalSettings.json",
 
-    "Grid" : "meshes/Fine.msh"
+    "Grid" : "meshes/Square.msh"
 }

@@ -94,7 +94,7 @@ for bc in problemData.boundaryConditions:
 	uBoundaryType = bc["u"].__type__
 	vBoundaryType = bc["v"].__type__
 
-	if uBoundaryType != vBoundaryType and False:
+	if uBoundaryType != vBoundaryType:
 		dirichletLabel = "u" if uBoundaryType=="DIRICHLET" else "v"
 		neumannLabel = "u" if uBoundaryType=="NEUMANN" else "v"
 
@@ -137,57 +137,46 @@ for bc in problemData.boundaryConditions:
 					independent[N(outerFace.vertex)] += normalArea * bc[neumannLabel].getValue( outerFace.vertex.handle )
 					local+=1
 
-		# for vertex in boundary.vertices:
-		# 	print(matrix[N(vertex)])
-		# 	print([x for x in matrix[N(vertex)] if x >1e-12 or x<-1e-12])
-		# 	print(independent[N(vertex)])
-		# 	print("\n\n--------------\n\n")
-		# 	print(matrix[D(vertex)])
-		# 	print([x for x in matrix[D(vertex)] if x >1e-12 or x<-1e-12])
-		# 	print(independent[D(vertex)])
-		# 	print("--------------")
-		# 	print("--------------")
-		# 	print("--------------")
 
-	# if uBoundaryType == "NEUMANN" and vBoundaryType == "NEUMANN":
-	# 	for facet in boundary.facets:
-	# 		for outerFace in facet.outerFaces:
-	# 			independent[U(outerFace.vertex.handle)] = bc["u"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
-	# 			independent[V(outerFace.vertex.handle)] = bc["v"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
-
-	# if uBoundaryType == "DIRICHLET" and vBoundaryType == "DIRICHLET":
-	# 	for vertex in boundary.vertices:
-	# 		matrix[U(vertex.handle)] = np.zeros(2*numberOfVertices)
-	# 		matrix[V(vertex.handle)] = np.zeros(2*numberOfVertices)
-	# 		matrix[U(vertex.handle)][U(vertex.handle)] = 1.0
-	# 		matrix[V(vertex.handle)][V(vertex.handle)] = 1.0
-
-	# 		independent[U(vertex.handle)] = bc["u"].getValue(vertex.handle)
-	# 		independent[V(vertex.handle)] = bc["v"].getValue(vertex.handle)
-
-
-
-	if uBoundaryType == "NEUMANN":
+	if uBoundaryType == "NEUMANN" and vBoundaryType == "NEUMANN":
 		for facet in boundary.facets:
 			for outerFace in facet.outerFaces:
 				independent[U(outerFace.vertex.handle)] = bc["u"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
-
-	if vBoundaryType == "NEUMANN":
-		for facet in boundary.facets:
-			for outerFace in facet.outerFaces:
 				independent[V(outerFace.vertex.handle)] = bc["v"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
 
-	if uBoundaryType == "DIRICHLET":
+	if uBoundaryType == "DIRICHLET" and vBoundaryType == "DIRICHLET":
 		for vertex in boundary.vertices:
-			independent[vertex.handle] = bc["u"].getValue(vertex.handle)
-			matrix[vertex.handle] = np.zeros(2*numberOfVertices)
-			matrix[vertex.handle][vertex.handle] = 1.0
+			matrix[U(vertex.handle)] = np.zeros(2*numberOfVertices)
+			matrix[V(vertex.handle)] = np.zeros(2*numberOfVertices)
+			matrix[U(vertex.handle)][U(vertex.handle)] = 1.0
+			matrix[V(vertex.handle)][V(vertex.handle)] = 1.0
 
-	if vBoundaryType == "DIRICHLET":
-		for vertex in boundary.vertices:
-			independent[vertex.handle+numberOfVertices] = bc["v"].getValue(vertex.handle)
-			matrix[vertex.handle+numberOfVertices] = np.zeros(2*numberOfVertices)
-			matrix[vertex.handle+numberOfVertices][vertex.handle+numberOfVertices] = 1.0
+			independent[U(vertex.handle)] = bc["u"].getValue(vertex.handle)
+			independent[V(vertex.handle)] = bc["v"].getValue(vertex.handle)
+
+
+
+	# if uBoundaryType == "NEUMANN":
+	# 	for facet in boundary.facets:
+	# 		for outerFace in facet.outerFaces:
+	# 			independent[U(outerFace.vertex.handle)] = bc["u"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
+
+	# if vBoundaryType == "NEUMANN":
+	# 	for facet in boundary.facets:
+	# 		for outerFace in facet.outerFaces:
+	# 			independent[V(outerFace.vertex.handle)] = bc["v"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
+
+	# if uBoundaryType == "DIRICHLET":
+	# 	for vertex in boundary.vertices:
+	# 		independent[vertex.handle] = bc["u"].getValue(vertex.handle)
+	# 		matrix[vertex.handle] = np.zeros(2*numberOfVertices)
+	# 		matrix[vertex.handle][vertex.handle] = 1.0
+
+	# if vBoundaryType == "DIRICHLET":
+	# 	for vertex in boundary.vertices:
+	# 		independent[vertex.handle+numberOfVertices] = bc["v"].getValue(vertex.handle)
+	# 		matrix[vertex.handle+numberOfVertices] = np.zeros(2*numberOfVertices)
+	# 		matrix[vertex.handle+numberOfVertices][vertex.handle+numberOfVertices] = 1.0
 
 
 #-------------------------SOLVE LINEAR SYSTEM-------------------------------

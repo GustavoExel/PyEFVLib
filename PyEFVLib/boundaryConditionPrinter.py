@@ -1,14 +1,14 @@
 def stressEquilibriumBoundaryConditionsPrinter(bcs):
 	boundaryConditions={ bc["u"].boundary.name:bc for bc in bcs }
 	values=[
-		boundaryConditions["NORTH"]["u"].value,
-		boundaryConditions["SOUTH"]["u"].value,
-		boundaryConditions["WEST"]["u"].value,
-		boundaryConditions["EAST"]["u"].value,
-		boundaryConditions["NORTH"]["v"].value,
-		boundaryConditions["SOUTH"]["v"].value,
-		boundaryConditions["WEST"]["v"].value,
-		boundaryConditions["EAST"]["v"].value
+		-boundaryConditions["NORTH"]["u"].value,
+		+boundaryConditions["SOUTH"]["u"].value,
+		+boundaryConditions["WEST"]["u"].value,
+		-boundaryConditions["EAST"]["u"].value,
+		-boundaryConditions["NORTH"]["v"].value,
+		+boundaryConditions["SOUTH"]["v"].value,
+		-boundaryConditions["WEST"]["v"].value,
+		-boundaryConditions["EAST"]["v"].value
 	]
 	units=[
 		"mm" if boundaryConditions["NORTH"]["u"].__type__ == "DIRICHLET" else "MPa",

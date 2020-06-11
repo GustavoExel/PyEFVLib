@@ -4,14 +4,16 @@ sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver
 import numpy as np
 
-models = ["stress_equilibrium", "stress_1d"]
 #-------------------------SETTINGS----------------------------------------------
-problemData = ProblemData( models[1] )
+problemData = ProblemData( "stress_equilibrium" )
 
 reader = MSHReader(problemData.paths["Grid"])
 grid = Grid(reader.getData())
 problemData.grid = grid
 problemData.read()
+
+from PyEFVLib.boundaryConditionPrinter import stressEquilibriumBoundaryConditionsPrinter
+stressEquilibriumBoundaryConditionsPrinter(problemData.boundaryConditions)
 
 cgnsSaver = CgnsSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
@@ -21,66 +23,67 @@ displacements = np.repeat(problemData.initialValue["u"], 2*numberOfVertices)
 prevDisplacements = np.repeat(problemData.initialValue["u"], numberOfVertices)
 
 matrix = np.zeros([2*numberOfVertices, 2*numberOfVertices])
-difference = 0.0
-iteration = 0
-converged = False
+#---------------------------HELPER FUNCTIONS------------------------------------
+def getConstitutiveMatrix(region):
+	shearModulus = problemData.propertyData[region.handle]["ShearModulus"]
+	poissonsRatio = problemData.propertyData[region.handle]["PoissonsRatio"]
 
-
-def computeLocalMatrixCoefficient(innerFace, shearModulus, poissonsRatio):
-	Sx, Sy, Sz = innerFace.area.getCoordinates()
-	voigtAreaMatrix = np.array([[Sx, 0],[0, Sy],[Sy, Sx]])
-
-	lameParameter=l=2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
-	b=l*(1-poissonsRatio)/poissonsRatio
-	G=shearModulus
-
-	Nx, Ny = innerFace.globalDerivatives
-	zero=np.zeros(Nx.size)
-	voigtGradientOperator = np.array([[Nx, zero],[zero, Ny],[Ny, Nx]])
-
+	lameParameter=2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
 	constitutiveMatrix = np.array([[lameParameter*(1-poissonsRatio)/poissonsRatio,lameParameter 							   ,0			],
 								   [lameParameter								 ,lameParameter*(1-poissonsRatio)/poissonsRatio,0			],
 								   [0			 								 ,0											   ,shearModulus]])
-	
-	c1=np.einsum("ji,jk,kmn->imn", voigtAreaMatrix, constitutiveMatrix, voigtGradientOperator)
-	return c1
+	return constitutiveMatrix
+
+def getTransposedVoigtArea(face):
+	Sx, Sy, _ = face.area.getCoordinates()
+	return np.array([[Sx,0,Sy],[0,Sy,Sx]])
+
+def getVoigtGradientOperator(globalDerivatives):
+	Nx,Ny = globalDerivatives
+	zero=np.zeros(Nx.size)
+	return np.array([[Nx,zero],[zero,Ny],[Ny,Nx]])
+
 
 #-------------------------ADD TO LINEAR SYSTEM------------------------------
 independent = np.zeros(2*numberOfVertices)
 
+U = lambda handle: handle + numberOfVertices * 0
+V = lambda handle: handle + numberOfVertices * 1
+
 # Gravity Term
 for region in grid.regions:
-	volumetricForce = problemData.propertyData[region.handle]["Density"] * problemData.propertyData[region.handle]["Gravity"]
+	density = problemData.propertyData[region.handle]["Density"]
+	gravity = problemData.propertyData[region.handle]["Gravity"]
 	for element in region.elements:
 		local = 0
 		for vertex in element.vertices:
-			independent[vertex.handle + numberOfVertices] += -element.subelementVolumes[local] * volumetricForce
+			independent[V(vertex.handle)] += - density * gravity * element.subelementVolumes[local]
 			local += 1
 
 # Stress Term
 for region in grid.regions:
-	shearModulus = problemData.propertyData[region.handle]["ShearModulus"]
-	poissonsRatio = problemData.propertyData[region.handle]["PoissonsRatio"]
-	
+	constitutiveMatrix = getConstitutiveMatrix(region)
 	for element in region.elements:
 		for innerFace in element.innerFaces:
+			transposedVoigtArea = getTransposedVoigtArea(innerFace)
+			voigtGradientOperator = getVoigtGradientOperator(innerFace.globalDerivatives)
+
+			matrixCoefficient = np.einsum("ij,jk,kmn->imn", transposedVoigtArea, constitutiveMatrix, voigtGradientOperator)
 			backwardVertexHandle = element.vertices[element.shape.innerFaceNeighborVertices[innerFace.local][0]].handle
 			forwardVertexHandle = element.vertices[element.shape.innerFaceNeighborVertices[innerFace.local][1]].handle
-			coefficient = computeLocalMatrixCoefficient(innerFace, shearModulus, poissonsRatio)
-			i=0
+			
+			local=0
 			for vertex in element.vertices:
-				matrix[backwardVertexHandle][vertex.handle] += coefficient[0][0][i]											# eq: u, var: u
-				matrix[forwardVertexHandle][vertex.handle] -= coefficient[0][0][i]											# eq: u, var: u
-				matrix[backwardVertexHandle][vertex.handle + numberOfVertices] += coefficient[0][1][i]						# eq: u, var: v
-				matrix[forwardVertexHandle][vertex.handle + numberOfVertices] -= coefficient[0][1][i]						# eq: u, var: v
-				matrix[backwardVertexHandle + numberOfVertices][vertex.handle] += coefficient[1][0][i]						# eq: v, var: u
-				matrix[forwardVertexHandle + numberOfVertices][vertex.handle] -= coefficient[1][0][i]						# eq: v, var: u
-				matrix[backwardVertexHandle + numberOfVertices][vertex.handle + numberOfVertices] += coefficient[1][1][i]	# eq: v, var: v
-				matrix[forwardVertexHandle + numberOfVertices][vertex.handle + numberOfVertices] -= coefficient[1][1][i]	# eq: v, var: v
-				i+=1
-				if '--debug' in sys.argv: exit(0)
+				matrix[U(backwardVertexHandle)][U(vertex.handle)] += matrixCoefficient[0][0][local]
+				matrix[U(backwardVertexHandle)][V(vertex.handle)] += matrixCoefficient[0][1][local]
+				matrix[V(backwardVertexHandle)][U(vertex.handle)] += matrixCoefficient[1][0][local]
+				matrix[V(backwardVertexHandle)][V(vertex.handle)] += matrixCoefficient[1][1][local]
+				matrix[U(forwardVertexHandle)][U(vertex.handle)]  -= matrixCoefficient[0][0][local]
+				matrix[U(forwardVertexHandle)][V(vertex.handle)]  -= matrixCoefficient[0][1][local]
+				matrix[V(forwardVertexHandle)][U(vertex.handle)]  -= matrixCoefficient[1][0][local]
+				matrix[V(forwardVertexHandle)][V(vertex.handle)]  -= matrixCoefficient[1][1][local]
 
-
+				local+=1
 
 # Neumann Boundary Condition
 for bCondition in problemData.neumannBoundaries["u"]:
@@ -113,91 +116,35 @@ for bCondition in problemData.dirichletBoundaries["v"]:
 #-------------------------SOLVE LINEAR SYSTEM-------------------------------
 displacements = np.linalg.solve(matrix, independent)
 
-normal_stain_x = np.zeros(numberOfVertices)
-normal_stain_y = np.zeros(numberOfVertices)
-shear_strain = np.zeros(numberOfVertices)
-for element in grid.elements:
-	element_u = np.array([ displacements[vertex.handle] for vertex in element.vertices ])
-	element_v = np.array([ displacements[vertex.handle+numberOfVertices] for vertex in element.vertices ])
-
-	for local in range(element.vertices.size):
-		localDerivatives = element.shape.vertexShapeFunctionDerivatives[local]
-		globalDerivatives = np.matmul(np.linalg.inv(element.getTransposedJacobian(localDerivatives)) , np.transpose(localDerivatives))
-
-		u_grad = np.matmul( globalDerivatives, element_u )
-		v_grad = np.matmul( globalDerivatives, element_v )
-
-		normal_stain_x[element.vertices[local].handle] += u_grad[0]
-		normal_stain_y[element.vertices[local].handle] += v_grad[1]
-		shear_strain[element.vertices[local].handle] += u_grad[1] + v_grad[0]
-
 #-------------------------SAVE RESULTS--------------------------------------
-# ACTUALLY DISPLACEMENTS WILL BE ONE MATRIX
-cgnsSaver.save('u', displacements[:numberOfVertices], 0.0)
-cgnsSaver.save('v', displacements[numberOfVertices:], 0.0)
-cgnsSaver.save('exx', normal_stain_x, 0.0)
-cgnsSaver.save('eyy', normal_stain_y, 0.0)
-cgnsSaver.save('exy', shear_strain, 0.0)
-
-#-------------------------CHECK CONVERGENCE---------------------------------
-converged = False
-difference = max([abs(temp-oldTemp) for temp, oldTemp in zip(displacements, prevDisplacements)])
-prevDisplacements = displacements
-
-#-------------------------------------------------------------------------------
-#-------------------------AFTER END OF MAIN LOOP ITERATION------------------------
-#-------------------------------------------------------------------------------
+cgnsSaver.save('u', displacements[:numberOfVertices], currentTime)
+cgnsSaver.save('v', displacements[numberOfVertices:], currentTime)
 cgnsSaver.finalize()
 
 print("\n\t\033[1;35mresult:\033[0m", problemData.paths["Output"]+"Results.cgns", '\n')
-#-------------------------------------------------------------------------------
-#-------------------------SHOW RESULTS GRAPHICALY-------------------------------
-#-------------------------------------------------------------------------------
-if "-g" in sys.argv:
-	from matplotlib import pyplot as plt, colors, cm
-	from scipy.interpolate import griddata
+# os.system("/usr/bin/paraview %sResults.cgns" % problemData.paths["Output"])
 
-	X,Y = zip(*[v.getCoordinates()[:-1] for v in grid.vertices])
-	Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), max(Y), len(Y)) )
-	def show(fieldValues, name):
-		plt.figure()
-		gridValues = griddata((X,Y), fieldValues, (Xi,Yi), method='linear')
-		plt.pcolor(Xi,Yi,gridValues, cmap="RdBu")#, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
-		plt.title(name)
-		plt.colorbar()
+from matplotlib import pyplot as plt, colors, cm
+def show_1d(fieldValues, name):
+	top_stress = problemData.boundaryConditionData["v"]["NORTH"]["value"]
+	shearModulus = problemData.propertyData[region.handle]["ShearModulus"]
+	poissonsRatio = problemData.propertyData[region.handle]["PoissonsRatio"]
+	lameParameter = 2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
 
-	def show_1d(fieldValues, name):
-		top_stress = problemData.boundaryConditionData["v"]["NORTH"]["value"]
-		shear_modulus = problemData.propertyData[region.handle]["ShearModulus"]
-		poissonsRatio = problemData.propertyData[region.handle]["PoissonsRatio"]
-		lameParameter = 2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
+	y, vals = zip(*[ (vertex.getCoordinates()[1], val) for vertex, val in zip(grid.vertices, fieldValues) if 0.1 > np.abs(vertex.getCoordinates()[0]-0.5)])
+	y, vals = zip(*( sorted( zip(y, vals), key=lambda p:p[0] ) ))
+	y, vals = np.array(y), np.array(vals)
+	
+	a_vals=	-y*top_stress/(2*shearModulus+lameParameter)
+	print("sum(vals): ", sum(vals)) 
+	print("max(vals): ", max(vals)) 
+	print("min(vals): ", min(vals)) 
+	print("avg(vals): ", sum(vals)/len(vals))
+	plt.figure()
+	plt.scatter(y,vals, marker='.', color='k')
+	plt.plot(y, a_vals)
+	plt.legend()	
+	plt.title(name)
 
-		y, vals = zip(*[ (vertex.getCoordinates()[1], val) for vertex, val in zip(grid.vertices, fieldValues) if 0.1 > np.abs(vertex.getCoordinates()[0]-0.5)])
-		y, vals = zip(*( sorted( zip(y, vals), key=lambda p:p[0] ) ))
-		y, vals = np.array(y), np.array(vals)
-		
-		a_vals=	-y*top_stress/(2*shear_modulus+lameParameter)
-		print("sum(vals): ", sum(vals)) 
-		print("max(vals): ", max(vals)) 
-		print("min(vals): ", min(vals)) 
-		print("avg(vals): ", sum(vals)/len(vals))
-		plt.figure()
-		plt.scatter(y,vals, marker='.', color='k')
-		plt.plot(y, a_vals)
-		plt.legend()	
-		plt.title(name)
-
-	# show(displacements[:numberOfVertices], "X displacement (u)")
-	# show(displacements[numberOfVertices:], "Y displacement (v)")
-	# show(normal_stain_x, "X normal strain (exx)")
-	# show(normal_stain_y, "Y normal strain (eyy)")
-	# show(shear_strain, "Shear strain (γxy)")
-	show_1d(displacements[numberOfVertices:], "Y displacement (v) along beam")
-
-	plt.show()
-else:
-	try:
-		print("Opening Paraview...")
-		os.system("/usr/bin/paraview %sResults.cgns" % problemData.paths["Output"])
-	except:
-		print("Could not launch /usr/bin/paraview")
+show_1d(displacements[numberOfVertices:], "Y displacement (v) along beam")
+plt.show()

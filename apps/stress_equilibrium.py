@@ -54,14 +54,14 @@ U = lambda handle: handle + numberOfVertices * 0
 V = lambda handle: handle + numberOfVertices * 1
 
 # Gravity Term
-for region in grid.regions:
-	density = problemData.propertyData[region.handle]["Density"]
-	gravity = problemData.propertyData[region.handle]["Gravity"]
-	for element in region.elements:
-		local = 0
-		for vertex in element.vertices:
-			independent[V(vertex.handle)] += - density * gravity * element.subelementVolumes[local]
-			local += 1
+# for region in grid.regions:
+# 	density = problemData.propertyData[region.handle]["Density"]
+# 	gravity = problemData.propertyData[region.handle]["Gravity"]
+# 	for element in region.elements:
+# 		local = 0
+# 		for vertex in element.vertices:
+# 			independent[V(vertex.handle)] += - density * gravity * element.subelementVolumes[local]
+# 			local += 1
 
 # Stress Term
 for region in grid.regions:
@@ -94,84 +94,28 @@ for bc in problemData.boundaryConditions:
 	uBoundaryType = bc["u"].__type__
 	vBoundaryType = bc["v"].__type__
 
-	if uBoundaryType != vBoundaryType:
-		dirichletLabel = "u" if uBoundaryType=="DIRICHLET" else "v"
-		neumannLabel = "u" if uBoundaryType=="NEUMANN" else "v"
 
-		dirichletIndex = 0 if uBoundaryType=="DIRICHLET" else 1
-		neumannIndex = 0 if uBoundaryType=="NEUMANN" else 1
-
-		D=lambda vertex: int( vertex.handle + numberOfVertices * dirichletIndex )
-		N=lambda vertex: int( vertex.handle + numberOfVertices * neumannIndex )
-
-		for vertex in boundary.vertices:
-			matrix[D(vertex)] = np.zeros(2*numberOfVertices)
-			matrix[D(vertex)][D(vertex)] = 1.0
-			independent[D(vertex)] = bc[dirichletLabel].getValue(vertex.handle)
-
-			matrix[N(vertex)] = np.zeros(2*numberOfVertices)
-			independent[N(vertex)] = 0.0
-
-		for facet in boundary.facets:
-			shearModulus = problemData.propertyData[region.handle]["ShearModulus"]
-			for outerFace in facet.outerFaces:
-				globalDerivatives = getOuterFaceGlobalDerivatives(outerFace)
-				Nx, Ny = globalDerivatives
-
-				Sx,Sy,_ = outerFace.area.getCoordinates()
-				normalArea = [Sx,Sy][neumannIndex]
-				shearArea = [Sx,Sy][dirichletIndex]
-				transposedVoigtArea = getTransposedVoigtArea(outerFace)
-				voigtGradientOperator = getVoigtGradientOperator(globalDerivatives)
-				coefficient = np.einsum("ij,jk,kmn->imn", transposedVoigtArea, constitutiveMatrix, voigtGradientOperator)
-
-				local=0
-				for vertex in facet.element.vertices:
-					matrix[N(outerFace.vertex)][U(vertex.handle)] += shearModulus * Ny[local]
-					matrix[N(outerFace.vertex)][V(vertex.handle)] += shearModulus * Nx[local]
-					independent[N(outerFace.vertex)] +=  bc[neumannLabel].getValue( outerFace.vertex.handle )
-					local+=1
-
-
-	if uBoundaryType == "NEUMANN" and vBoundaryType == "NEUMANN":
+	if uBoundaryType == "NEUMANN":
 		for facet in boundary.facets:
 			for outerFace in facet.outerFaces:
-				independent[U(outerFace.vertex.handle)] = bc["u"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
-				independent[V(outerFace.vertex.handle)] = bc["v"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
+				independent[U(outerFace.vertex.handle)] -= bc["u"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
 
-	if uBoundaryType == "DIRICHLET" and vBoundaryType == "DIRICHLET":
+	if vBoundaryType == "NEUMANN":
+		for facet in boundary.facets:
+			for outerFace in facet.outerFaces:
+				independent[V(outerFace.vertex.handle)] -= bc["v"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
+
+	if uBoundaryType == "DIRICHLET":
 		for vertex in boundary.vertices:
-			matrix[U(vertex.handle)] = np.zeros(2*numberOfVertices)
-			matrix[V(vertex.handle)] = np.zeros(2*numberOfVertices)
-			matrix[U(vertex.handle)][U(vertex.handle)] = 1.0
-			matrix[V(vertex.handle)][V(vertex.handle)] = 1.0
+			independent[vertex.handle] = bc["u"].getValue(vertex.handle)
+			matrix[vertex.handle] = np.zeros(2*numberOfVertices)
+			matrix[vertex.handle][vertex.handle] = 1.0
 
-			independent[U(vertex.handle)] = bc["u"].getValue(vertex.handle)
-			independent[V(vertex.handle)] = bc["v"].getValue(vertex.handle)
-
-
-
-	# if uBoundaryType == "NEUMANN":
-	# 	for facet in boundary.facets:
-	# 		for outerFace in facet.outerFaces:
-	# 			independent[U(outerFace.vertex.handle)] = bc["u"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
-
-	# if vBoundaryType == "NEUMANN":
-	# 	for facet in boundary.facets:
-	# 		for outerFace in facet.outerFaces:
-	# 			independent[V(outerFace.vertex.handle)] = bc["v"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
-
-	# if uBoundaryType == "DIRICHLET":
-	# 	for vertex in boundary.vertices:
-	# 		independent[vertex.handle] = bc["u"].getValue(vertex.handle)
-	# 		matrix[vertex.handle] = np.zeros(2*numberOfVertices)
-	# 		matrix[vertex.handle][vertex.handle] = 1.0
-
-	# if vBoundaryType == "DIRICHLET":
-	# 	for vertex in boundary.vertices:
-	# 		independent[vertex.handle+numberOfVertices] = bc["v"].getValue(vertex.handle)
-	# 		matrix[vertex.handle+numberOfVertices] = np.zeros(2*numberOfVertices)
-	# 		matrix[vertex.handle+numberOfVertices][vertex.handle+numberOfVertices] = 1.0
+	if vBoundaryType == "DIRICHLET":
+		for vertex in boundary.vertices:
+			independent[vertex.handle+numberOfVertices] = bc["v"].getValue(vertex.handle)
+			matrix[vertex.handle+numberOfVertices] = np.zeros(2*numberOfVertices)
+			matrix[vertex.handle+numberOfVertices][vertex.handle+numberOfVertices] = 1.0
 
 
 #-------------------------SOLVE LINEAR SYSTEM-------------------------------
@@ -183,7 +127,7 @@ cgnsSaver.save('v', displacements[numberOfVertices:], currentTime)
 cgnsSaver.finalize()
 
 print("\n\t\033[1;35mresult:\033[0m", problemData.paths["Output"]+"Results.cgns", '\n')
-os.system("/usr/bin/paraview %sResults.cgns" % problemData.paths["Output"])
+# os.system("/usr/bin/paraview %sResults.cgns" % problemData.paths["Output"])
 
 from matplotlib import pyplot as plt, colors, cm
 def show_1d(fieldValues, name):
@@ -202,10 +146,10 @@ def show_1d(fieldValues, name):
 	print("min(vals): ", min(vals)) 
 	print("avg(vals): ", sum(vals)/len(vals))
 	plt.figure()
-	plt.scatter(y,vals, marker='.', color='k', label="Numerical y displacement")
-	plt.plot(y, a_vals, label="Analytical solution")
+	plt.plot(y,vals, marker='.', color='k')
+	plt.plot(y, a_vals)
 	plt.legend()	
 	plt.title(name)
-	plt.show()
 
-# show_1d(displacements[numberOfVertices:], "Y displacement (v) along beam")
+show_1d(displacements[numberOfVertices:], "Y displacement (v) along beam")
+plt.show()

@@ -54,14 +54,14 @@ U = lambda handle: handle + numberOfVertices * 0
 V = lambda handle: handle + numberOfVertices * 1
 
 # Gravity Term
-# for region in grid.regions:
-# 	density = problemData.propertyData[region.handle]["Density"]
-# 	gravity = problemData.propertyData[region.handle]["Gravity"]
-# 	for element in region.elements:
-# 		local = 0
-# 		for vertex in element.vertices:
-# 			independent[V(vertex.handle)] += - density * gravity * element.subelementVolumes[local]
-# 			local += 1
+for region in grid.regions:
+	density = problemData.propertyData[region.handle]["Density"]
+	gravity = problemData.propertyData[region.handle]["Gravity"]
+	for element in region.elements:
+		local = 0
+		for vertex in element.vertices:
+			independent[V(vertex.handle)] += - density * gravity * element.subelementVolumes[local]
+			local += 1
 
 # Stress Term
 for region in grid.regions:
@@ -77,15 +77,12 @@ for region in grid.regions:
 			
 			local=0
 			for vertex in element.vertices:
-				matrix[U(backwardVertexHandle)][U(vertex.handle)] += matrixCoefficient[0][0][local]
-				matrix[U(backwardVertexHandle)][V(vertex.handle)] += matrixCoefficient[0][1][local]
-				matrix[V(backwardVertexHandle)][U(vertex.handle)] += matrixCoefficient[1][0][local]
-				matrix[V(backwardVertexHandle)][V(vertex.handle)] += matrixCoefficient[1][1][local]
-				matrix[U(forwardVertexHandle)][U(vertex.handle)]  -= matrixCoefficient[0][0][local]
-				matrix[U(forwardVertexHandle)][V(vertex.handle)]  -= matrixCoefficient[0][1][local]
-				matrix[V(forwardVertexHandle)][U(vertex.handle)]  -= matrixCoefficient[1][0][local]
-				matrix[V(forwardVertexHandle)][V(vertex.handle)]  -= matrixCoefficient[1][1][local]
-
+				for neighborVertex in [backwardVertexHandle, forwardVertexHandle]:
+					matrix[U(neighborVertex)][U(vertex.handle)] += matrixCoefficient[0][0][local]
+					matrix[U(neighborVertex)][V(vertex.handle)] += matrixCoefficient[0][1][local]
+					matrix[V(neighborVertex)][U(vertex.handle)] += matrixCoefficient[1][0][local]
+					matrix[V(neighborVertex)][V(vertex.handle)] += matrixCoefficient[1][1][local]
+					matrixCoefficient *= -1
 				local+=1
 
 # Boundary Conditions

@@ -17,6 +17,16 @@ set (CMAKE_BUILD_TYPE "Release")
 set (LIBRARY_TYPE "shared")
 
 ##############
+# CGNS
+##############
+set (CGNS_VERSION "3.4.0")
+set (CGNS_DIR $ENV{CGNS_DIR}/${BUILD_TYPE}/${LIBRARY_TYPE})
+find_package (CGNS REQUIRED)
+if (CGNS_FOUND)
+    include_directories (${CGNS_INCLUDE_DIR})
+endif ()
+
+##############
 # BOOST
 ##############
 set (BOOST_VERSION "1.70.0")
@@ -27,17 +37,6 @@ find_package (Boost ${BOOST_VERSION} EXACT COMPONENTS ${Components_Boost} REQUIR
 if (Boost_FOUND)
     include_directories (SYSTEM ${Boost_INCLUDE_DIRS})
 endif ()
-
-##############
-# CGNS
-##############
-set (CGNS_VERSION "3.4.0")
-set (CGNS_DIR $ENV{CGNS_DIR}/${BUILD_TYPE}/${LIBRARY_TYPE})
-find_package (CGNS REQUIRED)
-if (CGNS_FOUND)
-    include_directories (${CGNS_INCLUDE_DIR})
-endif ()
-
 
 
 

@@ -11,7 +11,5 @@ from PyEFVLib.geometry.Boundary import *
 from PyEFVLib.geometry.Element import *
 from PyEFVLib.geometry.Grid import *
 from PyEFVLib.simulation.BoundaryConditions import *
-from PyEFVLib.simulation.LinearSystemAdders import *
 from PyEFVLib.simulation.CgnsSaver import *
-from PyEFVLib.simulation.Timer import *
 from PyEFVLib.simulation.ProblemData import *

@@ -1,6 +1,7 @@
 import numpy as np
 
 class DirichletBoundaryCondition:
+	__type__="DIRICHLET"
 	def __init__(self, boundary, value, handle):
 		self.boundary = boundary
 		self.value = value
@@ -10,6 +11,7 @@ class DirichletBoundaryCondition:
 		return self.value
 
 class NeumannBoundaryCondition:
+	__type__="NEUMANN"
 	def __init__(self, boundary, value, handle):
 		self.boundary = boundary
 		self.value = value

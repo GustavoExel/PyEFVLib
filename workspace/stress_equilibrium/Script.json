@@ -1,0 +1,13 @@
+{
+    "Root" : "/home/gustavoe/Documents/Sinmec/GTRelated/GridReader/",
+
+    "Output" : "results/stress_equilibrium/",
+
+    "Boundary" : "workspace/stress_equilibrium/boundaryConditions/",
+
+    "Property" : "workspace/stress_equilibrium/properties.json",
+
+    "Numerical" : "workspace/stress_equilibrium/NumericalSettings.json",
+
+    "Grid" : "meshes/Square.msh"
+}

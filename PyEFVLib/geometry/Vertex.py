@@ -10,3 +10,6 @@ class Vertex(Point):
 
 	def addElement(self, element):
 		self.elements = np.append(self.elements, element)
+
+	def getLocal(self, element):
+		return list(element.vertices).index(self)

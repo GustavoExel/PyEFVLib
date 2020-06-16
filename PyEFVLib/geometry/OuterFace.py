@@ -6,4 +6,5 @@ class OuterFace:
 		self.facet = facet
 		self.local = local
 		self.handle = handle
+		self.vertexLocalIndex = vertex.getLocal( facet.element )
 

@@ -50,3 +50,6 @@ class Element:
 	def getTransposedJacobian(self, shapeFunctionDerivatives):	# shapeFunctionDerivatives must be already a numpy array
 		vertices = np.array([[vertex.getCoordinates()[k] for k in range(self.shape.dimension)] for vertex in self.vertices])
 		return np.matmul(np.transpose(shapeFunctionDerivatives), vertices)
+
+	def getGlobalDerivatives(self, derivatives):
+		return np.matmul(np.linalg.inv(self.getTransposedJacobian(derivatives)) , np.transpose(derivatives))

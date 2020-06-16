@@ -15,7 +15,7 @@ problemData.read()
 timeStep = problemData.timeStep
 currentTime = 0.0
 
-cgnsSaver = CgnsSaver(grid, problemData.paths["Output"], problemData.libraryPath, ['temperature field'])
+cgnsSaver = CgnsSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
 temperatureField = np.repeat(problemData.initialValue, grid.vertices.size)
 prevTemperatureField = np.repeat(problemData.initialValue, grid.vertices.size)

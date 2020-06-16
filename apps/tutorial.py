@@ -18,7 +18,7 @@ currentTime = 0.0
 cgnsSaver = CgnsSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
 temperatureField = np.repeat(problemData.initialValue, grid.vertices.size)
-prevTemperatureField = np.repeat(problemData.initialValue, grid.vertices.size)
+prevTemperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)
 
 matrix = np.zeros([grid.vertices.size, grid.vertices.size])
 difference = 0.0
@@ -74,17 +74,17 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 				local += 1
 
 	# Neumann Boundary Condition
-	for bCondition in problemData.neumannBoundaries:
+	for bCondition in problemData.neumannBoundaries["temperature"]:
 		for facet in bCondition.boundary.facets:
 			for outerFace in facet.outerFaces:
 				independent[outerFace.vertex.handle] -= bCondition.getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
 
 	# Dirichlet Boundary Condition
-	for bCondition in problemData.dirichletBoundaries:
+	for bCondition in problemData.dirichletBoundaries["temperature"]:
 		for vertex in bCondition.boundary.vertices:
 			independent[vertex.handle] = bCondition.getValue(vertex.handle)
 	if iteration == 0:
-		for bCondition in problemData.dirichletBoundaries:
+		for bCondition in problemData.dirichletBoundaries["temperature"]:
 			for vertex in bCondition.boundary.vertices:
 				matrix[vertex.handle] = np.zeros(grid.vertices.size)
 				matrix[vertex.handle][vertex.handle] = 1.0

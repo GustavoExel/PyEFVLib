@@ -22,14 +22,22 @@ class MSHReader:
 			raise( Exception("MSH version must be ") )
 
 	def read(self):
+		# This numberOf... are indicated on top of each msh file section
 		self.numberOfSections = int( self.fileData[1][0][0] )
 		self.numberOfVertices = int( self.fileData[2][0][0] )
 		self.numberOfConnectivities = int( self.fileData[3][0][0] )
 
+		# This fileDatas store raw information from file, only converting from string
+		# DIMENSION, INDEX, NAME => REGIONS / BOUNDARIES
 		self.sectionsFileData = [ ( int(dimension), int(index) , name[1:-1] ) for dimension, index, name in self.fileData[1][1:] ]
+		
+		# X,Y,Z COORDINATES
 		self.verticesFileData = [ (float(x), float(y), float(z)) for idx,x,y,z in self.fileData[2][1:] ]
+		
+		# SHAPE CODE, SECTION INDEX, [[ VERTICES INDEXES ]]
 		self.connectivitiesFileData = [ ( ''.join([c1,c2]), int(p_id), [ int(v)-1 for v in nodes ] ) for idx, c1, c2, p_id, e_id, *nodes in self.fileData[3][1:] ]
 
+		# Sorts elements by sections
 		self.sectionElements = [ [ e[2] for e in self.connectivitiesFileData if e[1] == section[1] ] for section in self.sectionsFileData]
 
 		shapeCodes = {"line":"12", "triangle":"22", "quadrilateral":"32", "tetrahedron":"42"}

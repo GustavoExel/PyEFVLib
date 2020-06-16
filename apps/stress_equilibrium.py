@@ -146,8 +146,8 @@ def show_1d(fieldValues, name):
 	print("min(vals): ", min(vals)) 
 	print("avg(vals): ", sum(vals)/len(vals))
 	plt.figure()
-	plt.plot(y,vals, marker='.', color='k')
-	plt.plot(y, a_vals)
+	plt.scatter(y,vals, marker='.', color='k', label="Numeric results")
+	plt.plot(y,a_vals, label="Analytical solution")
 	plt.legend()	
 	plt.title(name)
 

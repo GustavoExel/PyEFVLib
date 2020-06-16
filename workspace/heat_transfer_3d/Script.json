@@ -1,0 +1,13 @@
+{
+    "Root" : "/home/gustavoe/Documents/Sinmec/GTRelated/GridReader/",
+
+    "Output" : "results/heat_transfer_3d/",
+
+    "Boundary" : "workspace/heat_transfer_3d/boundaryConditions/",
+
+    "Property" : "workspace/heat_transfer_3d/properties.json",
+
+    "Numerical" : "workspace/heat_transfer_3d/NumericalSettings.json",
+
+    "Grid" : "meshes/Box.msh"
+}

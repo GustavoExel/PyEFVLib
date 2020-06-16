@@ -94,13 +94,9 @@ class BoundaryBuilder:
 		if vertices.size == 2:
 			return Point( vertices[0].y-vertices[1].y , vertices[1].x-vertices[0].x, 0.0 ) 
 
-		# if vertices.size == 3:
-		#     d10 = Point(vertices[1].x-vertices[0].x, vertices[1].y-vertices[0].y, vertices[1].z-vertices[0].z)
-		#     d20 = Point(vertices[2].x-vertices[0].x, vertices[2].y-vertices[0].y, vertices[2].z-vertices[0].z)
-		#     x = (d10.y*d20.z - d20.y*d10.z) / 2.0
-		#     y = (d10.z*d20.x - d20.z*d10.x) / 2.0
-		#     z = (d10.x*d20.y - d20.x*d10.y) / 2.0
-		#     return Point(x, y, z);
+		if vertices.size == 3:
+			v0,v1,v2=vertices[0].getCoordinates(), vertices[1].getCoordinates(), vertices[2].getCoordinates(), 
+			return Point( *np.cross(v1-v0,v2-v0)/2 )
 
 		# if vertices.size == 4:
 		#     CM = Point(vertices[2].x-vertices[0].x, vertices[2].y-vertices[0].y, vertices[2].z-vertices[0].z)

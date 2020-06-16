@@ -132,12 +132,15 @@ def show_1d(fieldValues, name):
 	shearModulus = problemData.propertyData[region.handle]["ShearModulus"]
 	poissonsRatio = problemData.propertyData[region.handle]["PoissonsRatio"]
 	lameParameter = 2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
+	density = problemData.propertyData[region.handle]["Density"]
+	gravity = problemData.propertyData[region.handle]["Gravity"]
+	height = 1.0
 
 	y, vals = zip(*[ (vertex.getCoordinates()[1], val) for vertex, val in zip(grid.vertices, fieldValues) if 0.1 > np.abs(vertex.getCoordinates()[0]-0.5)])
 	y, vals = zip(*( sorted( zip(y, vals), key=lambda p:p[0] ) ))
 	y, vals = np.array(y), np.array(vals)
 	
-	a_vals=y*top_stress/(2*shearModulus+lameParameter)
+	a_vals=y*(top_stress+density*gravity*(height-y/2))/(2*shearModulus+lameParameter)
 	print("sum(vals): ", sum(vals)) 
 	print("max(vals): ", max(vals)) 
 	print("min(vals): ", min(vals)) 

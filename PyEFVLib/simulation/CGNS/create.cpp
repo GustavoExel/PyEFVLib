@@ -33,7 +33,6 @@ void writeCoords(int &fileIndex, int &baseIndex, int &zoneIndex, int &coordinate
         i++;
     }
 
-
     cg_coord_write(fileIndex, baseIndex, zoneIndex, RealDouble, "CoordinateX", &coords[0][0], &coordinateIndex);
     cg_coord_write(fileIndex, baseIndex, zoneIndex, RealDouble, "CoordinateY", &coords[1][0], &coordinateIndex);    
     cg_coord_write(fileIndex, baseIndex, zoneIndex, RealDouble, "CoordinateZ", &coords[2][0], &coordinateIndex);    
@@ -83,7 +82,7 @@ void writeSections(int &fileIndex, int &baseIndex, int &zoneIndex, int &sectionI
             }
         }
 
-        std::unordered_map<int,int> sizeType = {{2,BAR_2},{3,TRI_3},{4,QUAD_4}};
+        std::unordered_map<int,int> sizeType = {{2,BAR_2},{3,TRI_3},{4,TETRA_4},{5,PYRA_5},{6,PENTA_6},{8,HEXA_8}};
         cg_section_write(fileIndex, baseIndex, zoneIndex, section.name.c_str(), ElementType_t(sizeType[section.elementType]), section.begin+1,
                          section.end+1, 0, &sectionConnectivities[0],  &sectionIndex);
     }
@@ -93,8 +92,8 @@ int main(int argc, char* argv[])
 {
     std::string fileName;
     int baseIndex = 1, zoneIndex, fileIndex, coordinateIndex, sectionIndex;
-    int physicalDimension = 2;
-    int cellDimension = 2;
+    int physicalDimension = 3;
+    int cellDimension = 3;
     int sizes[3];
 
     std::string baseName = "BASE";

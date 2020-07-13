@@ -1,7 +1,7 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
-from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver
+from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver
 import numpy as np
 
 #-------------------------SETTINGS----------------------------------------------
@@ -15,7 +15,7 @@ problemData.read()
 timeStep = problemData.timeStep
 currentTime = 0.0
 
-cgnsSaver = CgnsSaver(grid, problemData.paths["Output"], problemData.libraryPath)
+saver = CsvSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
 temperatureField = np.repeat(problemData.initialValue, grid.vertices.size)
 prevTemperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)
@@ -100,7 +100,7 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 	currentTime += timeStep
 
 	#-------------------------SAVE RESULTS--------------------------------------
-	cgnsSaver.save('temperature field', temperatureField, currentTime)
+	saver.save('temperature field', temperatureField, currentTime)
 
 	#-------------------------CHECK CONVERGENCE---------------------------------
 	converged = False
@@ -117,22 +117,22 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 #-------------------------------------------------------------------------------
 #-------------------------AFTER END OF MAIN LOOP ITERATION------------------------
 #-------------------------------------------------------------------------------
-cgnsSaver.finalize()
+saver.finalize()
 
-print("\n\t\033[1;35mresult:\033[0m", problemData.paths["Output"]+"Results.cgns", '\n')
+print("\n\t\033[1;35mresult:\033[0m", saver.outputPath, '\n')
 #-------------------------------------------------------------------------------
 #-------------------------SHOW RESULTS GRAPHICALY-------------------------------
 #-------------------------------------------------------------------------------
-from matplotlib import pyplot as plt, colors, cm
-from scipy.interpolate import griddata
+# from matplotlib import pyplot as plt, colors, cm
+# from scipy.interpolate import griddata
 
-X,Y = zip(*[v.getCoordinates()[:-1] for v in grid.vertices])
+# X,Y = zip(*[v.getCoordinates()[:-1] for v in grid.vertices])
 
-Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), max(Y), len(Y)) )
-nTi = griddata((X,Y), temperatureField, (Xi,Yi), method='linear')
+# Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), max(Y), len(Y)) )
+# nTi = griddata((X,Y), temperatureField, (Xi,Yi), method='linear')
 
-plt.pcolor(Xi,Yi,nTi, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
-# plt.pcolor(Xi,Yi,nTi, cmap="RdBu")
-plt.title("Numerical Temperature")
-plt.colorbar()	
-plt.show()
+# plt.pcolor(Xi,Yi,nTi, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
+# # plt.pcolor(Xi,Yi,nTi, cmap="RdBu")
+# plt.title("Numerical Temperature")
+# plt.colorbar()	
+# plt.show()

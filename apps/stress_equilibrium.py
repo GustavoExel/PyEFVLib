@@ -1,7 +1,7 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
-from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver
+from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver
 import numpy as np
 
 #-------------------------SETTINGS----------------------------------------------
@@ -15,7 +15,7 @@ problemData.read()
 from PyEFVLib.boundaryConditionPrinter import stressEquilibriumBoundaryConditionsPrinter
 stressEquilibriumBoundaryConditionsPrinter(problemData.boundaryConditions)
 
-cgnsSaver = CgnsSaver(grid, problemData.paths["Output"], problemData.libraryPath)
+saver = CsvSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
 currentTime = 0.0
 numberOfVertices = grid.vertices.size
@@ -119,9 +119,9 @@ for bc in problemData.boundaryConditions:
 displacements = np.linalg.solve(matrix, independent)
 
 #-------------------------SAVE RESULTS--------------------------------------
-cgnsSaver.save('u', displacements[:numberOfVertices], currentTime)
-cgnsSaver.save('v', displacements[numberOfVertices:], currentTime)
-cgnsSaver.finalize()
+saver.save('u', displacements[:numberOfVertices], currentTime)
+saver.save('v', displacements[numberOfVertices:], currentTime)
+saver.finalize()
 
 print("\n\t\033[1;35mresult:\033[0m", problemData.paths["Output"]+"Results.cgns", '\n')
 # os.system("/usr/bin/paraview %sResults.cgns" % problemData.paths["Output"])

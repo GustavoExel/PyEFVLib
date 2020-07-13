@@ -1,3 +1,0 @@
-Cgns3D
-Windows
-Put executables inside build/bin/

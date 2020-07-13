@@ -40,7 +40,7 @@ iteration = 0
 converged = False
 
 if not '-s' in sys.argv:
-	for key,path in zip( ["input", "output", "grids"] , [problemData.libraryPath+"/workspace/"+model , problemData.paths["Output"], problemData.paths["Grid"]] ):
+	for key,path in zip( ["input", "output", "grids"] , [os.path.join(problemData.libraryPath,"workspace",model) , problemData.paths["Output"], problemData.paths["Grid"]] ):
 		print("\t\033[1;35m{}\033[0m\n\t\t{}\n".format(key, path))
 	print("\t\033[1;35msolid\033[0m")
 	for region in grid.regions:

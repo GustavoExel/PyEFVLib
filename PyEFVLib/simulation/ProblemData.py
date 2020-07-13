@@ -94,11 +94,11 @@ class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 		self.read()
 
 	def getPaths(self):
-		self.libraryPath = '/'.join(os.path.realpath(__file__).split('/')[:-3])		# this is the GridReader path
-		self.scriptPath  = "{}/workspace/{}/Script.json".format( self.libraryPath, self.simulatorName )
+		self.libraryPath = os.sep.join(os.path.realpath(__file__).split(os.sep)[:-3])		# this is the PyEFVLib path
+		self.scriptPath  = os.path.join(self.libraryPath, "workspace", self.simulatorName, "Script.json")
 		if not os.path.isfile(self.scriptPath):
 			raise(Exception("File {} not found".format(self.scriptPath)))
 
 		with open(self.scriptPath, "r") as f:
 			self.paths = json.load(f)
-		self.paths = { key : self.libraryPath + '/' + self.paths[key] for key in self.paths}
+		self.paths = { key : os.path.join(self.libraryPath, self.paths[key]) for key in self.paths}

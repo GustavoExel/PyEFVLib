@@ -6,7 +6,6 @@ class Saver:
 		self.grid = grid
 		self.outputPath = outputPath + "Results." + extension
 		self.basePath = basePath
-		self.binPath = os.path.join( basePath, "PyEFVLib", "simulation" ) + "/"
 		self.timeSteps  = np.array([])
 		self.fields = dict()
 		self.createFile()

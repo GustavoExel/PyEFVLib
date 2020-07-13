@@ -3,7 +3,8 @@ import subprocess, os, sys
 from PyEFVLib.simulation.Saver import Saver
 
 class CgnsSaver(Saver):
-	def __init__(self, grid, outputPath, basePath): 
+	def __init__(self, grid, outputPath, basePath):
+		self.binPath = os.path.join( basePath, "PyEFVLib", "simulation", "CGNS", "bin" ) + "/"
 		Saver.__init__(self, grid, outputPath, basePath, 'cgns')
 
 	def finalize(self):

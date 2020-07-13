@@ -1,6 +1,6 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
-from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver
+from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver
 import numpy as np
 import time
 
@@ -13,8 +13,9 @@ if '--help' in sys.argv:
 	print('-2d\t show 2d analytical solution colorplot. Useful for really discrepant differences\n')
 	exit(0)
 
-
+savers = {'cgns': CgnsSaver, 'csv': CsvSaver}
 model = 'heat_transfer_2d'
+extension = 'csv'
 if len(sys.argv)>1 and not '-' in sys.argv[1]: model=sys.argv[1]
 #-------------------------SETTINGS----------------------------------------------
 initialTime = time.time()
@@ -28,7 +29,7 @@ problemData.read()
 timeStep = problemData.timeStep
 currentTime = 0.0
 
-cgnsSaver = CgnsSaver(grid, problemData.paths["Output"], problemData.libraryPath)
+saver = savers[extension](grid, problemData.paths["Output"], problemData.libraryPath)
 
 temperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)
 prevTemperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)
@@ -124,9 +125,9 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 	currentTime += timeStep
 
 	#-------------------------SAVE RESULTS--------------------------------------
-	# cgnsSaver.timeSteps	= np.append(cgnsSaver.timeSteps,  currentTime)
-	# cgnsSaver.fields  = np.vstack([cgnsSaver.fields, temperatureField])
-	cgnsSaver.save('temperature field', temperatureField, currentTime)
+	# saver.timeSteps	= np.append(saver.timeSteps,  currentTime)
+	# saver.fields  = np.vstack([saver.fields, temperatureField])
+	saver.save('temperature field', temperatureField, currentTime)
 
 	#-------------------------CHECK CONVERGENCE---------------------------------
 	converged = False
@@ -148,7 +149,7 @@ finalSimulationTime = time.time()
 if not '-s' in sys.argv:
 	print("Ended Simultaion, elapsed {:.2f}s".format(finalSimulationTime-initialTime))
 
-cgnsSaver.finalize()
+saver.finalize()
 if not '-s' in sys.argv:
 	print("Saved file: elapsed {:.2f}s".format(time.time()-finalSimulationTime))
 

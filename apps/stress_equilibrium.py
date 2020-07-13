@@ -123,7 +123,7 @@ saver.save('u', displacements[:numberOfVertices], currentTime)
 saver.save('v', displacements[numberOfVertices:], currentTime)
 saver.finalize()
 
-print("\n\t\033[1;35mresult:\033[0m", problemData.paths["Output"]+"Results.cgns", '\n')
+print("\n\t\033[1;35mresult:\033[0m", saver.outputPath, '\n')
 # os.system("/usr/bin/paraview %sResults.cgns" % problemData.paths["Output"])
 
 from matplotlib import pyplot as plt, colors, cm

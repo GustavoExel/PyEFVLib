@@ -153,7 +153,7 @@ saver.finalize()
 if not '-s' in sys.argv:
 	print("Saved file: elapsed {:.2f}s".format(time.time()-finalSimulationTime))
 
-	print("\n\t\033[1;35mresult:\033[0m", problemData.paths["Output"]+"Results.cgns", '\n')
+	print("\n\t\033[1;35mresult:\033[0m", saver.outputPath, '\n')
 #-------------------------------------------------------------------------------
 #-------------------------SHOW RESULTS GRAPHICALY-------------------------------
 #-------------------------------------------------------------------------------

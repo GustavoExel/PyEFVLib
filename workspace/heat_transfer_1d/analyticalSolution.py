@@ -1,7 +1,7 @@
 import os,json
 
 r = os.path.realpath(os.path.dirname(__file__))
-with open(os.path.join(r,"boundaryConditions/temperature.json"), "r") as f:
+with open(os.path.join(r,"boundaryConditions","temperature.json"), "r") as f:
 	t = json.load(f)
 with open(os.path.join(r, "properties.json"), "r") as f:
 	p = json.load(f)

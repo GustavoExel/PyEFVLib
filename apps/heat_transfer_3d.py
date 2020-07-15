@@ -1,7 +1,3 @@
-"""
-THIS IS APPLICATION IS ONLY A TEST FOR CGNS 3D WRITING
-THE CALCULATIONS WEREN'T ACTUALLY MADE FOR 3D IMPLEMENTATIONS!!
-"""
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 

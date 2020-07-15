@@ -8,3 +8,5 @@ class OuterFace:
 		self.handle = handle
 		self.vertexLocalIndex = vertex.getLocal( facet.element )
 
+	def getShapeFunctionAtCentroid(self):
+		return self.facet.element.shape.outerFaceShapeFunctionValues[ self.vertexLocalIndex ]

@@ -129,8 +129,6 @@ def main():
 
 if __name__ == "__main__":
 	geos = ["Tetras", "Hexas","Prism","Pyrams"]
-	geos = ["Tetras", "Hexas"]
-	geos = ["Pyrams"]
 	for geo in geos:
 		print(geo)
 		problemData.paths["Grid"] = f"/home/gustavoe/Documents/Sinmec/HTRelated/PyEFVLib/meshes/geos/{geo}.msh"

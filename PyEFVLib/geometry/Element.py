@@ -20,7 +20,7 @@ class Element:
 			if shape._is(self):
 				self.shape = shape(self)
 				return
-		raise Exception("Either this element isn\'t 2-dimensional or isn\'t registered yet")
+		raise Exception("This element has not been registered in Grid yet")
 
 	def buildInnerFaces(self):
 		self.innerFaces = np.array([])

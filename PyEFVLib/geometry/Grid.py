@@ -1,5 +1,5 @@
 import numpy as np
-from PyEFVLib.geometry.Shape import Triangle, Quadrilateral, Tetrahedron
+from PyEFVLib.geometry.Shape import Triangle, Quadrilateral, Tetrahedron, Hexahedron, Prism, Pyramid
 from PyEFVLib.geometry.Vertex import Vertex
 from PyEFVLib.geometry.Element import Element
 from PyEFVLib.geometry.Region import Region
@@ -49,4 +49,4 @@ class Grid:
 		BoundaryBuilder(self)
 
 	def getShapes(self):
-		return [Triangle, Quadrilateral, Tetrahedron]
+		return [Triangle, Quadrilateral, Tetrahedron, Hexahedron, Prism, Pyramid]

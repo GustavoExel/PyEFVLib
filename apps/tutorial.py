@@ -3,6 +3,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
 from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver
 import numpy as np
+from scipy import sparse
+import scipy.sparse.linalg
 
 #-------------------------SETTINGS----------------------------------------------
 problemData = ProblemData('heat_transfer_2d')
@@ -12,18 +14,25 @@ grid = Grid(reader.getData())
 problemData.grid = grid
 problemData.read()
 
+numberOfVertices = grid.vertices.size
 timeStep = problemData.timeStep
 currentTime = 0.0
 
 saver = CsvSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
-temperatureField = np.repeat(problemData.initialValue, grid.vertices.size)
-prevTemperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)
+temperatureField = np.repeat(problemData.initialValue, numberOfVertices)
+prevTemperatureField = np.repeat(problemData.initialValue["temperature"], numberOfVertices)
 
-matrix = np.zeros([grid.vertices.size, grid.vertices.size])
+coords,matrixVals = [], []
+
 difference = 0.0
 iteration = 0
 converged = False
+
+def add(i, j, val):
+	global coords, matrixVals
+	coords.append((i,j))
+	matrixVals.append(val)
 
 print("{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
 #-------------------------------------------------------------------------------
@@ -31,7 +40,7 @@ print("{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeSt
 #-------------------------------------------------------------------------------
 while not converged and iteration < problemData.maxNumberOfIterations:
 	#-------------------------ADD TO LINEAR SYSTEM------------------------------
-	independent = np.zeros(grid.vertices.size)
+	independent = np.zeros(numberOfVertices)
 
 	# Generation Term
 	for region in grid.regions:
@@ -55,8 +64,8 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 					i=0
 					for vertex in element.vertices:
 						coefficient = -1.0 * diffusiveFlux[i]
-						matrix[backwardVertexHandle][vertex.handle] += coefficient
-						matrix[forwardVertexHandle][vertex.handle] -= coefficient
+						add(backwardVertexHandle, vertex.handle, coefficient)
+						add(forwardVertexHandle, vertex.handle, -coefficient)
 						i+=1
 
 	# Transient Term
@@ -70,7 +79,7 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 			for vertex in element.vertices:
 				independent[vertex.handle] += element.subelementVolumes[local] * accumulation * prevTemperatureField[vertex.handle]
 				if iteration == 0:
-						matrix[vertex.handle][vertex.handle] += element.subelementVolumes[local] * accumulation
+					add(vertex.handle, vertex.handle, element.subelementVolumes[local] * accumulation)						
 				local += 1
 
 	# Neumann Boundary Condition
@@ -86,11 +95,16 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 	if iteration == 0:
 		for bCondition in problemData.dirichletBoundaries["temperature"]:
 			for vertex in bCondition.boundary.vertices:
-				matrix[vertex.handle] = np.zeros(grid.vertices.size)
-				matrix[vertex.handle][vertex.handle] = 1.0
+				matrixVals = [val for coord, val in zip(coords, matrixVals) if coord[0] != vertex.handle]
+				coords 	   = [coord for coord in coords if coord[0] != vertex.handle]
+				add(vertex.handle, vertex.handle, 1.0)
 
 	#-------------------------SOLVE LINEAR SYSTEM-------------------------------
-	temperatureField = np.linalg.solve(matrix, independent)
+	if iteration == 0:
+		matrix = sparse.coo_matrix( (matrixVals, zip(*coords)) )
+		matrix = sparse.csc_matrix( matrix )
+		inverseMatrix = sparse.linalg.inv( matrix )
+	temperatureField = inverseMatrix * independent
 
 	#-------------------------PRINT ITERATION DATA------------------------------
 	if iteration > 0:
@@ -132,7 +146,6 @@ Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), m
 nTi = griddata((X,Y), temperatureField, (Xi,Yi), method='linear')
 
 plt.pcolor(Xi,Yi,nTi, cmap=colors.ListedColormap( cm.get_cmap("RdBu",256)(np.linspace(1,0,256)) ))
-# plt.pcolor(Xi,Yi,nTi, cmap="RdBu")
 plt.title("Numerical Temperature")
 plt.colorbar()	
 plt.show()

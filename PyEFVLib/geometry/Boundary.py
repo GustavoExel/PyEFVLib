@@ -98,13 +98,13 @@ class BoundaryBuilder:
 			v0,v1,v2=vertices[0].getCoordinates(), vertices[1].getCoordinates(), vertices[2].getCoordinates(), 
 			return Point( *np.cross(v1-v0,v2-v0)/2 )
 
-		# if vertices.size == 4:
-		#     CM = Point(vertices[2].x-vertices[0].x, vertices[2].y-vertices[0].y, vertices[2].z-vertices[0].z)
-		#     LR = Point(vertices[3].x-vertices[1].x, vertices[3].y-vertices[1].y, vertices[3].z-vertices[1].z)
-		#     x = 0.5 * (CM.y()*LR.z() - CM.z()*LR.y())
-		#     y = 0.5 * (CM.z()*LR.x() - CM.x()*LR.z())
-		#     z = 0.5 * (CM.x()*LR.y() - CM.y()*LR.x())
-		#     return Point(x, y, z)
+		if vertices.size == 4:
+		    CM = vertices[2] - vertices[0]
+		    LR = vertices[3] - vertices[1]
+		    x = 0.5 * (CM.y*LR.z - CM.z*LR.y)
+		    y = 0.5 * (CM.z*LR.x - CM.x*LR.z)
+		    z = 0.5 * (CM.x*LR.y - CM.y*LR.x)
+		    return Point(x, y, z)
 
 	def buildOuterFaces(self, facet):
 		for o in range(facet.vertices.size):

@@ -7,11 +7,14 @@ sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
 from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver
 import numpy as np
+from scipy import sparse
+import scipy.sparse.linalg
 
 #-------------------------SETTINGS----------------------------------------------
 problemData = ProblemData('heat_transfer_3d')
 
 def main():
+	global coords, matrixVals
 	reader = MSHReader(problemData.paths["Grid"])
 	grid = Grid(reader.getData())
 	problemData.grid = grid
@@ -25,10 +28,15 @@ def main():
 	temperatureField = np.repeat(problemData.initialValue, grid.vertices.size)
 	prevTemperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)
 
-	matrix = np.zeros([grid.vertices.size, grid.vertices.size])
+	coords,matrixVals = [], []
 	difference = 0.0
 	iteration = 0
 	converged = False
+
+	def add(i, j, val):
+		global coords, matrixVals
+		coords.append((i,j))
+		matrixVals.append(val)
 
 	print("{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
 	#-------------------------------------------------------------------------------
@@ -60,8 +68,8 @@ def main():
 						i=0
 						for vertex in element.vertices:
 							coefficient = -1.0 * diffusiveFlux[i]
-							matrix[backwardVertexHandle][vertex.handle] += coefficient
-							matrix[forwardVertexHandle][vertex.handle] -= coefficient
+							add(backwardVertexHandle, vertex.handle, coefficient)
+							add(forwardVertexHandle, vertex.handle, -coefficient)
 							i+=1
 
 		# Transient Term
@@ -75,7 +83,7 @@ def main():
 				for vertex in element.vertices:
 					independent[vertex.handle] += element.subelementVolumes[local] * accumulation * prevTemperatureField[vertex.handle]
 					if iteration == 0:
-							matrix[vertex.handle][vertex.handle] += element.subelementVolumes[local] * accumulation
+						add(vertex.handle, vertex.handle, element.subelementVolumes[local] * accumulation)						
 					local += 1
 
 		# Neumann Boundary Condition
@@ -91,14 +99,17 @@ def main():
 		if iteration == 0:
 			for bCondition in problemData.dirichletBoundaries["temperature"]:
 				for vertex in bCondition.boundary.vertices:
-					matrix[vertex.handle] = np.zeros(grid.vertices.size)
-					matrix[vertex.handle][vertex.handle] = 1.0
+					matrixVals = [val for coord, val in zip(coords, matrixVals) if coord[0] != vertex.handle]
+					coords 	   = [coord for coord in coords if coord[0] != vertex.handle]
+					add(vertex.handle, vertex.handle, 1.0)
 
 		#-------------------------SOLVE LINEAR SYSTEM-------------------------------
-		# Since the problem is linear, and the matrix doesn't change along the iterations
 		if iteration == 0:
-			inverseMatrix = np.linalg.inv( matrix )
-		temperatureField = np.matmul( inverseMatrix, independent )
+			matrix = sparse.coo_matrix( (matrixVals, zip(*coords)) )
+			matrix = sparse.csc_matrix( matrix )
+			inverseMatrix = sparse.linalg.inv( matrix )
+		temperatureField = inverseMatrix * independent
+
 
 		#-------------------------PRINT ITERATION DATA------------------------------
 		if iteration > 0:

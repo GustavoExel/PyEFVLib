@@ -3,6 +3,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
 from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver
 import numpy as np
+from scipy import sparse
+import scipy.sparse.linalg
 
 #-------------------------SETTINGS----------------------------------------------
 problemData = ProblemData( "stress_equilibrium" )
@@ -22,8 +24,13 @@ numberOfVertices = grid.vertices.size
 displacements = np.repeat(problemData.initialValue["u"], 2*numberOfVertices)
 prevDisplacements = np.repeat(problemData.initialValue["u"], numberOfVertices)
 
-matrix = np.zeros([2*numberOfVertices, 2*numberOfVertices])
+coords,matrixVals = [], []
 #---------------------------HELPER FUNCTIONS------------------------------------
+def add(i, j, val):
+	global coords, matrixVals
+	coords.append((i,j))
+	matrixVals.append(val)
+
 def getConstitutiveMatrix(region):
 	shearModulus = problemData.propertyData[region.handle]["ShearModulus"]
 	poissonsRatio = problemData.propertyData[region.handle]["PoissonsRatio"]
@@ -78,10 +85,11 @@ for region in grid.regions:
 			local=0
 			for vertex in element.vertices:
 				for neighborVertex in [backwardVertexHandle, forwardVertexHandle]:
-					matrix[U(neighborVertex)][U(vertex.handle)] += matrixCoefficient[0][0][local]
-					matrix[U(neighborVertex)][V(vertex.handle)] += matrixCoefficient[0][1][local]
-					matrix[V(neighborVertex)][U(vertex.handle)] += matrixCoefficient[1][0][local]
-					matrix[V(neighborVertex)][V(vertex.handle)] += matrixCoefficient[1][1][local]
+					add( U(neighborVertex), U(vertex.handle), matrixCoefficient[0][0][local] )
+					add( U(neighborVertex), V(vertex.handle), matrixCoefficient[0][1][local] )
+					add( V(neighborVertex), U(vertex.handle), matrixCoefficient[1][0][local] )
+					add( V(neighborVertex), V(vertex.handle), matrixCoefficient[1][1][local] )
+
 					matrixCoefficient *= -1
 				local+=1
 
@@ -105,18 +113,24 @@ for bc in problemData.boundaryConditions:
 	if uBoundaryType == "DIRICHLET":
 		for vertex in boundary.vertices:
 			independent[vertex.handle] = bc["u"].getValue(vertex.handle)
-			matrix[vertex.handle] = np.zeros(2*numberOfVertices)
-			matrix[vertex.handle][vertex.handle] = 1.0
+			matrixVals = [val for coord, val in zip(coords, matrixVals) if coord[0] != vertex.handle]
+			coords 	   = [coord for coord in coords if coord[0] != vertex.handle]
+			add(vertex.handle, vertex.handle, 1.0)
+
 
 	if vBoundaryType == "DIRICHLET":
 		for vertex in boundary.vertices:
 			independent[vertex.handle+numberOfVertices] = bc["v"].getValue(vertex.handle)
-			matrix[vertex.handle+numberOfVertices] = np.zeros(2*numberOfVertices)
-			matrix[vertex.handle+numberOfVertices][vertex.handle+numberOfVertices] = 1.0
+			matrixVals = [val for coord, val in zip(coords, matrixVals) if coord[0] != vertex.handle+numberOfVertices]
+			coords 	   = [coord for coord in coords if coord[0] != vertex.handle+numberOfVertices]
+			add(vertex.handle+numberOfVertices, vertex.handle+numberOfVertices, 1.0)
+
 
 
 #-------------------------SOLVE LINEAR SYSTEM-------------------------------
-displacements = np.linalg.solve(matrix, independent)
+matrix = sparse.coo_matrix( (matrixVals, zip(*coords)) )
+matrix = sparse.csc_matrix( matrix )
+displacements = scipy.sparse.linalg.spsolve(matrix, independent)
 
 #-------------------------SAVE RESULTS--------------------------------------
 saver.save('u', displacements[:numberOfVertices], currentTime)

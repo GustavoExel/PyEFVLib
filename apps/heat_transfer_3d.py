@@ -95,7 +95,10 @@ def main():
 					matrix[vertex.handle][vertex.handle] = 1.0
 
 		#-------------------------SOLVE LINEAR SYSTEM-------------------------------
-		temperatureField = np.linalg.solve(matrix, independent)
+		# Since the problem is linear, and the matrix doesn't change along the iterations
+		if iteration == 0:
+			inverseMatrix = np.linalg.inv( matrix )
+		temperatureField = np.matmul( inverseMatrix, independent )
 
 		#-------------------------PRINT ITERATION DATA------------------------------
 		if iteration > 0:

@@ -12,12 +12,13 @@ if '--help' in sys.argv:
 	print('-g\t for show results graphicaly')
 	print('-s\t for verbosity 0')
 	print('-1d\t compare 1d analytical with numerical solution along a graph')
-	print('-2d\t show 2d analytical solution colorplot. Useful for really discrepant differences\n')
+	print('-2d\t show 2d analytical solution colorplot. Useful for really discrepant differences')
+	print('--extension=cgns for output file in cgns extension\n')
 	exit(0)
 
 savers = {'cgns': CgnsSaver, 'csv': CsvSaver}
 model = 'heat_transfer_2d'
-extension = 'csv'
+extension = 'csv' if not '--extension=cgns' in sys.argv else 'cgns'
 if len(sys.argv)>1 and not '-' in sys.argv[1]: model=sys.argv[1]
 #-------------------------SETTINGS----------------------------------------------
 initialTime = time.time()

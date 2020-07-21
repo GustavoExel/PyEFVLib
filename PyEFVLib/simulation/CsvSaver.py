@@ -25,6 +25,13 @@ class CsvSaver(Saver):
 
 		data = np.array([X, Y, Z, *fieldData]).T
 
+		# print(os.path.dirname(self.outputPath))
+		if not os.path.isdir(os.path.dirname(self.outputPath)):
+			os.makedirs(os.path.dirname(self.outputPath))
+
+		if os.path.isfile(self.outputPath):
+			os.remove(self.outputPath)
+
 		with open(self.outputPath, "w") as f:
 			f.write("\"{}\"\n".format( "\", \"".join(labels) ))
 			# f.write("{}\n".format( ", ".join([str(n) for n in timeData]) ))

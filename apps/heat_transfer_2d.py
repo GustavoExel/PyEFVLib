@@ -7,7 +7,7 @@ import scipy.sparse.linalg
 import time
 
 if '--help' in sys.argv:
-	print('\npython main.py workspace_file for opening a described model in workspace\n')
+	print('\npython apps/heat_transfer_2d.py workspace_file for opening a described model in workspace\n')
 	print('-p\t for permanent regime (without the accumulation term)')
 	print('-g\t for show results graphicaly')
 	print('-s\t for verbosity 0')

@@ -1,21 +1,31 @@
 import numpy as np
+from numpy import pi, sin, cos, tan, arcsin, arccos, arctan, sinh, cosh, tanh, arcsinh, arccosh, arctanh, sqrt, e , log, exp, inf, mod, floor
 
-class DirichletBoundaryCondition:
+def getFunction(expr):
+	def function(x,y,z,t):
+		return eval( expr.replace('x',str(x)).replace('y',str(y)).replace('z',str(z)).replace('t',str(t)) )
+	return function
+
+class BoundaryCondition:
+	def __init__(self, grid, boundary, value, handle, expression=False):
+		self.grid = grid
+		self.boundary = boundary
+		self.value = value
+		self.handle = handle
+		self.expression = expression
+
+		if self.expression:
+			self.function = getFunction(value)
+
+	def getValue(self, index, time=0.0): # Index argument for future variable boundaryCondition
+		if self.expression:
+			x,y,z = self.grid.vertices[index].getCoordinates()
+			return self.function(x,y,z,time)
+		else:
+			return self.value
+
+class DirichletBoundaryCondition(BoundaryCondition):
 	__type__="DIRICHLET"
-	def __init__(self, boundary, value, handle):
-		self.boundary = boundary
-		self.value = value
-		self.handle = handle
 
-	def getValue(self, index): # Index argument for future variable boundaryCondition
-		return self.value
-
-class NeumannBoundaryCondition:
+class NeumannBoundaryCondition(BoundaryCondition):
 	__type__="NEUMANN"
-	def __init__(self, boundary, value, handle):
-		self.boundary = boundary
-		self.value = value
-		self.handle = handle
-
-	def getValue(self, index): # Index argument for future variable boundaryCondition
-		return self.value

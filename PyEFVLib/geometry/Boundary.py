@@ -3,6 +3,22 @@ from PyEFVLib.geometry.Point import Point
 from PyEFVLib.geometry.OuterFace import OuterFace
 import numpy as np
 
+class Boundary:
+	def __init__(self, name, handleOfFirstOuterFace, handle):
+		self.name = name
+		self.handleOfFirstOuterFace = handleOfFirstOuterFace
+		self.handle = handle
+		self.vertices = np.array([])
+		self.facets = np.array([])
+
+	def addVertex(self, vertex):
+		self.vertices = np.append(self.vertices, vertex)
+
+	def addFacet(self, facet):
+		self.facets = np.append(self.facets, facet)
+
+
+
 class BoundaryData:
 	def __init__(self, name, connectivity, handle):
 		self.name = name
@@ -118,17 +134,3 @@ class BoundaryBuilder:
 
 			outerFace.area = Point(*(facet.area.getCoordinates() / facet.vertices.size))
 			facet.addOuterFace(outerFace)
-
-class Boundary:
-	def __init__(self, name, handleOfFirstOuterFace, handle):
-		self.name = name
-		self.handleOfFirstOuterFace = handleOfFirstOuterFace
-		self.handle = handle
-		self.vertices = np.array([])
-		self.facets = np.array([])
-
-	def addVertex(self, vertex):
-		self.vertices = np.append(self.vertices, vertex)
-
-	def addFacet(self, facet):
-		self.facets = np.append(self.facets, facet)

@@ -64,11 +64,11 @@ class BoundaryConditions:
 
 				bData = self.boundaryConditionData[variableName][boundary.name]
 				if bData["condition"] == "DIRICHLET":
-					dirichletBoundaries = np.append(dirichletBoundaries, DirichletBoundaryCondition(boundary, bData["value"], i) )
+					dirichletBoundaries = np.append(dirichletBoundaries, DirichletBoundaryCondition(self.grid, boundary, bData["value"], i, expression=(bData["type"] == "VARIABLE") ) )
 					boundaryConditions[boundary.name][variableName] = dirichletBoundaries[-1]#{"boundary":dirichletBoundaries[-1], 'type':"DIRICHLET"}
 
 				elif bData["condition"] == "NEUMANN":
-					neumannBoundaries = np.append(neumannBoundaries, NeumannBoundaryCondition(boundary, bData["value"], i) )
+					neumannBoundaries = np.append(neumannBoundaries, NeumannBoundaryCondition(self.grid, boundary, bData["value"], i, expression=(bData["type"] == "VARIABLE") ) )
 					boundaryConditions[boundary.name][variableName] = neumannBoundaries[-1]#{"boundary":neumannBoundaries[-1], 'type':"NEUMANN"}
 
 				else:

@@ -1,5 +1,5 @@
 {
-    "Output" : "${LIB}/results/heat_transfer_2d/",
+    "Output" : "${LIB}/results/heat_transfer_2d/pipe/",
 
     "Boundary" : "${DIR}/boundaryConditions/",
 

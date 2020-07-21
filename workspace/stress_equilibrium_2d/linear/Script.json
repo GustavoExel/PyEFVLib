@@ -1,5 +1,5 @@
 {
-    "Output" : "${LIB}/results/stress_equilibrium/",
+    "Output" : "${LIB}/results/stress_equilibrium/linear/",
 
     "Boundary" : "${DIR}/boundaryConditions/",
 

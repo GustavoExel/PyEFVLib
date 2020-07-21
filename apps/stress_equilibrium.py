@@ -7,7 +7,7 @@ from scipy import sparse
 import scipy.sparse.linalg
 
 #-------------------------SETTINGS----------------------------------------------
-problemData = ProblemData( "stress_equilibrium" )
+problemData = ProblemData( "stress_equilibrium_2d/truss" )
 
 reader = MSHReader(problemData.paths["Grid"])
 grid = Grid(reader.getData())
@@ -155,10 +155,6 @@ def show_1d(fieldValues, name):
 	y, vals = np.array(y), np.array(vals)
 	
 	a_vals=y*(top_stress+density*gravity*(height-y/2))/(2*shearModulus+lameParameter)
-	print("sum(vals): ", sum(vals)) 
-	print("max(vals): ", max(vals)) 
-	print("min(vals): ", min(vals)) 
-	print("avg(vals): ", sum(vals)/len(vals))
 	plt.figure()
 	plt.scatter(y,vals, marker='.', color='k', label="Numeric results")
 	plt.plot(y,a_vals, label="Analytical solution")

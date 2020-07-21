@@ -1,13 +1,11 @@
 {
-    "Root" : "/home/gustavoe/Documents/Sinmec/HTRelated/PyEFVLib/",
+    "Output" : "${LIB}/results/heat_transfer_1d/",
 
-    "Output" : "results/heat_transfer_1d/",
+    "Boundary" : "${DIR}/boundaryConditions/",
 
-    "Boundary" : "workspace/heat_transfer_1d/boundaryConditions/",
+    "Property" : "${DIR}/properties.json",
 
-    "Property" : "workspace/heat_transfer_1d/properties.json",
+    "Numerical" : "${DIR}/NumericalSettings.json",
 
-    "Numerical" : "workspace/heat_transfer_1d/NumericalSettings.json",
-
-    "Grid" : "meshes/Fine.msh"
+    "Grid" : "${LIB}/meshes/Fine.msh"
 }

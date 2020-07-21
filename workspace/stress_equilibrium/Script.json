@@ -1,13 +1,11 @@
 {
-    "Root" : "/home/gustavoe/Documents/Sinmec/HTRelated/PyEFVLib/",
+    "Output" : "${LIB}/results/stress_equilibrium/",
 
-    "Output" : "results/stress_equilibrium/",
+    "Boundary" : "${DIR}/boundaryConditions/",
 
-    "Boundary" : "workspace/stress_equilibrium/boundaryConditions/",
+    "Property" : "${DIR}/properties.json",
 
-    "Property" : "workspace/stress_equilibrium/properties.json",
+    "Numerical" : "${DIR}/NumericalSettings.json",
 
-    "Numerical" : "workspace/stress_equilibrium/NumericalSettings.json",
-
-    "Grid" : "meshes/Square.msh"
+    "Grid" : "${LIB}/meshes/Square.msh"
 }

@@ -1,13 +1,11 @@
 {
-    "Root" : "/home/gustavoe/Documents/Sinmec/HTRelated/PyEFVLib/",
+    "Output" : "${LIB}/results/test/",
 
-    "Output" : "results/test/",
+    "Boundary" : "${DIR}/boundaryConditions/",
 
-    "Boundary" : "workspace/test/boundaryConditions/",
+    "Property" : "${DIR}/properties.json",
 
-    "Property" : "workspace/test/properties.json",
+    "Numerical" : "${DIR}/NumericalSettings.json",
 
-    "Numerical" : "workspace/test/NumericalSettings.json",
-
-    "Grid" : "workspace/test/pipe.msh"
+    "Grid" : "${DIR}/pipe.msh"
 }

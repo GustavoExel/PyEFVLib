@@ -101,4 +101,20 @@ class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 
 		with open(self.scriptPath, "r") as f:
 			self.paths = json.load(f)
-		self.paths = { key : os.path.join(self.libraryPath, self.paths[key]) for key in self.paths}
+
+		self.replaceVariables()
+
+	def replaceVariables(self):
+		"""
+		When a workspace folder is copyied into another, some informations must be changed all the time,
+		because inside the Script.json the directory in which Script.json and the other files is explicit,
+		giving more freedom. However, this is a pain every time a folder is copied. So to correct this problem
+		this function will substitute every "keyword" or "variable", which will be indicated by ${var}.
+		"""
+		DIR = os.path.join(self.libraryPath, "workspace", self.simulatorName)
+		variables = {"DIR" : DIR, "LIB" : self.libraryPath}
+		for key in self.paths.keys():
+			for variable in variables:
+				var = "${%s}" % variable
+				if var in self.paths[key]:
+					self.paths[key] = self.paths[key].replace( var, variables[variable] )

@@ -7,6 +7,6 @@
 
         "Conductivity": 22,
 
-        "HeatGeneration": 5000.0
+        "HeatGeneration": 0.0
     }
 }

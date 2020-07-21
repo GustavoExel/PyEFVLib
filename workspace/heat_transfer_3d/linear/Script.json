@@ -1,5 +1,5 @@
 {
-    "Output" : "${LIB}/results/heat_transfer_2d/linear/",
+    "Output" : "${LIB}/results/heat_transfer_3d/linear/",
 
     "Boundary" : "${DIR}/boundaryConditions/",
 
@@ -7,5 +7,5 @@
 
     "Numerical" : "${DIR}/NumericalSettings.json",
 
-    "Grid" : "${LIB}/meshes/Fine.msh"
+    "Grid" : "${LIB}/meshes/Box.msh"
 }

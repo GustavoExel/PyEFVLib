@@ -11,6 +11,7 @@ class Grid:
 		if gridData.__class__ != GridData:
 			raise Exception("Grid argument must be of class GridData")
 		self.gridData = gridData
+		self.dimension = gridData.dimension
 		self.build()
 
 	def build(self):

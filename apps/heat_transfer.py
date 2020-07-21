@@ -29,6 +29,7 @@ grid = Grid(reader.getData())
 problemData.grid = grid
 problemData.read()
 
+dimension = grid.dimension
 timeStep = problemData.timeStep
 currentTime = 0.0
 
@@ -80,7 +81,7 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 			conductivity = problemData.propertyData[region.handle]["Conductivity"]
 			for element in region.elements:
 				for innerFace in element.innerFaces:
-					diffusiveFlux = conductivity * np.matmul( np.transpose(innerFace.globalDerivatives) , innerFace.area.getCoordinates()[:-1] )
+					diffusiveFlux = conductivity * np.matmul( np.transpose(innerFace.globalDerivatives) , innerFace.area.getCoordinates()[:dimension] )
 					backwardVertexHandle = element.vertices[element.shape.innerFaceNeighborVertices[innerFace.local][0]].handle
 					forwardVertexHandle = element.vertices[element.shape.innerFaceNeighborVertices[innerFace.local][1]].handle
 					

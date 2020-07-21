@@ -43,6 +43,7 @@ class MSHReader:
 		shapeCodes = {"line":"12", "triangle":"22", "quadrilateral":"32", "tetrahedron":"42"}
 		self.shapes = { shape : [ (e[1],e[2]) for e in self.connectivitiesFileData if e[0] == shapeCodes[shape] ] for shape in shapeCodes.keys() }
 
+		self.gridDimension = max(self.sectionsFileData, key=lambda p:p[0])[0]
 
 	def getData(self):
 		elementsConnectivities, regionNames, regionsElementsIndexes = [], [], []
@@ -65,6 +66,7 @@ class MSHReader:
 				boundariesIndexes.append( list(range(indexOfFirstConnectivity, indexOfFirstConnectivity+len(sectionElements))) )
 
 		gridData = GridData(self.path)
+		gridData.setDimension(self.gridDimension)
 		gridData.setVertices(self.verticesFileData)
 		gridData.setElementConnectivity(elementsConnectivities)
 		gridData.setRegions(regionNames, regionsElementsIndexes)

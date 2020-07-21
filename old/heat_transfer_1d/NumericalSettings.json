@@ -1,6 +1,0 @@
-{
-    "TimeStep": 100,
-    "FinalTime": 10000000000.0,
-    "Tolerance": 1e-8,
-    "MaximumNumberOfIterations" : 1000000
-}

@@ -7,7 +7,7 @@ from scipy import sparse
 import scipy.sparse.linalg
 
 #-------------------------SETTINGS----------------------------------------------
-problemData = ProblemData('heat_transfer_2d')
+problemData = ProblemData('heat_transfer_2d/linear')
 
 reader = MSHReader(problemData.paths["Grid"])
 grid = Grid(reader.getData())

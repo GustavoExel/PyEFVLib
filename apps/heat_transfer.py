@@ -235,3 +235,6 @@ if '-2d' in sys.argv and not '-g' in sys.argv:
 	print("Max Error: {:.3e}".format(max(err)))
 	print("Mean Error: {:.3e}".format(sum(err)/len(err)))
 	print("Euclidean Error: {:.3e}".format(np.sqrt(sum([v.volume*e**2 for v,e in zip(grid.vertices, err)]))))
+
+if '--paraview' in sys.argv:
+	os.system(f"/usr/bin/paraview {saver.outputPath}")

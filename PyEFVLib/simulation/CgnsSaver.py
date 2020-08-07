@@ -25,7 +25,7 @@ class CgnsSaver(Saver):
 		for fieldName in self.fields.keys():
 			os.remove(os.path.join(self.binPath, fieldName) + ".txt")
 
-		self.finalize = True
+		self.finalized = True
 
 	def createFile(self):
 		# Check existing Results.cgns, if so remove it

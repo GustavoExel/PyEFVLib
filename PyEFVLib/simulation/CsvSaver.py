@@ -38,4 +38,4 @@ class CsvSaver(Saver):
 			for line in data:
 				f.write("{}\n".format( ",".join([str(n) for n in line]) ))
 
-		self.finalize = True
+		self.finalized = True

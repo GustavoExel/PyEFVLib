@@ -25,10 +25,11 @@ grid   	  = Grid(reader.getData())
 saver = CgnsSaver(grid, outputPath, os.path.join(os.path.dirname(__file__),os.path.pardir))
 
 # First we'll assume that the data is ordered acording to the msh file
-i=0.0
 for columnLabel in data.columns[3:]:
 	columnData = data[columnLabel]
 	fieldName = " - ".join( columnLabel.split(" - ")[1:] )
-	saver.save(fieldName, data[columnLabel], i)
-	i+=1.0
+	timeStep = int( columnLabel.split(" - ")[0].replace("TimeStep", "") )
+	saver.save(fieldName, data[columnLabel], timeStep)
 saver.finalize()
+
+print(f"Output Path: {saver.outputPath}")

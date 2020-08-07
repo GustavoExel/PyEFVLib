@@ -24,7 +24,7 @@ class Saver:
 			self.finalize()
 
 	def finalize(self):
-		self.finalize = True
+		self.finalized = True
 
 	def createFile(self):
 		pass

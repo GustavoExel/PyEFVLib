@@ -4,7 +4,7 @@ import subprocess, os, sys
 class Saver:
 	def __init__(self, grid, outputPath, basePath, extension): 
 		self.grid = grid
-		self.outputPath = outputPath + "Results." + extension
+		self.outputPath = os.path.join( outputPath , "Results." + extension )
 		self.basePath = basePath
 		self.timeSteps  = np.array([])
 		self.fields = dict()

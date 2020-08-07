@@ -20,7 +20,7 @@ class CsvSaver(Saver):
 		timeData = ["", "", ""]
 
 		fieldData = np.array([ self.fields[fieldName][tsIdx] for tsIdx in range( self.timeSteps.size ) for fieldName in self.fields.keys() ])
-		labels += [ f"TimeStep{tsIdx} - {fieldName}" for tsIdx in range( self.timeSteps.size ) for fieldName in self.fields.keys() ]
+		labels += [ f"TimeStep{tsIdx+1} - {fieldName}" for tsIdx in range( self.timeSteps.size ) for fieldName in self.fields.keys() ]
 		timeData += [ timeStepSize for timeStepSize in self.timeSteps for fieldIdx in range( len(self.fields) ) ]
 
 		data = np.array([X, Y, Z, *fieldData]).T
@@ -33,9 +33,9 @@ class CsvSaver(Saver):
 			os.remove(self.outputPath)
 
 		with open(self.outputPath, "w") as f:
-			f.write("\"{}\"\n".format( "\", \"".join(labels) ))
-			# f.write("{}\n".format( ", ".join([str(n) for n in timeData]) ))
+			f.write("\"{}\"\n".format( "\",\"".join(labels) ))
+			# f.write("{}\n".format( ",".join([str(n) for n in timeData]) ))
 			for line in data:
-				f.write("{}\n".format( ", ".join([str(n) for n in line]) ))
+				f.write("{}\n".format( ",".join([str(n) for n in line]) ))
 
 		self.finalize = True

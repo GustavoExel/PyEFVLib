@@ -133,7 +133,7 @@ while not converged and iteration < problemData.maxNumberOfIterations:
 
 	#-------------------------PRINT ITERATION DATA------------------------------
 	if iteration > 0 and not '-s' in sys.argv:
-		print("{:>9}\t{:>14e}\t{:>14e}\t{:>14e}".format(iteration, currentTime, timeStep, difference))
+		print("{:>9}\t{:>14.2e}\t{:>14.2e}\t{:>14.2e}".format(iteration, currentTime, timeStep, difference))
 
 	#-------------------------INCREMENT TIME------------------------------------
 	currentTime += timeStep

@@ -1,0 +1,11 @@
+{
+    "Output" : "${LIB}/results/heat_transfer_3d/geos/prisms/",
+
+    "Boundary" : "${DIR}/boundaryConditions/",
+
+    "Property" : "${DIR}/properties.json",
+
+    "Numerical" : "${DIR}/NumericalSettings.json",
+
+    "Grid" : "${LIB}/meshes/3DGeometries/Prisms.msh"
+}

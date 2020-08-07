@@ -1,9 +1,9 @@
 {
     "BODY":
     {
-    	"Density": 2700,
-        "PoissonsRatio": 2.0e-1,
-        "ShearModulus": 6.0e+6,
+    	"Density": 1800.0,
+        "PoissonsRatio": 0.4,
+        "ShearModulus": 6.0e+06,
         "Gravity": -9.81
     }
 }

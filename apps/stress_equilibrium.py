@@ -1,7 +1,7 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
-from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver
+from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver, CgnsSaver
 import numpy as np
 from scipy import sparse
 import scipy.sparse.linalg
@@ -14,8 +14,8 @@ grid = Grid(reader.getData())
 problemData.grid = grid
 problemData.read()
 
-from PyEFVLib.boundaryConditionPrinter import stressEquilibriumBoundaryConditionsPrinter
-stressEquilibriumBoundaryConditionsPrinter(problemData.boundaryConditions)
+# from PyEFVLib.boundaryConditionPrinter import stressEquilibriumBoundaryConditionsPrinter
+# stressEquilibriumBoundaryConditionsPrinter(problemData.boundaryConditions)
 
 saver = CsvSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
@@ -156,10 +156,12 @@ def show_1d(fieldValues, name):
 	
 	a_vals=y*(top_stress+density*gravity*(height-y/2))/(2*shearModulus+lameParameter)
 	plt.figure()
-	plt.scatter(y,vals, marker='.', color='k', label="Numeric results")
-	plt.plot(y,a_vals, label="Analytical solution")
+	plt.scatter(y,1000*vals, marker='.', color='k', label="Resultados Numéricos")
+	plt.plot(y,1000*a_vals, label="Solução Analítica")
+	plt.xlabel("X (m)")
+	plt.ylabel("v (mm)")
 	plt.legend()	
 	plt.title(name)
 
-show_1d(displacements[numberOfVertices:], "Y displacement (v) along beam")
-plt.show()
+# show_1d(displacements[numberOfVertices:], "Deslocamento em y")
+# plt.show()

@@ -185,56 +185,8 @@ if '-g' in sys.argv:
 
 	plt.pcolor(Xi,Yi,nTi, cmap=CM( cm.get_cmap("RdBu",64)(np.linspace(1,0,64)) )) # Makes BuRd instead of RdBu
 	plt.title("Numerical Temperature")
-	plt.colorbar()	
-
-	if '-1d' in sys.argv:
-		from workspace.heat_transfer_1d.analyticalSolution import analyticalSolution_X
-		plt.figure()
-
-		x=np.linspace(0,1,200)
-		X,T = zip(*[(x,t) for x,y,t in zip(X,Y,temperatureField) if y==1])
-		plt.plot(x,[analyticalSolution_X(xx) for xx in x], color='k', label='Analytical Results')
-		plt.scatter(X,T, marker='X', color='r', label='Numerical Results')
-		plt.xlabel("X (m)")
-		plt.ylabel("Temperature (K)")
-		plt.legend()
-
-		err = [abs(T - analyticalSolution_X(v.getCoordinates()[0])) for v,T in zip(grid.vertices,temperatureField)]
-		print("Max Error: {:.3e}".format(max(err)))
-		print("Mean Error: {:.3e}".format(sum(err)/len(err)))
-		print("Euclidean Error: {:.3e}".format(np.sqrt(sum([v.volume*e**2 for v,e in zip(grid.vertices, err)]))))
-
-	elif '-2d' in sys.argv:
-		from workspace.sine_distribution.analyticalSolution import analyticalSolution_XY
-		plt.figure()
-		aT  = [analyticalSolution_XY(x,y) for x,y in zip(X,Y)]
-		aTi = griddata((X,Y), aT, (Xi,Yi), method='linear')
-		plt.pcolor(Xi,Yi,aTi, cmap=CM( cm.get_cmap("RdBu",64)(np.linspace(1,0,64)) ))
-		plt.title("Analytical Temperature")
-		plt.colorbar()
-
-		err = [abs(T - analyticalSolution_XY(*v.getCoordinates()[:-1])) for v,T in zip(grid.vertices,temperatureField)]
-		print("Max Error: {:.3e}".format(max(err)))
-		print("Mean Error: {:.3e}".format(sum(err)/len(err)))
-		print("Euclidean Error: {:.3e}".format(np.sqrt(sum([v.volume*e**2 for v,e in zip(grid.vertices, err)]))))
-
-
+	plt.colorbar()
 	plt.show()
-
-if '-1d' in sys.argv and not '-g' in sys.argv:
-	from workspace.heat_transfer_1d.analyticalSolution import analyticalSolution_X
-	err = [abs(T - analyticalSolution_X(v.getCoordinates()[0])) for v,T in zip(grid.vertices,temperatureField)]
-	print("Max Error: {:.3e}".format(max(err)))
-	print("Mean Error: {:.3e}".format(sum(err)/len(err)))
-	print("Euclidean Error: {:.3e}".format(np.sqrt(sum([v.volume*e**2 for v,e in zip(grid.vertices, err)]))))
-
-
-if '-2d' in sys.argv and not '-g' in sys.argv:
-	from workspace.sine_distribution.analyticalSolution import analyticalSolution_XY
-	err = [abs(T - analyticalSolution_XY(*v.getCoordinates()[:-1])) for v,T in zip(grid.vertices,temperatureField)]
-	print("Max Error: {:.3e}".format(max(err)))
-	print("Mean Error: {:.3e}".format(sum(err)/len(err)))
-	print("Euclidean Error: {:.3e}".format(np.sqrt(sum([v.volume*e**2 for v,e in zip(grid.vertices, err)]))))
 
 if '--paraview' in sys.argv:
 	os.system(f"/usr/bin/paraview {saver.outputPath}")

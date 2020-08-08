@@ -18,6 +18,6 @@
     "NORTH": {
         "condition": "NEUMANN",
         "type": "CONSTANT",
-        "value": 4900.0
+        "value": -490.0
     }
 }

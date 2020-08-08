@@ -163,5 +163,5 @@ def show_1d(fieldValues, name):
 	plt.legend()	
 	plt.title(name)
 
-# show_1d(displacements[numberOfVertices:], "Deslocamento em y")
-# plt.show()
+show_1d(displacements[numberOfVertices:], "Deslocamento em y")
+plt.show()

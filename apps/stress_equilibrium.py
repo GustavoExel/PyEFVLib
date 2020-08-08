@@ -7,7 +7,7 @@ from scipy import sparse
 import scipy.sparse.linalg
 
 #-------------------------SETTINGS----------------------------------------------
-problemData = ProblemData( "stress_equilibrium_2d/truss" )
+problemData = ProblemData( "stress_equilibrium_2d/linear" )
 
 reader = MSHReader(problemData.paths["Grid"])
 grid = Grid(reader.getData())

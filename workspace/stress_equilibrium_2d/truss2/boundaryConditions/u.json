@@ -1,0 +1,18 @@
+{
+    "InitialValue": 0.0,
+    "left_base": {
+        "condition": "DIRICHLET",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "right_base": {
+        "condition": "DIRICHLET",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "bridge_floor": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    }
+}

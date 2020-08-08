@@ -1,0 +1,11 @@
+{
+    "Output" : "${LIB}/results/stress_equilibrium/truss2/",
+
+    "Boundary" : "${DIR}/boundaryConditions/",
+
+    "Property" : "${DIR}/properties.json",
+
+    "Numerical" : "${DIR}/NumericalSettings.json",
+
+    "Grid" : "${LIB}/meshes/truss2.msh"
+}

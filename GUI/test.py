@@ -29,21 +29,6 @@ class Application():
 		self.BCFrame = tk.LabelFrame(self.canvas, text="Boundary Conditions Settings")
 		self.BCFrame.place(relx=0.02, rely=0.22, relheight=0.63, relwidth=0.96, anchor="nw")
 
-		self.BCScrollCanvas = tk.Canvas(self.BCFrame, bg="blue")
-		self.BCScrollCanvas.pack(side="right", fill="both", expand="yes")
-
-		self.BCScrollBar = tk.Scrollbar(self.BCFrame, orient="vertical", command=self.BCScrollCanvas.yview)
-		self.BCScrollBar.place(relx=1.0,rely=0.50,relheight=1.0,width=15,anchor="e")
-
-		self.BCScrollCanvas.configure(yscrollcommand=self.BCScrollBar.set)
-		self.BCScrollCanvas.bind("<Configure>", lambda event: self.BCScrollCanvas.configure(scrollregion=self.BCScrollCanvas.bbox("all")))
-
-		self.BCWindow = tk.Frame(self.BCScrollCanvas, bg="yellow")
-		self.BCScrollCanvas.create_window((0,0), window=self.BCWindow, anchor="n")
-
-		self.BCArea = tk.Canvas(self.BCWindow, width=WIDTH, height=HEIGHT)
-		self.BCArea.pack(side="left", fill="both", expand="yes")
-
 		self.bottomFrame = tk.Frame(self.canvas)
 		self.bottomFrame.place(relx=0.02, rely=0.87, relheight=0.1, relwidth=0.96, anchor="nw" )
 
@@ -56,13 +41,18 @@ class Application():
 		self.root.mainloop()
 
 	def placeBCForms(self):
-		boundariesNames = gridData = MSHReader(self.fileLabel["text"]).getData().boundariesNames
+		self.boundariesNames = gridData = MSHReader(self.fileLabel["text"]).getData().boundariesNames
 		
-		i=0
-		for boundaryName in boundariesNames:
-			label = tk.Label(self.BCArea, text=boundaryName)
-			label.grid(row=i, column=0)
-			i+=1
+		countLabel = tk.Label(self.BCFrame, text=f"1/{len(self.boundariesNames)}")
+		countLabel.place(relx=0.5,rely=0.0,anchor="n")
+
+		boundaryNameLabel = tk.Label(self.BCFrame, text=self.boundariesNames[0])
+		boundaryNameLabel.place(relx=0.5,rely=0.1,anchor="nw")
+		# i=0
+		# for boundaryName in self.boundariesNames:
+		# 	label = tk.Label(self.BCFrame, text=boundaryName)
+		# 	label.grid(row=i, column=0)
+		# 	i+=1
 
 	def openFile(self):
 		self.fileLabel["text"] = tk.filedialog.askopenfilename(initialdir="../meshes", title="Select a mesh file", filetypes=(("MSH files", "*.msh"),("All files", "*")))

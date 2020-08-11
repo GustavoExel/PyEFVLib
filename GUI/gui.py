@@ -11,7 +11,7 @@ class Application:
 		self.root.title("PyEFVLib GUI")
 		self.root.bind("<Key>", lambda key: self.root.destroy() if key.char=="\x17" else 0) # Close window if Ctrl+W is pressed
 
-		self.HEIGHT, self.WIDTH = (600, 500)
+		self.HEIGHT, self.WIDTH = (500, 600)
 
 		self.mainPage 		= MainPage(self, self.root)
 		self.bcPage 		= BCPage(self, self.root)
@@ -20,6 +20,32 @@ class Application:
 
 		# Later it'll be mainPage
 		self.bcPage.show()
+
+	def getData(self):
+		self.unitConversions = {
+			"K" : lambda T: T,
+			"°C": lambda T: T+273,
+			"°F": lambda T: (T+459.67)*5/9,
+			"K/m": lambda D: D,
+			"kg/m³": lambda d: d,
+			"g/cm³": lambda d: 1000.0*d,
+			"J/kg.K": lambda Cp: Cp,
+			"W/m.K": lambda k: k,
+			"K/m³": lambda q: q
+		}
+		self.bcData = dict()
+		# Boundary Conditions
+		for boundaryName, entry, unit, conditionType in zip( self.bcPage.boundariesNames, self.bcPage.boundaryValueEntries, self.bcPage.boundaryUnitVars,self.bcPage.boundaryTypeVars ):
+			self.bcData[boundaryName] = {
+				"condition": ["NEUMANN", "DIRICHLET"][conditionType.get()-1],
+				"type": "CONSTANT",
+				"value": self.unitConversions[unit.get()]( float( entry.get() ) )
+			}
+
+		# Properties
+		self.propertiesData = dict()
+		for propertyName, entry, unit in zip( self.propertiesPage.properties, self.propertiesPage.propertyEntries, self.propertiesPage.propertyUnitVars ):
+			self.propertiesData[propertyName] = self.unitConversions[unit.get()]( float( entry.get() ) )
 
 class Page:
 	def __init__(self, app, root):
@@ -130,8 +156,9 @@ class BCPage(Page):
 			nameLabel = ttk.Label(BCWindow, text=boundaryName)
 			nameLabel.grid(row=i, column=0)
 
-			valEntry = ttk.Entry(BCWindow)
+			valEntry = tk.Entry(BCWindow)
 			valEntry.grid(row=i,column=1)
+			print(valEntry.get())
 
 			unitMenu = ttk.OptionMenu(BCWindow, unitVar, *options)
 			unitMenu.grid(row=i, column=2)
@@ -209,22 +236,22 @@ class PropertiesPage(Page):
 		self.propertiesFrame = tk.LabelFrame(self.canvas, text="Material Properties")
 		self.propertiesFrame.place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
 
-		properties = ["Density","HeatCapacity","Conductivity","HeatGeneration"]
-		propertyUnits = {
+		self.properties = ["Density","HeatCapacity","Conductivity","HeatGeneration"]
+		self.propertyUnits = {
 			"Density":       ["kg/m³", "g/cm³"],
 			"HeatCapacity":   ["J/kg.K"],
 			"Conductivity":   ["W/m.K"],
 			"HeatGeneration": ["K/m³"]
 		}
-		propertyEntries = []
-		propertyUnitMenus = []
+		self.propertyEntries = []
+		self.propertyUnitVars = []
 
 		i=0
-		for propertyName in properties:
-			options = propertyUnits[propertyName]
+		for propertyName in self.properties:
+			options = self.propertyUnits[propertyName]
 
 			unitVar = tk.StringVar(self.propertiesFrame)
-			unitVar.set(propertyUnits[propertyName][0])
+			unitVar.set(self.propertyUnits[propertyName][0])
 			bTypeVar = tk.IntVar(self.propertiesFrame)
 
 			nameLabel = ttk.Label(self.propertiesFrame, text=propertyName)
@@ -236,14 +263,15 @@ class PropertiesPage(Page):
 			unitMenu = tk.OptionMenu(self.propertiesFrame, unitVar, *options)
 			unitMenu.grid(row=i, column=2)
 
-			propertyEntries.append(valEntry)
-			propertyUnitMenus.append(unitMenu)
+			self.propertyEntries.append(valEntry)
+			self.propertyUnitVars.append(unitVar)
 			i+=1
 
 		self.populated = True
 
 	def next(self):
-		pass
+		print("Running Simulation...")
+		self.app.getData()
 
 	def prev(self):
 		self.canvas.pack_forget()

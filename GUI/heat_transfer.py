@@ -15,8 +15,8 @@ def main(boundaryConditionData, propertyData, initialValues, timeStep, gridPath,
 
 	saver = CsvSaver(grid, outputPath, libraryPath)
 
-	temperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)
-	prevTemperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)
+	temperatureField = np.repeat(initialValues["temperature"], grid.vertices.size)
+	prevTemperatureField = np.repeat(initialValues["temperature"], grid.vertices.size)
 
 	coords,matrixVals = [], []
 	difference = 0.0

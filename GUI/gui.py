@@ -111,7 +111,7 @@ class BCPage(Page):
 		self.populated = True
 
 	def placeBCForms(self):
-		self.boundariesNames = gridData = MSHReader(self.fileLabel["text"]).getData().boundariesNames
+		self.boundariesNames = MSHReader(self.fileLabel["text"]).getData().boundariesNames
 				
 		BCCanvas = tk.Canvas(self.BCFrame)
 		BCCanvas.pack(side="left", fill="both", expand=True)
@@ -217,12 +217,15 @@ class BCPage(Page):
 	def prev(self):
 		pass
 
-
 class PropertiesPage(Page):
 	def __init__(self, app, root):
 		Page.__init__(self, app, root)
 
 	def populate(self):
+		filePath = self.app.bcPage.fileLabel["text"]
+		regionNames = MSHReader(filePath).getData().regionsNames
+		print(regionNames)
+
 		# For now only one region
 		self.canvas = tk.Canvas(self.root, height=self.HEIGHT, width=self.WIDTH)
 		self.canvas.pack(side="top", fill="both", expand="yes")
@@ -279,7 +282,6 @@ class PropertiesPage(Page):
 	def prev(self):
 		self.canvas.pack_forget()
 		self.app.bcPage.show()
-
 
 class PostPage(Page):
 	def __init__(self, app, root):

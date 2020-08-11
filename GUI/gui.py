@@ -90,6 +90,12 @@ class BCPage(Page):
 		scrollbar = ttk.Scrollbar(self.BCFrame, orient="vertical", command=BCCanvas.yview)
 		scrollbar.pack(side="right", fill="y")
 
+		# with Windows OS
+		self.root.bind("<MouseWheel>", lambda e: BCCanvas.yview_scroll(-1*(event.delta/120), "units"))
+		# with Linux OS
+		self.root.bind("<Button-4>", lambda e: BCCanvas.yview_scroll(-1, "units"))
+		self.root.bind("<Button-5>", lambda e: BCCanvas.yview_scroll(+1, "units"))
+
 		BCWindow = ttk.Frame(BCCanvas)
 		BCWindow.bind("<Configure>", lambda event: BCCanvas.configure(scrollregion=BCCanvas.bbox("all")))
 

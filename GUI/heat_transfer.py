@@ -6,34 +6,18 @@ from scipy import sparse
 import scipy.sparse.linalg
 import time
 
-if '--help' in sys.argv:
-	print('\npython apps/heat_transfer_2d.py workspace_file for opening a described model in workspace\n')
-	print('-p\t for permanent regime (without the accumulation term)')
-	print('-g\t for show results graphicaly')
-	print('-s\t for verbosity 0')
-	print('-1d\t compare 1d analytical with numerical solution along a graph')
-	print('-2d\t show 2d analytical solution colorplot. Useful for really discrepant differences')
-	print('--extension=cgns for output file in cgns extension\n')
-	exit(0)
-
-savers = {'cgns': CgnsSaver, 'csv': CsvSaver}
-model = 'heat_transfer_2d/linear'
-extension = 'csv' if not '--extension=cgns' in sys.argv else 'cgns'
-if len(sys.argv)>1 and not '-' in sys.argv[1]: model=sys.argv[1]
 #-------------------------SETTINGS----------------------------------------------
 initialTime = time.time()
-problemData = ProblemData(model)
-
 reader = MSHReader(problemData.paths["Grid"])
 grid = Grid(reader.getData())
-problemData.setGrid(grid)
+problemData.grid = grid
 problemData.read()
 
 dimension = grid.dimension
 timeStep = problemData.timeStep
 currentTime = 0.0
 
-saver = savers[extension](grid, problemData.paths["Output"], problemData.libraryPath)
+saver = CsvSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
 temperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)
 prevTemperatureField = np.repeat(problemData.initialValue["temperature"], grid.vertices.size)

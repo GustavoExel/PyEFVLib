@@ -11,7 +11,7 @@ problemData = ProblemData('heat_transfer_2d/linear')
 
 reader = MSHReader(problemData.paths["Grid"])
 grid = Grid(reader.getData())
-problemData.grid = grid
+problemData.setGrid(grid)
 problemData.read()
 
 numberOfVertices = grid.vertices.size

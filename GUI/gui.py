@@ -47,6 +47,9 @@ class Application:
 		for propertyName, entry, unit in zip( self.propertiesPage.properties, self.propertiesPage.propertyEntries, self.propertiesPage.propertyUnitVars ):
 			self.propertiesData[propertyName] = self.unitConversions[unit.get()]( float( entry.get() ) )
 
+	def dumpData(self):
+		pass
+
 class Page:
 	def __init__(self, app, root):
 		self.app = app

@@ -11,7 +11,7 @@ problemData = ProblemData( "stress_equilibrium_2d/linear" )
 
 reader = MSHReader(problemData.paths["Grid"])
 grid = Grid(reader.getData())
-problemData.grid = grid
+problemData.setGrid(grid)
 problemData.read()
 
 # from PyEFVLib.boundaryConditionPrinter import stressEquilibriumBoundaryConditionsPrinter

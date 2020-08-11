@@ -5,15 +5,56 @@ from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver
 import tkinter as tk
 from tkinter import filedialog, ttk
 
-class Application():
+class Application:
 	def __init__(self):
-		WIDTH, HEIGHT = 600,500
-
 		self.root = tk.Tk()
 		self.root.title("PyEFVLib GUI")
 		self.root.bind("<Key>", lambda key: self.root.destroy() if key.char=="\x17" else 0) # Close window if Ctrl+W is pressed
 
-		self.canvas = tk.Canvas(self.root, height=HEIGHT, width=WIDTH)
+		self.HEIGHT, self.WIDTH = (600, 500)
+
+		self.mainPage 		= MainPage(self, self.root)
+		self.bcPage 		= BCPage(self, self.root)
+		self.propertiesPage = PropertiesPage(self, self.root)
+		self.postPage 		= PostPage(self, self.root)
+
+		# Later it'll be mainPage
+		self.bcPage.show()
+
+class Page:
+	def __init__(self, app, root):
+		self.app = app
+		self.root = root
+
+		self.HEIGHT, self.WIDTH = self.app.HEIGHT, self.app.WIDTH
+
+		self.populated = False
+
+	def populate(self):
+		self.populated = True
+
+	def show(self):
+		if not self.populated:
+			self.populate()
+		else:
+			self.canvas.pack(side="top", fill="both", expand="yes")
+
+class MainPage(Page):
+	def __init__(self, app, root):
+		Page.__init__(self, app, root)
+
+	def populate(self):
+		pass
+
+	def show(self):
+		pass
+
+class BCPage(Page):
+	def __init__(self, app, root):
+		Page.__init__(self, app, root)
+
+	def populate(self):
+		self.canvas = tk.Canvas(self.root, height=self.HEIGHT, width=self.WIDTH)
 		self.canvas.pack(side="top", fill="both", expand="yes")
 
 		self.openFrame = tk.LabelFrame(self.canvas, text="Open Mesh File")
@@ -29,7 +70,6 @@ class Application():
 		self.BCFrame.place(relx=0.02, rely=0.22, relheight=0.63, relwidth=0.96, anchor="nw")
 
 		# Footer
-
 		self.bottomFrame = tk.Frame(self.canvas)
 		self.bottomFrame.place(relx=0.02, rely=0.87, relheight=0.1, relwidth=0.96, anchor="nw" )
 
@@ -39,6 +79,7 @@ class Application():
 		self.prevButton = tk.Button(self.bottomFrame, text="Prev", command=self.prev)
 		self.prevButton.place(relx=0.78, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
+		self.populated = True
 
 	def placeBCForms(self):
 		self.boundariesNames = gridData = MSHReader(self.fileLabel["text"]).getData().boundariesNames
@@ -133,19 +174,41 @@ class Application():
 		self.placeBCForms()
 
 	def next(self):
-		self.openFrame.destroy()
-		self.BCFrame.destroy()
+		self.canvas.pack_forget()
 
+		self.app.propertiesPage.show()
+
+	def prev(self):
+		pass
+
+
+class PropertiesPage(Page):
+	def __init__(self, app, root):
+		Page.__init__(self, app, root)
+
+	def populate(self):
 		# For now only one region
+		self.canvas = tk.Canvas(self.root, height=self.HEIGHT, width=self.WIDTH)
+		self.canvas.pack(side="top", fill="both", expand="yes")
+
+		self.bottomFrame = tk.Frame(self.canvas)
+		self.bottomFrame.place(relx=0.02, rely=0.87, relheight=0.1, relwidth=0.96, anchor="nw" )
+
+		self.nextButton = tk.Button(self.bottomFrame, text="RUN", command=self.next)
+		self.nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+
+		self.prevButton = tk.Button(self.bottomFrame, text="Prev", command=self.prev)
+		self.prevButton.place(relx=0.78, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
 		self.propertiesFrame = tk.LabelFrame(self.canvas, text="Material Properties")
 		self.propertiesFrame.place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
 
 		properties = ["Density","HeatCapacity","Conductivity","HeatGeneration"]
-		propertyUnits = {"Density":       ["kg/m³", "g/cm³"],
-						"HeatCapacity":   ["J/kg.K"],
-						"Conductivity":   ["W/m.K"],
-						"HeatGeneration": ["K/m³"]
+		propertyUnits = {
+			"Density":       ["kg/m³", "g/cm³"],
+			"HeatCapacity":   ["J/kg.K"],
+			"Conductivity":   ["W/m.K"],
+			"HeatGeneration": ["K/m³"]
 		}
 		propertyEntries = []
 		propertyUnitMenus = []
@@ -155,7 +218,7 @@ class Application():
 			options = propertyUnits[propertyName]
 
 			unitVar = tk.StringVar(self.propertiesFrame)
-			unitVar.set("")
+			unitVar.set(propertyUnits[propertyName][0])
 			bTypeVar = tk.IntVar(self.propertiesFrame)
 
 			nameLabel = ttk.Label(self.propertiesFrame, text=propertyName)
@@ -164,15 +227,34 @@ class Application():
 			valEntry = ttk.Entry(self.propertiesFrame)
 			valEntry.grid(row=i,column=1)
 
-			unitMenu = ttk.OptionMenu(self.propertiesFrame, unitVar, *options)
+			unitMenu = tk.OptionMenu(self.propertiesFrame, unitVar, *options)
 			unitMenu.grid(row=i, column=2)
 
 			propertyEntries.append(valEntry)
 			propertyUnitMenus.append(unitMenu)
 			i+=1
 
-	def prev(self):
+		self.populated = True
+
+	def next(self):
 		pass
 
-app = Application()
-app.root.mainloop()
+	def prev(self):
+		self.canvas.pack_forget()
+		self.app.bcPage.show()
+
+
+class PostPage(Page):
+	def __init__(self, app, root):
+		Page.__init__(self, app, root)
+
+	def populate(self):
+		pass
+
+	def show(self):
+		pass
+
+
+if __name__ == "__main__":
+	app = Application()
+	app.root.mainloop()

@@ -120,7 +120,7 @@ class BCPage(Page):
 		scrollbar.pack(side="right", fill="y")
 
 		# with Windows OS
-		self.root.bind("<MouseWheel>", lambda e: BCCanvas.yview_scroll(-1*(event.delta/120), "units"))
+		self.root.bind("<MouseWheel>", lambda e: BCCanvas.yview_scroll(-1*int(e.delta/120), "units"))
 		# with Linux OS
 		self.root.bind("<Button-4>", lambda e: BCCanvas.yview_scroll(-1, "units"))
 		self.root.bind("<Button-5>", lambda e: BCCanvas.yview_scroll(+1, "units"))

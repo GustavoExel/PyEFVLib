@@ -40,14 +40,14 @@ class BoundaryConditions:
 		# with open(self.paths["Boundary"], "r") as f:
 		# 	data = json.load(f)
 		self.boundaryConditionData = dict()
-		self.initialValue = dict()
+		self.initialValues = dict()
 		for path in list( os.walk(self.paths["Boundary"]) )[0][2]:
 			with open( os.path.join(self.paths["Boundary"], path) , "r") as f:
 				data = json.load(f)
 
 			variableName = path.strip(".json") 
 			self.boundaryConditionData[variableName] = {key : data[key] for key in data.keys() if key != "InitialValue"}
-			self.initialValue[variableName] = data["InitialValue"]
+			self.initialValues[variableName] = data["InitialValue"]
 
 	def build(self):
 		self.dirichletBoundaries = dict()
@@ -96,8 +96,6 @@ class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 	def getPaths(self):
 		self.libraryPath = os.sep.join(os.path.realpath(__file__).split(os.sep)[:-3])		# this is the PyEFVLib path
 		self.scriptPath  = os.path.join(self.libraryPath, self.simulatorName, "Script.json")
-		print(self.libraryPath)
-		print(self.scriptPath)
 		if not os.path.isfile(self.scriptPath):
 			raise(Exception("File {} not found".format(self.scriptPath)))
 
@@ -115,15 +113,15 @@ class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 		Also, for Windows Users, Script.json maintains the "/" separation syntax, and the class handles it;
 		"""
 		DIR = os.path.join(self.libraryPath, self.simulatorName)
-		caseName = self.scriptPath.split("workspace")[1][1:].replace("Script.json", "")
-		print(caseName)
+		caseName = self.scriptPath.split("workspace")[1][1:].replace("/Script.json", "")
 		variables = {"DIR" : DIR, "LIB" : self.libraryPath, "CASE": caseName}
 		for key in self.paths.keys():
+			
+			sep = "/"
+			if sep in self.paths[key]:
+				self.paths[key] = os.path.join(*self.paths[key].split(sep))
+			
 			for variable in variables:
 				var = "${%s}" % variable
 				if var in self.paths[key]:
 					self.paths[key] = self.paths[key].replace( var, variables[variable] )
-
-				sep = "/"
-				if sep in self.paths[key]:
-					self.paths[key] = os.path.join(*self.paths[key].split(sep))

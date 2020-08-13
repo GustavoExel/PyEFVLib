@@ -1,5 +1,5 @@
 {
-    "Output" : "${LIB}/results/${CASE}",
+    "Output" : "${LIB}/results/${CASE}/",
 
     "Boundary" : "${DIR}/boundaryConditions/",
 

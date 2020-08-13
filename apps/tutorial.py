@@ -7,7 +7,7 @@ from scipy import sparse
 import scipy.sparse.linalg
 
 #-------------------------SETTINGS----------------------------------------------
-problemData = ProblemData('heat_transfer_2d/linear')
+problemData = ProblemData('workspace/heat_transfer_2d/linear')
 
 reader = MSHReader(problemData.paths["Grid"])
 grid = Grid(reader.getData())
@@ -20,8 +20,8 @@ currentTime = 0.0
 
 saver = CsvSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
-temperatureField = np.repeat(problemData.initialValue, numberOfVertices)
-prevTemperatureField = np.repeat(problemData.initialValue["temperature"], numberOfVertices)
+temperatureField = np.repeat(problemData.initialValues, numberOfVertices)
+prevTemperatureField = np.repeat(problemData.initialValues["temperature"], numberOfVertices)
 
 coords,matrixVals = [], []
 

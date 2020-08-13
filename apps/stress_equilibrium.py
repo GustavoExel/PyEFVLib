@@ -7,7 +7,7 @@ from scipy import sparse
 import scipy.sparse.linalg
 
 #-------------------------SETTINGS----------------------------------------------
-problemData = ProblemData( "stress_equilibrium_2d/linear" )
+problemData = ProblemData( "workspace/stress_equilibrium_2d/linear" )
 
 reader = MSHReader(problemData.paths["Grid"])
 grid = Grid(reader.getData())
@@ -21,8 +21,8 @@ saver = CsvSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
 currentTime = 0.0
 numberOfVertices = grid.vertices.size
-displacements = np.repeat(problemData.initialValue["u"], 2*numberOfVertices)
-prevDisplacements = np.repeat(problemData.initialValue["u"], numberOfVertices)
+displacements = np.repeat(problemData.initialValues["u"], 2*numberOfVertices)
+prevDisplacements = np.repeat(problemData.initialValues["u"], numberOfVertices)
 
 coords,matrixVals = [], []
 #---------------------------HELPER FUNCTIONS------------------------------------

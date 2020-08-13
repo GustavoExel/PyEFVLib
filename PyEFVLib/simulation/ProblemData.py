@@ -96,6 +96,8 @@ class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 	def getPaths(self):
 		self.libraryPath = os.sep.join(os.path.realpath(__file__).split(os.sep)[:-3])		# this is the PyEFVLib path
 		self.scriptPath  = os.path.join(self.libraryPath, self.simulatorName, "Script.json")
+		print(self.libraryPath)
+		print(self.scriptPath)
 		if not os.path.isfile(self.scriptPath):
 			raise(Exception("File {} not found".format(self.scriptPath)))
 
@@ -113,7 +115,9 @@ class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 		Also, for Windows Users, Script.json maintains the "/" separation syntax, and the class handles it;
 		"""
 		DIR = os.path.join(self.libraryPath, self.simulatorName)
-		variables = {"DIR" : DIR, "LIB" : self.libraryPath}
+		caseName = self.scriptPath.split("workspace")[1][1:].replace("Script.json", "")
+		print(caseName)
+		variables = {"DIR" : DIR, "LIB" : self.libraryPath, "CASE": caseName}
 		for key in self.paths.keys():
 			for variable in variables:
 				var = "${%s}" % variable

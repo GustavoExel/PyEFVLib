@@ -1,5 +1,5 @@
 {
-    "Output" : "${LIB}/results/heat_transfer_2d/sinusoidal/",
+    "Output" : "${LIB}/results/${CASE}",
 
     "Boundary" : "${DIR}/boundaryConditions/",
 

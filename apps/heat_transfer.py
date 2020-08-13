@@ -8,18 +8,22 @@ import time
 
 def heatTransfer(
 			model,
-			extension,
-			grid,
-			timeStep,
-			outputPath,
 			libraryPath,
-			initialValues,
-			maxNumberOfIterations,
+			outputPath,
+			extension,
+
+			grid,
 			propertyData,
+
+			initialValues,
 			neumannBoundaries,
 			dirichletBoundaries,
+
+			timeStep,
 			finalTime,
+			maxNumberOfIterations,
 			tolerance,
+			
 			fileName="Results",
 			transient=True,
 			verbosity=True 	
@@ -193,18 +197,22 @@ if __name__ == "__main__":
 
 	finalTemperatureField = heatTransfer(
 		model 	  = model,
-		extension = "csv" if not "--extension=cgns" in sys.argv else "cgns",
-		grid 	  = grid,
-		timeStep  = problemData.timeStep,
-		outputPath = problemData.paths["Output"],
 		libraryPath = problemData.libraryPath,
-		initialValues = problemData.initialValues,
-		maxNumberOfIterations = problemData.maxNumberOfIterations,
+		outputPath = problemData.paths["Output"],
+		extension = "csv" if not "--extension=cgns" in sys.argv else "cgns",
+		
+		grid 	  = grid,
 		propertyData = problemData.propertyData,
+		
+		initialValues = problemData.initialValues,
 		neumannBoundaries = problemData.neumannBoundaries,
 		dirichletBoundaries = problemData.dirichletBoundaries,
+
+		timeStep  = problemData.timeStep,
 		finalTime = problemData.finalTime,
+		maxNumberOfIterations = problemData.maxNumberOfIterations,
 		tolerance = problemData.tolerance,
+		
 		transient = not "-p" in sys.argv,
 		verbosity = not "-s" in sys.argv
 	)

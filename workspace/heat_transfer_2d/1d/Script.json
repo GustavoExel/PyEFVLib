@@ -1,5 +1,5 @@
 {
-    "Output" : "${LIB}/results/${CASE}/",
+    "Output" : "${LIB}/results/${CASE}",
 
     "Boundary" : "${DIR}/boundaryConditions/",
 
@@ -7,5 +7,5 @@
 
     "Numerical" : "${DIR}/NumericalSettings.json",
 
-    "Grid" : "${LIB}/meshes/1d.msh"
+    "Grid" : "${LIB}/meshes/Square.msh"
 }

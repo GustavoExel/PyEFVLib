@@ -1,6 +1,6 @@
 //+
 SetFactory("OpenCASCADE");
-Rectangle(1) = {0, 0, 0, 1, 0.1, 0};
+Rectangle(1) = {0, 0, 0, 1, 0.2, 0};
 //+
 Physical Line("South") = {3};
 //+

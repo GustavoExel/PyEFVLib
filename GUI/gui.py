@@ -157,7 +157,7 @@ class BCPage(Page):
 			bTypeVar = tk.IntVar(BCWindow)
 
 			nameLabel = ttk.Label(BCWindow, text=boundaryName)
-			nameLabel.grid(row=i, column=0)
+			nameLabel.grid(row=i, column=0, sticky="W")
 
 			valEntry = tk.Entry(BCWindow)
 			valEntry.grid(row=i,column=1)
@@ -205,7 +205,8 @@ class BCPage(Page):
 		return setDirichletFunc
 
 	def openFile(self):
-		self.fileLabel["text"] = tk.filedialog.askopenfilename(initialdir="../meshes", title="Select a mesh file", filetypes=(("MSH files", "*.msh"),("All files", "*")))
+		initialdir = os.path.join( os.path.dirname(__file__), os.path.pardir, "meshes" )
+		self.fileLabel["text"] = tk.filedialog.askopenfilename(initialdir=initialdir, title="Select a mesh file", filetypes=(("MSH files", "*.msh"),("All files", "*")))
 		self.placeBCForms()
 
 	def next(self):
@@ -238,10 +239,6 @@ class PropertiesPage(Page):
 		self.prevButton = tk.Button(self.bottomFrame, text="Prev", command=self.prev)
 		self.prevButton.place(relx=0.78, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
-		for region in regionNames:
-		self.propertiesFrame = tk.LabelFrame(self.canvas, text="Material Properties")
-		self.propertiesFrame.place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
-
 		self.properties = ["Density","HeatCapacity","Conductivity","HeatGeneration"]
 		self.propertyUnits = {
 			"Density":       ["kg/m³", "g/cm³"],
@@ -249,30 +246,56 @@ class PropertiesPage(Page):
 			"Conductivity":   ["W/m.K"],
 			"HeatGeneration": ["K/m³"]
 		}
-		self.propertyEntries = []
-		self.propertyUnitVars = []
 
-		i=0
-		for propertyName in self.properties:
-			options = self.propertyUnits[propertyName]
+		self.propertyEntries = dict()
+		self.propertyUnitVars = dict()
+		self.propertiesFrames = []
 
-			unitVar = tk.StringVar(self.propertiesFrame)
-			unitVar.set(self.propertyUnits[propertyName][0])
-			bTypeVar = tk.IntVar(self.propertiesFrame)
+		for regionCount, region in enumerate(regionNames):
+			propertiesFrame = tk.LabelFrame(self.canvas, text="Material Properties")
+			centerFrame = tk.Frame(propertiesFrame)
+			self.propertiesFrames.append(propertiesFrame)
 
-			nameLabel = ttk.Label(self.propertiesFrame, text=propertyName)
-			nameLabel.grid(row=i, column=0)
+			self.propertyEntries[region] = []
+			self.propertyUnitVars[region] = []
 
-			valEntry = ttk.Entry(self.propertiesFrame)
-			valEntry.grid(row=i,column=1)
+			self.regionCountLabel = tk.Label(centerFrame, text=f"{region}\t[{regionCount+1}/{len(regionNames)}]")
+			self.regionCountLabel.grid(row=0, column=0, pady=5, sticky="W")
 
-			unitMenu = tk.OptionMenu(self.propertiesFrame, unitVar, *options)
-			unitMenu.grid(row=i, column=2)
+			i=1
+			for propertyName in self.properties:
+				options = self.propertyUnits[propertyName]
 
-			self.propertyEntries.append(valEntry)
-			self.propertyUnitVars.append(unitVar)
-			i+=1
+				unitVar = tk.StringVar(centerFrame)
+				unitVar.set(self.propertyUnits[propertyName][0])
+				bTypeVar = tk.IntVar(centerFrame)
 
+				nameLabel = ttk.Label(centerFrame, text=propertyName)
+				nameLabel.grid(row=i, column=0, sticky="W", padx=5)
+
+				valEntry = ttk.Entry(centerFrame)
+				valEntry.grid(row=i,column=1)
+
+				unitMenu = tk.OptionMenu(centerFrame, unitVar, *options)
+				unitMenu.grid(row=i, column=2, sticky="E")
+
+
+				self.propertyEntries[region].append(valEntry)
+				self.propertyUnitVars[region].append(unitVar)
+				i+=1
+
+			prevButton = tk.Button(centerFrame, text="<")
+			prevButton.grid(row=i, column=2, sticky="E")
+
+			nextButton = tk.Button(centerFrame, text=">")
+			nextButton.grid(row=i, column=3)
+
+			centerFrame.place(relx=0.5, rely=0.0, anchor="n")
+
+
+		currentProperty = 0
+		self.propertiesFrames[0].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
+		
 		self.populated = True
 
 	def next(self):

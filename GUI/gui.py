@@ -250,6 +250,22 @@ class PropertiesPage(Page):
 		self.propertyEntries = dict()
 		self.propertyUnitVars = dict()
 		self.propertiesFrames = []
+		self.currentRegion = 0
+
+		def nextRegion():
+			print("nextRegion being called")
+			if self.currentRegion < len(regionNames)-1:
+				propertiesFrames[self.currentRegion].place_forget()
+				propertiesFrames[self.currentRegion+1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
+				self.currentRegion += 1
+
+		def prevRegion():
+			print("prevRegion being called")
+			if self.currentRegion > 0:
+				propertiesFrames[self.currentRegion].place_forget()
+				propertiesFrames[self.currentRegion-1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
+				self.currentRegion -= 1
+
 
 		for regionCount, region in enumerate(regionNames):
 			propertiesFrame = tk.LabelFrame(self.canvas, text="Material Properties")
@@ -284,16 +300,14 @@ class PropertiesPage(Page):
 				self.propertyUnitVars[region].append(unitVar)
 				i+=1
 
-			prevButton = tk.Button(centerFrame, text="<")
+			prevButton = tk.Button(centerFrame, text="<", command=nextRegion)
 			prevButton.grid(row=i, column=2, sticky="E")
 
-			nextButton = tk.Button(centerFrame, text=">")
+			nextButton = tk.Button(centerFrame, text=">", command=prevRegion)
 			nextButton.grid(row=i, column=3)
 
 			centerFrame.place(relx=0.5, rely=0.0, anchor="n")
 
-
-		currentProperty = 0
 		self.propertiesFrames[0].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
 		
 		self.populated = True

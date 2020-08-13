@@ -17,7 +17,7 @@ if '--help' in sys.argv:
 	exit(0)
 
 savers = {'cgns': CgnsSaver, 'csv': CsvSaver}
-model = 'heat_transfer_2d/linear'
+model = 'workspace/heat_transfer_2d/linear'
 extension = 'csv' if not '--extension=cgns' in sys.argv else 'cgns'
 if len(sys.argv)>1 and not '-' in sys.argv[1]: model=sys.argv[1]
 #-------------------------SETTINGS----------------------------------------------

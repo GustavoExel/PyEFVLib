@@ -7,7 +7,7 @@ a = 0.5 * properties["BODY"]["HeatGeneration"] / properties["BODY"]["Conductivit
 def analyticalTemperature(t1, t2, a, x):
 	return -a*x**2 + (t2-t1+a)*x + t1
 
-results = os.path.join(os.path.dirname(__file__), *3*[os.path.pardir], "results", "heat_transfer_2d", "linear", "Results.csv")
+results = os.path.join(os.path.dirname(__file__), *3*[os.path.pardir], "results", "heat_transfer_2d", "1d", "Results.csv")
 print(results)
 data = pd.read_csv(results)
 

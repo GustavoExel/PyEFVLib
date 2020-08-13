@@ -157,6 +157,7 @@ def heatTransfer(
 
 		print("\n\t\033[1;35mresult:\033[0m", saver.outputPath, "\n")
 
+	return temperatureField
 
 if __name__ == "__main__":
 	if "--help" in sys.argv:
@@ -190,7 +191,7 @@ if __name__ == "__main__":
 			print("")
 		print("\n{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
 
-	heatTransfer(
+	finalTemperatureField = heatTransfer(
 		model 	  = model,
 		extension = "csv" if not "--extension=cgns" in sys.argv else "cgns",
 		grid 	  = grid,
@@ -221,7 +222,7 @@ if __name__ == "__main__":
 		X,Y = zip(*[v.getCoordinates()[:-1] for v in grid.vertices])
 
 		Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), max(Y), len(Y)) )
-		nTi = griddata((X,Y), temperatureField, (Xi,Yi), method="linear")
+		nTi = griddata((X,Y), finalTemperatureField, (Xi,Yi), method="linear")
 
 		plt.pcolor(Xi,Yi,nTi, cmap=CM( cm.get_cmap("RdBu",64)(np.linspace(1,0,64)) )) # Makes BuRd instead of RdBu
 		plt.title("Numerical Temperature")

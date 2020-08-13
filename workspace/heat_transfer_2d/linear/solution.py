@@ -2,7 +2,7 @@ import os, sys, json, pandas as pd, matplotlib.pyplot as plt
 
 with open(os.path.join(os.path.dirname(__file__), "properties.json"), "r") as f:
 	properties = json.load(f)
-a = 0.5 * properties["BODY"]["HeatGeneration"] / properties["BODY"]["Conductivity"]
+a = 0.5 * properties["Body"]["HeatGeneration"] / properties["Body"]["Conductivity"]
 
 def analyticalTemperature(t1, t2, a, x):
 	return -a*x**2 + (t2-t1+a)*x + t1

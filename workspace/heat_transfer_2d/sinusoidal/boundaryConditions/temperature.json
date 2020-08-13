@@ -1,21 +1,21 @@
 {
     "InitialValue": 0.0,
-    "WEST": {
+    "West": {
         "condition": "DIRICHLET",
         "type": "CONSTANT",
         "value": 300.0
     },
-    "EAST": {
+    "East": {
         "condition": "DIRICHLET",
         "type": "CONSTANT",
         "value": 300.0
     },
-    "SOUTH": {
+    "South": {
         "condition": "DIRICHLET",
         "type": "CONSTANT",
         "value": 300.0
     },
-    "NORTH": {
+    "North": {
         "condition": "DIRICHLET",
         "type": "VARIABLE",
         "value": "300.0 - 200.0 * sin(pi * x)"

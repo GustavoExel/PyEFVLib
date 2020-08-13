@@ -9,12 +9,12 @@ with open(os.path.join(os.path.dirname(__file__), "boundaryConditions/v.json"), 
 resultsPath = "/home/gustavoe/Documents/Sinmec/HTRelated/PyEFVLib/results/stress_equilibrium/linear/Results.csv"
 resultsData = pd.read_csv(resultsPath)
 
-top_stress = v_condition["NORTH"]["value"]
-shearModulus = properties["BODY"]["ShearModulus"]
-poissonsRatio = properties["BODY"]["PoissonsRatio"]
+top_stress = v_condition["North"]["value"]
+shearModulus = properties["Body"]["ShearModulus"]
+poissonsRatio = properties["Body"]["PoissonsRatio"]
 lameParameter = 2*shearModulus*poissonsRatio/(1-2*poissonsRatio)
-density = properties["BODY"]["Density"]
-gravity = properties["BODY"]["Gravity"]
+density = properties["Body"]["Density"]
+gravity = properties["Body"]["Gravity"]
 height = 1.0
 
 Y, X = resultsData["Y"], resultsData["X"]

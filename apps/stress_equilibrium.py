@@ -142,7 +142,7 @@ print("\n\t\033[1;35mresult:\033[0m", saver.outputPath, '\n')
 
 from matplotlib import pyplot as plt, colors, cm
 def show_1d(fieldValues, name):
-	top_stress = problemData.boundaryConditionData["v"]["NORTH"]["value"]
+	top_stress = problemData.boundaryConditionData["v"]["North"]["value"]
 	shearModulus = problemData.propertyData[region.handle]["ShearModulus"]
 	poissonsRatio = problemData.propertyData[region.handle]["PoissonsRatio"]
 	lameParameter = 2*shearModulus*poissonsRatio/(1-2*poissonsRatio)

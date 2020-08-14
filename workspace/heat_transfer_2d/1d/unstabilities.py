@@ -32,7 +32,6 @@ di=0.05
 for i in np.arange(0.001,df,di):
 	X,Y = zip(*[v.getCoordinates()[:-1] for v in grid.vertices])
 	finalTemperatureField=heatTransfer(
-		model 	  = model,
 		libraryPath = problemData.libraryPath,
 		outputPath = problemData.paths["Output"],
 		fileName="Results",

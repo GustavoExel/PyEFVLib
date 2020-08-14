@@ -7,29 +7,27 @@ import scipy.sparse.linalg
 import time
 
 def heatTransfer(
-			model,
-			libraryPath,
-			outputPath,
-			extension,
+			libraryPath,			# PyEFVLib path
+			outputPath,				# Results directory path (Ex.: "results/heat_transfer_2d/...")
+			extension,				# Extension type. Either "csv" or "cgns"
 
-			grid,
-			propertyData,
+			grid,					# Object of class Grid
+			propertyData,			# List of dictionaries containing the properties
 
-			initialValues,
-			neumannBoundaries,
-			dirichletBoundaries,
+			initialValues,			# Dictionary whose keys are the field names, and values are the field values
+			neumannBoundaries,		# Dictionary whose keys are the field names, and values are objects of the class NeumannBoundaryCondition
+			dirichletBoundaries,	# Dictionary whose keys are the field names, and values are objects of the class DirichletBoundaryCondition
 
-			timeStep,
-			finalTime,
-			maxNumberOfIterations,
-			tolerance,
+			timeStep,				# Floating point number indicating the timeStep used in the simulation (constant)
+			finalTime,				# The time at which, if reached, the simulation stops
+			maxNumberOfIterations,	# Number of iterations at which, if reached, the simulation stops
+			tolerance,				# The value at which, if the maximum difference between field values reach, the simulation stops
 			
-			fileName="Results",
-			transient=True,
-			verbosity=True 	
+			fileName="Results",		# File name
+			transient=True,			# If False, the transient term is not added to the equation, and it's solved in one iteration
+			verbosity=True 			# If False does not print iteration info
 			):
 
-	problemData=1
 	#-------------------------SETTINGS----------------------------------------------
 	initialTime = time.time()
 
@@ -196,7 +194,6 @@ if __name__ == "__main__":
 		print("\n{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
 
 	finalTemperatureField = heatTransfer(
-		model 	  = model,
 		libraryPath = problemData.libraryPath,
 		outputPath = problemData.paths["Output"],
 		extension = "csv" if not "--extension=cgns" in sys.argv else "cgns",

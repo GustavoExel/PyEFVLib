@@ -17,8 +17,6 @@ class Boundary:
 	def addFacet(self, facet):
 		self.facets = np.append(self.facets, facet)
 
-
-
 class BoundaryData:
 	def __init__(self, name, connectivity, handle):
 		self.name = name

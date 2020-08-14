@@ -1,9 +1,12 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
-from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver
+from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver, NeumannBoundaryCondition, DirichletBoundaryCondition
+from apps.heat_transfer import heatTransfer
 
 import tkinter as tk
 from tkinter import filedialog, ttk
+
+import numpy as np
 
 class Application:
 	def __init__(self):
@@ -33,22 +36,53 @@ class Application:
 			"W/m.K": lambda k: k,
 			"K/m³": lambda q: q
 		}
+
+		# IT IS STILL NECESSARY TO CONVERT ALL UNITS
+
 		self.bcData = dict()
 		# Boundary Conditions
-		for boundaryName, entry, unit, conditionType in zip( self.bcPage.boundariesNames, self.bcPage.boundaryValueEntries, self.bcPage.boundaryUnitVars,self.bcPage.boundaryTypeVars ):
-			self.bcData[boundaryName] = {
-				"condition": ["NEUMANN", "DIRICHLET"][conditionType.get()-1],
+		for bName, entry, unit, bType in zip(self.bcPage.boundariesNames, self.bcPage.boundaryValueEntries, self.bcPage.boundaryUnitVars, self.bcPage.boundaryTypeVars):
+			self.bcData[bName] = {
+				"condition": ["NEUMANN", "DIRICHLET"][bType.get()-1],
 				"type": "CONSTANT",
-				"value": self.unitConversions[unit.get()]( float( entry.get() ) )
+				"value": float( entry.get() )
 			}
 
-		# Properties
-		self.propertiesData = dict()
-		for propertyName, entry, unit in zip( self.propertiesPage.properties, self.propertiesPage.propertyEntries, self.propertiesPage.propertyUnitVars ):
-			self.propertiesData[propertyName] = self.unitConversions[unit.get()]( float( entry.get() ) )
+		# Property Data
+		self.propertyValues = dict()
+		for region in self.propertiesPage.propertyEntries.keys():
+			self.propertyValues[region] = dict()
+			for _property in self.propertiesPage.propertyEntries[region].keys():
+				self.propertyValues[region][_property] = float( self.propertiesPage.propertyEntries[region][_property].get() )
+
+		# print(self.propertiesPage.propertyUnitVars)
 
 	def dumpData(self):
 		pass
+
+	def runSimulation(self):
+		grid = Grid( MSHReader(self.bcPage.fileLabel["text"]).getData() )
+
+		heatTransfer(
+			libraryPath = os.path.join(os.path.dirname(__file__), os.path.pardir),
+			outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
+			extension = "csv",
+			
+			grid 	  = grid,
+			propertyData = [self.propertyValues["Body"]],#################
+			
+			initialValues = {"temperature": np.zeros(grid.vertices.size)},
+			neumannBoundaries = {"temperature":[NeumannBoundaryCondition(grid, boundary, self.bcData[boundary.name]["value"], handle) for handle, boundary in enumerate(grid.boundaries) if self.bcData[boundary.name]["condition"] == "NEUMANN"]},
+			dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(grid, boundary, self.bcData[boundary.name]["value"], handle) for handle, boundary in enumerate(grid.boundaries) if self.bcData[boundary.name]["condition"] == "DIRICHLET"]},
+
+			timeStep  = 10000.0,		#####################
+			finalTime = 1e+06,		#####################
+			maxNumberOfIterations = 1e+04,		#####################
+			tolerance = 1e-06,		#####################
+			
+			# transient = not "-p" in sys.argv,
+			# verbosity = not "-s" in sys.argv
+		)
 
 class Page:
 	def __init__(self, app, root):
@@ -114,10 +148,10 @@ class BCPage(Page):
 		self.boundariesNames = MSHReader(self.fileLabel["text"]).getData().boundariesNames
 				
 		BCCanvas = tk.Canvas(self.BCFrame)
-		BCCanvas.pack(side="left", fill="both", expand=True)
+		BCCanvas.place(relx=0.0, rely=0.0, relwidth=1.0, relheight=1.0, anchor="nw")
 
 		scrollbar = ttk.Scrollbar(self.BCFrame, orient="vertical", command=BCCanvas.yview)
-		scrollbar.pack(side="right", fill="y")
+		scrollbar.place(relx=1.0, rely=0.0, relheight=1.0, anchor="ne")
 
 		# with Windows OS
 		self.root.bind("<MouseWheel>", lambda e: BCCanvas.yview_scroll(-1*int(e.delta/120), "units"))
@@ -130,6 +164,15 @@ class BCPage(Page):
 
 		BCCanvas.create_window((0, 0), window=BCWindow, anchor="nw")
 		BCCanvas.configure(yscrollcommand=scrollbar.set)
+
+		BCWindow.columnconfigure(index=0, pad=5)
+		BCWindow.columnconfigure(index=1, pad=5)
+		BCWindow.columnconfigure(index=2, pad=5)
+		BCWindow.columnconfigure(index=3, pad=5)
+		BCWindow.rowconfigure(index=0, pad=5)
+		BCWindow.rowconfigure(index=1, pad=5)
+		BCWindow.rowconfigure(index=2, pad=5)
+		BCWindow.rowconfigure(index=3, pad=5)
 
 		ttk.Label(BCWindow, text="Boundary Name").grid(row=0, column=0)
 		ttk.Label(BCWindow, text="Value").grid(row=0, column=1)
@@ -157,7 +200,7 @@ class BCPage(Page):
 			bTypeVar = tk.IntVar(BCWindow)
 
 			nameLabel = ttk.Label(BCWindow, text=boundaryName)
-			nameLabel.grid(row=i, column=0, sticky="W")
+			nameLabel.grid(row=i, column=0, padx=5, sticky="W")
 
 			valEntry = tk.Entry(BCWindow)
 			valEntry.grid(row=i,column=1)
@@ -226,7 +269,6 @@ class PropertiesPage(Page):
 		regionNames = MSHReader(filePath).getData().regionsNames
 		print(regionNames)
 
-		# For now only one region
 		self.canvas = tk.Canvas(self.root, height=self.HEIGHT, width=self.WIDTH)
 		self.canvas.pack(side="top", fill="both", expand="yes")
 
@@ -253,27 +295,24 @@ class PropertiesPage(Page):
 		self.currentRegion = 0
 
 		def nextRegion():
-			print("nextRegion being called")
 			if self.currentRegion < len(regionNames)-1:
-				propertiesFrames[self.currentRegion].place_forget()
-				propertiesFrames[self.currentRegion+1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
+				self.propertiesFrames[self.currentRegion].place_forget()
+				self.propertiesFrames[self.currentRegion+1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
 				self.currentRegion += 1
 
 		def prevRegion():
-			print("prevRegion being called")
 			if self.currentRegion > 0:
-				propertiesFrames[self.currentRegion].place_forget()
-				propertiesFrames[self.currentRegion-1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
+				self.propertiesFrames[self.currentRegion].place_forget()
+				self.propertiesFrames[self.currentRegion-1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
 				self.currentRegion -= 1
-
 
 		for regionCount, region in enumerate(regionNames):
 			propertiesFrame = tk.LabelFrame(self.canvas, text="Material Properties")
-			centerFrame = tk.Frame(propertiesFrame)
 			self.propertiesFrames.append(propertiesFrame)
+			centerFrame = tk.Frame(propertiesFrame)
 
-			self.propertyEntries[region] = []
-			self.propertyUnitVars[region] = []
+			self.propertyEntries[region] = dict()
+			self.propertyUnitVars[region] = dict()
 
 			self.regionCountLabel = tk.Label(centerFrame, text=f"{region}\t[{regionCount+1}/{len(regionNames)}]")
 			self.regionCountLabel.grid(row=0, column=0, pady=5, sticky="W")
@@ -296,14 +335,14 @@ class PropertiesPage(Page):
 				unitMenu.grid(row=i, column=2, sticky="E")
 
 
-				self.propertyEntries[region].append(valEntry)
-				self.propertyUnitVars[region].append(unitVar)
+				self.propertyEntries[region][propertyName] = valEntry
+				self.propertyUnitVars[region][propertyName] = unitVar
 				i+=1
 
-			prevButton = tk.Button(centerFrame, text="<", command=nextRegion)
+			prevButton = tk.Button(centerFrame, text="<", command=prevRegion)
 			prevButton.grid(row=i, column=2, sticky="E")
 
-			nextButton = tk.Button(centerFrame, text=">", command=prevRegion)
+			nextButton = tk.Button(centerFrame, text=">", command=nextRegion)
 			nextButton.grid(row=i, column=3)
 
 			centerFrame.place(relx=0.5, rely=0.0, anchor="n")
@@ -315,6 +354,7 @@ class PropertiesPage(Page):
 	def next(self):
 		print("Running Simulation...")
 		self.app.getData()
+		self.app.runSimulation()
 
 	def prev(self):
 		self.canvas.pack_forget()

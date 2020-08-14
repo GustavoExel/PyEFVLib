@@ -445,17 +445,19 @@ class HeatTransferApplication:
 			}
 
 		# Property Data
-		self.propertyData = dict()
+		# TEM QUE TOMAR CUIDADO, PQ PROPERTY DATA DEVE ESTAR NA ORDEM DAS REGIÕES NA GRID. MAS ATUALMENTE ESTÁ NA ORDEM DAS REGIÕES
+		# DO ARQUIVO MSH. TORCER PRA SER SEMPRE O MESMO, MAS MUDA SAPORRAÍ
+		self.propertyData = []
 		for region in self.propertyEntries.keys():
-			self.propertyData[region] = dict()
+			self.propertyData.append( dict() )
 			for _property in self.propertyEntries[region].keys():
-				self.propertyData[region][_property] = float( self.propertyEntries[region][_property].get() )
+				self.propertyData[-1][_property] = float( self.propertyEntries[region][_property].get() )
 
 		# Numerical Settings
 			if self.numericalSettingsBools[list(self.numericalSettingsOp.keys()).index("Time Step")].get():
 				timeStep  = float(self.numericalSettingsEntries[list(self.numericalSettingsOp.keys()).index("Time Step")].get())
 			else:
-				timeStep = None
+				timeStep = 0.0
 
 			if self.numericalSettingsBools[list(self.numericalSettingsOp.keys()).index("Final time")].get():
 				finalTime = float(self.numericalSettingsEntries[list(self.numericalSettingsOp.keys()).index("Final time")].get())
@@ -483,7 +485,7 @@ class HeatTransferApplication:
 			extension = "csv",
 			
 			grid 	  = grid,
-			propertyData = [self.propertyData["Body"]],#################
+			propertyData = self.propertyData,
 			
 			initialValues = {"temperature": np.zeros(grid.vertices.size)},
 			neumannBoundaries = {"temperature":[NeumannBoundaryCondition(grid, boundary, self.boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(grid.boundaries) if self.boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},

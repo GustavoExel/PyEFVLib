@@ -29,12 +29,6 @@ def heatTransfer(
 			):
 
 	#-------------------------SETTINGS----------------------------------------------
-	print(f"timeStep = {timeStep}")
-	print(f"finalTime = {finalTime}")
-	print(f"maxNumberOfIterations = {maxNumberOfIterations}")
-	print(f"tolerance = {tolerance}")
-	print(f"transient = {transient}")
-
 	initialTime = time.time()
 
 	dimension = grid.dimension
@@ -60,6 +54,8 @@ def heatTransfer(
 	#-------------------------------------------------------------------------------
 	while not converged:
 		if maxNumberOfIterations != None and iteration > maxNumberOfIterations:
+			break
+		if iteration > 1 and not transient:
 			break
 		#-------------------------ADD TO LINEAR SYSTEM------------------------------
 		independent = np.zeros(grid.vertices.size)

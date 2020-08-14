@@ -47,6 +47,13 @@ class HeatTransferApplication:
 			"HeatGeneration": ["K/m³"]
 		}
 
+		self.numericalSettingsOp = {	# "option": [entry, unit, checkbox]
+			"Time Step"					:{"option":[1,1,0,1],"units":["s", "h", "days", "weeks"]},
+			"Final time"				:{"option":[1,1,1,0],"units":["s", "h", "days", "weeks"]},
+			"Max number of iterations"	:{"option":[1,0,1,0],"units":[""]},
+			"Tolerance"					:{"option":[1,1,1,1],"units":["K"]},
+			"Transient"					:{"option":[0,0,1,1],"units":[""]}
+		}
 
 		self.meshFileName = ""
 
@@ -66,14 +73,14 @@ class HeatTransferApplication:
 		self.BCFrame.place(relx=0.02, rely=0.22, relheight=0.63, relwidth=0.96, anchor="nw")
 
 		# Footer
-		self.bottomFrame = tk.Frame(self.page1)
-		self.bottomFrame.place(relx=0.02, rely=0.87, relheight=0.1, relwidth=0.96, anchor="nw" )
+		bottomFrame = tk.Frame(self.page1)
+		bottomFrame.place(relx=0.02, rely=0.87, relheight=0.1, relwidth=0.96, anchor="nw" )
 
-		self.nextButton = tk.Button(self.bottomFrame, text="Next", command=self.page1Next)
-		self.nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+		nextButton = tk.Button(bottomFrame, text="Next", command=self.page1Next)
+		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
-		self.prevButton = tk.Button(self.bottomFrame, text="Prev", command=self.page1Prev)
-		self.prevButton.place(relx=0.78, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+		prevButton = tk.Button(bottomFrame, text="Prev", command=self.page1Prev, state="disabled")
+		prevButton.place(relx=0.78, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
 	def showPage1(self):
 		self.page1.pack(side="top", fill="both", expand="yes")
@@ -179,31 +186,35 @@ class HeatTransferApplication:
 	def populatePage2(self): #
 		self.page2 = tk.Canvas(self.root, height=500, width=600)
 
-		self.bottomFrame = tk.Frame(self.page2)
-		self.bottomFrame.place(relx=0.02, rely=0.87, relheight=0.1, relwidth=0.96, anchor="nw" )
+		# Bottom Frame
+		bottomFrame = tk.Frame(self.page2)
+		bottomFrame.place(relx=0.02, rely=0.87, relheight=0.1, relwidth=0.96, anchor="nw" )
 
-		self.nextButton = tk.Button(self.bottomFrame, text="RUN", command=self.page2Next)
-		self.nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+		nextButton = tk.Button(bottomFrame, text="RUN", command=self.page2Next)
+		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
-		self.prevButton = tk.Button(self.bottomFrame, text="Prev", command=self.page2Prev)
-		self.prevButton.place(relx=0.78, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+		prevButton = tk.Button(bottomFrame, text="Prev", command=self.page2Prev)
+		prevButton.place(relx=0.78, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
+		# Property Frame
 		self.propertyEntries = dict()
 		self.propertyUnitVars = dict()
 		self.propertiesFrames = []
 		self.currentRegion = 0
 
+		numberOfRegions = len(self.meshData.regionsNames)
+
 		def nextRegion():
-			if self.currentRegion < len(self.meshData.regionsNames)-1:
+			if self.currentRegion < numberOfRegions-1:
 				self.propertiesFrames[self.currentRegion].place_forget()
 				self.propertiesFrames[self.currentRegion+1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
 				self.currentRegion += 1
-
 		def prevRegion():
 			if self.currentRegion > 0:
 				self.propertiesFrames[self.currentRegion].place_forget()
 				self.propertiesFrames[self.currentRegion-1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
 				self.currentRegion -= 1
+
 
 		for regionCount, region in enumerate(self.meshData.regionsNames):
 			propertiesFrame = tk.LabelFrame(self.page2, text="Material Properties")
@@ -213,7 +224,7 @@ class HeatTransferApplication:
 			self.propertyEntries[region] = dict()
 			self.propertyUnitVars[region] = dict()
 
-			self.regionCountLabel = tk.Label(centerFrame, text=f"{region}\t[{regionCount+1}/{len(self.meshData.regionsNames)}]")
+			self.regionCountLabel = tk.Label(centerFrame, text=f"{region}\t[{regionCount+1}/{numberOfRegions}]")
 			self.regionCountLabel.grid(row=0, column=0, pady=5, sticky="W")
 
 			i=1
@@ -238,16 +249,105 @@ class HeatTransferApplication:
 				self.propertyUnitVars[region][propertyName] = unitVar
 				i+=1
 
-			prevButton = tk.Button(centerFrame, text="<", command=prevRegion)
+			prevButton = tk.Button(centerFrame, text="<", command=prevRegion, state="disabled" if numberOfRegions==1 or regionCount==0 else "normal")
 			prevButton.grid(row=i, column=2, sticky="E")
 
-			nextButton = tk.Button(centerFrame, text=">", command=nextRegion)
+			nextButton = tk.Button(centerFrame, text=">", command=nextRegion, state="disabled" if numberOfRegions==1 or regionCount==numberOfRegions-1 else "normal")
 			nextButton.grid(row=i, column=3)
 
 			centerFrame.place(relx=0.5, rely=0.0, anchor="n")
 
-		self.propertiesFrames[0].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=0.96, anchor="nw")
+		self.propertiesFrames[0].place(relx=0.02, rely=0.02, relheight=0.45, relwidth=0.96, anchor="nw")
 		
+		# Numerical Frame
+		numericalFrame = tk.LabelFrame(self.page2, text="Numerical Settings")
+
+		self.numericalSettingsEntries = []
+		self.numericalSettingsUnits = []
+		self.numericalSettingsUnitMenus = []
+		self.numericalSettingsBools = []
+		self.numericalSettingsCheckboxes = []
+
+		def toggleCheckbox(i):
+			def toggleCheckboxFunc():
+				setting = list(self.numericalSettingsOp.keys())[i]
+				state = self.numericalSettingsBools[i].get()
+
+				if setting != "Transient":
+					# Entry
+					if self.numericalSettingsOp[setting]["option"][0]:
+						if state:
+							self.numericalSettingsEntries[i].grid(row=i, column=1, padx=5, pady=5, sticky="W")
+						else:
+							self.numericalSettingsEntries[i].grid_forget()
+					# Unit
+					if self.numericalSettingsOp[setting]["option"][1]:
+						if state:
+							self.numericalSettingsUnitMenus[i].grid(row=i, column=2, sticky="E")
+						else:
+							self.numericalSettingsUnitMenus[i].grid_forget()
+				else:
+					if state:
+						j=0
+						for loopSetting, entry, unitMenu, boolVar, checkbox in zip( self.numericalSettingsOp.keys(), self.numericalSettingsEntries, self.numericalSettingsUnitMenus, self.numericalSettingsBools, self.numericalSettingsCheckboxes ):
+							if self.numericalSettingsOp[loopSetting]["option"][0] and self.numericalSettingsOp[loopSetting]["option"][3]:
+								entry.grid(row=j, column=1, padx=5, pady=5, sticky="W")
+							
+							if self.numericalSettingsOp[loopSetting]["option"][1] and self.numericalSettingsOp[loopSetting]["option"][3]:
+								unitMenu.grid(row=j, column=2, sticky="E")
+							boolVar.set(self.numericalSettingsOp[loopSetting]["option"][3])
+							if loopSetting != "Time Step":
+								checkbox.configure(state="normal")
+							j+=1
+					else:
+						for loopSetting, entry, unitMenu, boolVar, checkbox in zip( self.numericalSettingsOp.keys(), self.numericalSettingsEntries, self.numericalSettingsUnitMenus, self.numericalSettingsBools, self.numericalSettingsCheckboxes ):
+							if loopSetting != "Transient":
+								entry.grid_forget()
+								unitMenu.grid_forget()
+								boolVar.set(False)
+								checkbox.configure(state="disabled")
+
+			return toggleCheckboxFunc
+
+		i=0
+		for setting in self.numericalSettingsOp.keys():
+			# Label
+			label = tk.Label(numericalFrame, text=setting)
+			label.grid(row=i, column=0, padx=5, pady=5, sticky="W")
+
+			# Entry
+			entry = tk.Entry(numericalFrame)
+			if self.numericalSettingsOp[setting]["option"][0] and self.numericalSettingsOp[setting]["option"][3]:
+				entry.grid(row=i, column=1, padx=5, pady=5, sticky="W")
+
+			self.numericalSettingsEntries.append(entry)
+
+			# Unit
+			unitVar = tk.StringVar(numericalFrame)
+			unitVar.set(self.numericalSettingsOp[setting]["units"][0])
+
+			unitMenu = tk.OptionMenu(numericalFrame, unitVar, *self.numericalSettingsOp[setting]["units"])
+			if self.numericalSettingsOp[setting]["option"][1] and self.numericalSettingsOp[setting]["option"][3]:
+				unitMenu.grid(row=i, column=2, sticky="E")
+
+			self.numericalSettingsUnits.append(unitVar)
+			self.numericalSettingsUnitMenus.append(unitMenu)
+
+			# Checkbox
+			boolVar = tk.BooleanVar()
+			boolVar.set(self.numericalSettingsOp[setting]["option"][3])
+
+			checkbox = tk.Checkbutton(numericalFrame, variable=boolVar, command=toggleCheckbox(i), state= "normal" if self.numericalSettingsOp[setting]["option"][2] else "disabled")
+			checkbox.grid(row=i, column=3)
+
+			self.numericalSettingsBools.append(boolVar)
+			self.numericalSettingsCheckboxes.append(checkbox)
+
+			i+=1
+
+		numericalFrame.place(relx=0.02, rely=0.47, relheight=0.38, relwidth=0.96, anchor="nw")
+
+
 		self.populated = True
 
 	def showPage2(self): #
@@ -312,6 +412,26 @@ class HeatTransferApplication:
 						messagebox.showwarning("Warning", "Invalid value in \"{}\" {} field".format(region, propertyName))
 						raise Exception("Invalid value in \"{}\" {} field".format(region, propertyName))
 	
+		transientIndex = list(self.numericalSettingsOp.keys()).index("Transient")
+		finalTimeIndex = list(self.numericalSettingsOp.keys()).index("Final time")
+		maxNOfItIndex = list(self.numericalSettingsOp.keys()).index("Max number of iterations")
+		toleranceIndex = list(self.numericalSettingsOp.keys()).index("Tolerance")
+		
+		if self.numericalSettingsBools[transientIndex].get():
+			if not self.numericalSettingsBools[finalTimeIndex].get() and not self.numericalSettingsBools[maxNOfItIndex].get() and not self.numericalSettingsBools[toleranceIndex].get():
+				messagebox.showwarning("Warning", "There is no way of reaching convergence. Set at least one of final time, max number of iterations or tolerance fields")
+				raise Exception("There is no way of reaching convergence. Set at least one of final time, max number of iterations or tolerance fields")
+
+		i=0
+		for numericalSetting in self.numericalSettingsOp.keys():
+			if self.numericalSettingsOp[numericalSetting]["option"][0] and self.numericalSettingsBools[i].get():
+				try:
+					float( self.numericalSettingsEntries[i].get() )
+				except:
+					messagebox.showwarning("Warning", "Invalid input in {} field".format(numericalSetting))
+					raise Exception("Invalid input in {} field".format(numericalSetting))
+			i+=1
+
 	def runSimulation(self):
 		grid = Grid( MSHReader(self.meshFileName).getData() )
 
@@ -331,6 +451,31 @@ class HeatTransferApplication:
 			for _property in self.propertyEntries[region].keys():
 				self.propertyData[region][_property] = float( self.propertyEntries[region][_property].get() )
 
+		# Numerical Settings
+			if self.numericalSettingsBools[list(self.numericalSettingsOp.keys()).index("Time Step")].get():
+				timeStep  = float(self.numericalSettingsEntries[list(self.numericalSettingsOp.keys()).index("Time Step")].get())
+			else:
+				timeStep = None
+
+			if self.numericalSettingsBools[list(self.numericalSettingsOp.keys()).index("Final time")].get():
+				finalTime = float(self.numericalSettingsEntries[list(self.numericalSettingsOp.keys()).index("Final time")].get())
+			else:
+				finalTime = None
+
+			if self.numericalSettingsBools[list(self.numericalSettingsOp.keys()).index("Max number of iterations")].get():
+				maxNumberOfIterations = float(self.numericalSettingsEntries[list(self.numericalSettingsOp.keys()).index("Max number of iterations")].get())
+			else:
+				maxNumberOfIterations = None
+
+			if self.numericalSettingsBools[list(self.numericalSettingsOp.keys()).index("Tolerance")].get():
+				tolerance = float(self.numericalSettingsEntries[list(self.numericalSettingsOp.keys()).index("Tolerance")].get())
+			else:
+				tolerance = None
+
+			
+			transient = self.numericalSettingsBools[list(self.numericalSettingsOp.keys()).index("Transient")].get()
+
+
 
 		heatTransfer(
 			libraryPath = os.path.join(os.path.dirname(__file__), os.path.pardir),
@@ -344,15 +489,28 @@ class HeatTransferApplication:
 			neumannBoundaries = {"temperature":[NeumannBoundaryCondition(grid, boundary, self.boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(grid.boundaries) if self.boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},
 			dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(grid, boundary, self.boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(grid.boundaries) if self.boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET"]},
  
-			timeStep  = 10000.0,		#####################
-			finalTime = 1e+06,		#####################
-			maxNumberOfIterations = 1e+04,		#####################
-			tolerance = 1e-06,		#####################
+			timeStep  = timeStep ,
+			finalTime = finalTime,
+			maxNumberOfIterations = maxNumberOfIterations,
+			tolerance = tolerance,
 			
-			transient = True,	#####################
+			transient = transient,
 			verbosity = True
 		)
-		print(grid)
+		self.root.destroy()
+
+class HeatTransferApplication2(HeatTransferApplication):
+	def __init__(self, root):
+		self.root = root
+
+		self.meshFileName = "/home/gustavoe/Documents/Sinmec/HTRelated/PyEFVLib/meshes/Square.msh"
+		# self.meshFileName = "/home/gustavoe/Documents/Sinmec/HTRelated/PyEFVLib/meshes/dualRegion.msh"
+		self.meshData = MSHReader(self.meshFileName).getData()
+
+		self.settings()
+
+		self.populatePage2()
+		self.showPage2()
 
 if __name__ == "__main__":
 	app = Application()

@@ -19,9 +19,9 @@ def heatTransfer(
 			dirichletBoundaries,	# Dictionary whose keys are the field names, and values are objects of the class DirichletBoundaryCondition
 
 			timeStep,				# Floating point number indicating the timeStep used in the simulation (constant)
-			finalTime,				# The time at which, if reached, the simulation stops
-			maxNumberOfIterations,	# Number of iterations at which, if reached, the simulation stops
-			tolerance,				# The value at which, if the maximum difference between field values reach, the simulation stops
+			finalTime,				# The time at which, if reached, the simulation stops. If None, then it is not used.
+			maxNumberOfIterations,	# Number of iterations at which, if reached, the simulation stops. If None, then it is not used.
+			tolerance,				# The value at which, if the maximum difference between field values reach, the simulation stops. If None, then it is not used.
 			
 			fileName="Results",		# File name
 			transient=True,			# If False, the transient term is not added to the equation, and it's solved in one iteration
@@ -29,6 +29,12 @@ def heatTransfer(
 			):
 
 	#-------------------------SETTINGS----------------------------------------------
+	print(f"timeStep = {timeStep}")
+	print(f"finalTime = {finalTime}")
+	print(f"maxNumberOfIterations = {maxNumberOfIterations}")
+	print(f"tolerance = {tolerance}")
+	print(f"transient = {transient}")
+
 	initialTime = time.time()
 
 	dimension = grid.dimension
@@ -52,7 +58,9 @@ def heatTransfer(
 	#-------------------------------------------------------------------------------
 	#-------------------------SIMULATION MAIN LOOP----------------------------------
 	#-------------------------------------------------------------------------------
-	while not converged and iteration < maxNumberOfIterations:
+	while not converged:
+		if maxNumberOfIterations != None and iteration > maxNumberOfIterations:
+			break
 		#-------------------------ADD TO LINEAR SYSTEM------------------------------
 		independent = np.zeros(grid.vertices.size)
 
@@ -137,11 +145,10 @@ def heatTransfer(
 		converged = False
 		difference = max([abs(temp-oldTemp) for temp, oldTemp in zip(temperatureField, prevTemperatureField)])
 		prevTemperatureField = temperatureField
-		if currentTime > finalTime:
+		if finalTime != None and currentTime > finalTime:
 			converged = True
-		elif iteration > 0:
+		elif iteration > 0 and tolerance != None:
 			converged = difference < tolerance
-
 		#-------------------------INCREMENT ITERATION-------------------------------
 		iteration += 1   
 

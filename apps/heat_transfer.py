@@ -7,26 +7,26 @@ import scipy.sparse.linalg
 import time
 
 def heatTransfer(
-			libraryPath,			# PyEFVLib path
-			outputPath,				# Results directory path (Ex.: "results/heat_transfer_2d/...")
-			extension,				# Extension type. Either "csv" or "cgns"
+		libraryPath,			# PyEFVLib path
+		outputPath,				# Results directory path (Ex.: "results/heat_transfer_2d/...")
+		extension,				# Extension type. Either "csv" or "cgns"
 
-			grid,					# Object of class Grid
-			propertyData,			# List of dictionaries containing the properties
+		grid,					# Object of class Grid
+		propertyData,			# List of dictionaries containing the properties
 
-			initialValues,			# Dictionary whose keys are the field names, and values are the field values
-			neumannBoundaries,		# Dictionary whose keys are the field names, and values are objects of the class NeumannBoundaryCondition
-			dirichletBoundaries,	# Dictionary whose keys are the field names, and values are objects of the class DirichletBoundaryCondition
+		initialValues,			# Dictionary whose keys are the field names, and values are the field values
+		neumannBoundaries,		# Dictionary whose keys are the field names, and values are objects of the class NeumannBoundaryCondition
+		dirichletBoundaries,	# Dictionary whose keys are the field names, and values are objects of the class DirichletBoundaryCondition
 
-			timeStep,				# Floating point number indicating the timeStep used in the simulation (constant)
-			finalTime,				# The time at which, if reached, the simulation stops. If None, then it is not used.
-			maxNumberOfIterations,	# Number of iterations at which, if reached, the simulation stops. If None, then it is not used.
-			tolerance,				# The value at which, if the maximum difference between field values reach, the simulation stops. If None, then it is not used.
-			
-			fileName="Results",		# File name
-			transient=True,			# If False, the transient term is not added to the equation, and it's solved in one iteration
-			verbosity=True 			# If False does not print iteration info
-		):
+		timeStep,				# Floating point number indicating the timeStep used in the simulation (constant)
+		finalTime,				# The time at which, if reached, the simulation stops. If None, then it is not used.
+		maxNumberOfIterations,	# Number of iterations at which, if reached, the simulation stops. If None, then it is not used.
+		tolerance,				# The value at which, if the maximum difference between field values reach, the simulation stops. If None, then it is not used.
+		
+		fileName="Results",		# File name
+		transient=True,			# If False, the transient term is not added to the equation, and it's solved in one iteration
+		verbosity=True 			# If False does not print iteration info
+	):
 
 	#-------------------------SETTINGS----------------------------------------------
 	initialTime = time.time()

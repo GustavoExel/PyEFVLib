@@ -18,15 +18,9 @@ def stressEquilibrium(
 		initialValues,			# Dictionary whose keys are the field names, and values are the field values
 		neumannBoundaries,		# Dictionary whose keys are the field names, and values are objects of the class NeumannBoundaryCondition
 		dirichletBoundaries,	# Dictionary whose keys are the field names, and values are objects of the class DirichletBoundaryCondition
-		boundaryConditions,		# Dictionary whose keys are the boundary names, and values are dictionaries whose keys are the field names, and values are objects of the class BoundaryCondition
+		boundaryConditions,		# List of dictionaries whose keys are field names and values are BoundaryCondition objects
 
-		timeStep,				# Floating point number indicating the timeStep used in the simulation (constant)
-		finalTime,				# The time at which, if reached, the simulation stops. If None, then it is not used.
-		maxNumberOfIterations,	# Number of iterations at which, if reached, the simulation stops. If None, then it is not used.
-		tolerance,				# The value at which, if the maximum difference between field values reach, the simulation stops. If None, then it is not used.
-		
 		fileName="Results",		# File name
-		transient=True,			# If False, the transient term is not added to the equation, and it's solved in one iteration
 		verbosity=True 			# If False does not print iteration info
 	):
 
@@ -181,12 +175,6 @@ if __name__ == "__main__":
 		dirichletBoundaries = problemData.dirichletBoundaries,
 		boundaryConditions = problemData.boundaryConditions,
 
-		timeStep  = problemData.timeStep,
-		finalTime = problemData.finalTime,
-		maxNumberOfIterations = problemData.maxNumberOfIterations,
-		tolerance = problemData.tolerance,
-		
-		transient = not "-p" in sys.argv,
 		verbosity = not "-s" in sys.argv
 	)
 

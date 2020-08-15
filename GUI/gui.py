@@ -7,6 +7,11 @@ from apps.stress_equilibrium import stressEquilibrium
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
 
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib import pyplot as plt
+
 import numpy as np
 
 class PyEFVLibGUI:
@@ -37,10 +42,10 @@ class MainMenu:
 	def populate(self):
 		self.page = tk.Frame(self.root, width=600, height=500)
 
-		self.heatTransferButton = tk.Button(self.page, text="Heat Transfer Application", font="Arial 24", command=self.openHeatTransfer)
+		self.heatTransferButton = tk.Button(self.page, text="Heat Transfer Application", font="Arial 18", command=self.openHeatTransfer)
 		self.heatTransferButton.place(relx=0.5, rely=0.5, relwidth=0.75, relheight=0.25, anchor="s")
 
-		self.solidMechanicsButton = tk.Button(self.page, text="Solid Mechanics Application", font="Arial 24", command=self.openSolidMechanics)
+		self.solidMechanicsButton = tk.Button(self.page, text="Solid Mechanics Application", font="Arial 18", command=self.openSolidMechanics)
 		self.solidMechanicsButton.place(relx=0.5, rely=0.5, relwidth=0.75, relheight=0.25, anchor="n")
 
 	def show(self):
@@ -62,6 +67,7 @@ class Application:
 		self.settings()
 
 	def init(self):
+		self.drawn = False
 		self.populatePage1()
 		self.showPage1()
 
@@ -91,7 +97,10 @@ class Application:
 		prevButton.place(relx=0.78, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
 	def showPage1(self):
-		self.page1.pack(side="top", fill="both", expand="yes")
+		self.page1.pack(side="left", fill="both", expand="yes")
+
+	def hidePage1(self):
+		self.page1.pack_forget()
 
 	def populateBCFrame(self):
 		self.boundariesNames = self.meshData.boundariesNames
@@ -251,6 +260,29 @@ class Application:
 		fieldsBCCanvas[0].place(relx=0.0, rely=0.0, relwidth=1.0, relheight=0.85, anchor="nw")
 		fieldsIValueFrames[0].place(relx=0.0, rely=0.85, relwidth=1.0, relheight=0.15, anchor="nw")
 		self.BCFrame.configure(text="Boundary Conditions Settings - {} [{}/{}]".format( self.fields[self.currentField] , self.currentField+1, len(self.fields)))
+
+	def drawMesh(self):
+		self.drawn = True
+		self.page1.pack_forget()
+		self.meshDrawCanvas = tk.Canvas(self.root, width=600, height=500)
+		self.meshDrawCanvas.pack(side="left", fill="both", expand="yes")
+		self.showPage1()
+
+		figure = matplotlib.figure.Figure()
+		plot = figure.add_subplot()
+
+		i=0
+		for boundary, boundaryName in zip(self.meshData.boundariesIndexes, self.meshData.boundariesNames):
+			boundaryColor = plt.cm.get_cmap("hsv", len(self.meshData.boundariesNames))(i)
+			for facet in boundary:
+				pair = self.meshData.boundariesConnectivities[facet]
+				coords = [self.meshData.vertices[v][:-1] for v in pair]
+				plot.plot(*zip(*coords), color=boundaryColor, label=boundaryName if facet==boundary[0] else None)
+
+			i+=1
+		plot.legend()
+		canvas = FigureCanvasTkAgg(figure, self.meshDrawCanvas)
+		canvas.get_tk_widget().pack(side="left", fill="both", expand="yes")
 
 	def populatePage2(self): #
 		self.page2 = tk.Canvas(self.root, height=500, width=600)
@@ -422,6 +454,9 @@ class Application:
 	def showPage2(self): #
 		self.page2.pack(side="top", fill="both", expand="yes")
 
+	def hidePage2(self):
+		self.page2.pack_forget()
+
 	def openFile(self):
 		initialdir = os.path.join( os.path.dirname(__file__), os.path.pardir, "meshes" )
 		self.meshFileName = tk.filedialog.askopenfilename(initialdir=initialdir, title="Select a mesh file", filetypes=(("MSH files", "*.msh"),("All files", "*")))
@@ -437,6 +472,11 @@ class Application:
 				raise Exception("Must be a .msh file")
 			
 
+			self.grid = Grid( self.meshData )
+			if self.grid.dimension == 2:
+				if self.drawn:
+					self.meshDrawCanvas.destroy()
+				self.drawMesh()
 			self.fileLabel["text"] = self.meshFileName
 			self.populateBCFrame()
 			self.populatePage2()
@@ -447,11 +487,11 @@ class Application:
 	
 	def page1Next(self):
 		self.checkPage1Data()
-		self.page1.pack_forget()
+		self.hidePage1()
 		self.showPage2()
 	
 	def page2Prev(self):
-		self.page2.pack_forget()
+		self.hidePage2()
 		self.showPage1()
 	
 	def page2Next(self):
@@ -561,8 +601,6 @@ class SolidMechanicsApplication(Application):
 		self.meshFileName = ""
 
 	def runSimulation(self):
-		grid = Grid( self.meshData )
-
 		# Boundary Conditions
 		initialValues = { field : self.unitsConvert[ self.initialValueUnitVars[field].get() ](float( self.initialValueEntries[field].get() )) for field in self.fields}
 		
@@ -575,20 +613,20 @@ class SolidMechanicsApplication(Application):
 			dirichletBoundaries[field] = []
 			handle = 0
 
-			for bName, boundary, entry, unit, bType in zip(self.boundariesNames, grid.boundaries, self.boundaryValueEntries[field], self.boundaryUnitVars[field], self.boundaryTypeVars[field]):
+			for bName, boundary, entry, unit, bType in zip(self.boundariesNames, self.grid.boundaries, self.boundaryValueEntries[field], self.boundaryUnitVars[field], self.boundaryTypeVars[field]):
 				value = self.unitsConvert[unit.get()]( float( entry.get() ) )
 				if bType.get() == 1:
-					bc = NeumannBoundaryCondition(grid, boundary, value, handle)
+					bc = NeumannBoundaryCondition(self.grid, boundary, value, handle)
 					neumannBoundaries[field].append(bc)
 				if bType.get() == 2:
-					bc = DirichletBoundaryCondition(grid, boundary, value, handle)
+					bc = DirichletBoundaryCondition(self.grid, boundary, value, handle)
 					dirichletBoundaries[field].append(bc)
 				boundaryConditionsDict[bName][field] = bc
 				handle += 1
 
 		# Property Data
 		self.propertyData = []
-		for region in grid.regions:
+		for region in self.grid.regions:
 			self.propertyData.append( dict() )
 			for propertyName in self.propertyEntries[region.name].keys():
 				self.propertyData[-1][propertyName] = float( self.propertyEntries[region.name][propertyName].get() )
@@ -599,7 +637,7 @@ class SolidMechanicsApplication(Application):
 			outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
 			extension = "csv",
 			
-			grid 	  = grid,
+			grid 	  = self.grid,
 			propertyData = self.propertyData,
 
 			initialValues = initialValues,
@@ -654,8 +692,6 @@ class HeatTransferApplication(Application):
 		self.meshFileName = ""
 
 	def runSimulation(self):
-		grid = Grid( self.meshData )
-
 		# Boundary Conditions
 		boundaryConditionsData = dict()
 		for bName, entry, unit, bType in zip(self.boundariesNames, self.boundaryValueEntries["temperature"], self.boundaryUnitVars["temperature"], self.boundaryTypeVars["temperature"]):
@@ -665,13 +701,13 @@ class HeatTransferApplication(Application):
 				"value": float( entry.get() )
 			}
 
-		initialValues = {"temperature": [float(self.initialValueEntries["temperature"].get())] * grid.vertices.size},
-		neumannBoundaries = {"temperature":[NeumannBoundaryCondition(grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},
-		dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET"]}
+		initialValues = {"temperature": [float(self.initialValueEntries["temperature"].get())] * self.grid.vertices.size},
+		neumannBoundaries = {"temperature":[NeumannBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},
+		dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET"]}
 
 		# Property Data
 		self.propertyData = []
-		for region in grid.regions:
+		for region in self.grid.regions:
 			self.propertyData.append( dict() )
 			for propertyName in self.propertyEntries[region.name].keys():
 				self.propertyData[-1][propertyName] = float( self.propertyEntries[region.name][propertyName].get() )
@@ -711,7 +747,7 @@ class HeatTransferApplication(Application):
 			outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
 			extension = "csv",
 			
-			grid 	  = grid,
+			grid 	  = self.grid,
 			propertyData = self.propertyData,
 			
 			initialValues = {"temperature": [ self.unitsConvert[self.initialValueUnitVars["temperature"].get()]( float(self.initialValueEntries["temperature"].get()) ) ] * grid.vertices.size},

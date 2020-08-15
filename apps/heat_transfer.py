@@ -26,7 +26,7 @@ def heatTransfer(
 			fileName="Results",		# File name
 			transient=True,			# If False, the transient term is not added to the equation, and it's solved in one iteration
 			verbosity=True 			# If False does not print iteration info
-			):
+		):
 
 	#-------------------------SETTINGS----------------------------------------------
 	initialTime = time.time()

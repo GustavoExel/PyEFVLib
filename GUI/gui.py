@@ -596,6 +596,8 @@ class HeatTransferApplication(Application):
 		)
 		self.root.destroy()
 
+
+def comment():
 	# def init(self):
 	# 	self.populatePage1()
 	# 	self.showPage1()
@@ -1005,6 +1007,7 @@ class HeatTransferApplication(Application):
 	# 				messagebox.showwarning("Warning", "Invalid input in {} field".format(numericalSetting))
 	# 				raise Exception("Invalid input in {} field".format(numericalSetting))
 	# 		i+=1
+	pass
 
 class HeatTransferApplication2(HeatTransferApplication):
 	def __init__(self, root):

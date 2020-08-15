@@ -513,7 +513,7 @@ class SolidMechanicsApplication(Application):
 	def settings(self):
 		self.fields = ["u", "v"]
 
-		self.neumannUnits = {"u": ["Pa", "kPa", "MPa", "GPa", "kgf/m²", "psi"], "v": ["mm/mm"]}
+		self.neumannUnits = {"u": ["Pa", "kPa", "MPa", "GPa", "kgf/m²", "psi"], "v": ["Pa", "kPa", "MPa", "GPa", "kgf/m²", "psi"]}
 		self.dirichletUnits = {"u": ["m", "mm", "cm", "μm", "inch"], "v": ["m", "mm", "cm", "μm", "inch"]}
 
 		self.properties = ["Density", "PoissonsRatio", "ShearModulus", "Gravity"]

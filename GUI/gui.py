@@ -25,8 +25,11 @@ class PyEFVLibGUI:
 		self.mainMenu = MainMenu(self.root, self)
 		self.heatTransferApplication = HeatTransferApplication(self.root, self)
 		self.solidMechanicsApplication = SolidMechanicsApplication(self.root, self)
+		self.post = Post(self.root, self)
 
-		self.mainMenu.init()
+		# self.mainMenu.init()
+		self.post.setResultsPath("/home/gustavoe/Documents/Sinmec/HTRelated/PyEFVLib/results/gui/Results.csv")
+		self.post.init()
 
 		self.root.mainloop()
 
@@ -40,16 +43,16 @@ class MainMenu:
 		self.show()
 
 	def populate(self):
-		self.page = tk.Frame(self.root, width=600, height=500)
+		self.page = tk.Frame(self.root, width=300, height=250)
 
-		self.heatTransferButton = tk.Button(self.page, text="Heat Transfer Application", font="Arial 18", command=self.openHeatTransfer)
-		self.heatTransferButton.place(relx=0.5, rely=0.5, relwidth=0.75, relheight=0.25, anchor="s")
+		self.heatTransferButton = tk.Button(self.page, text="Heat Transfer Application", command=self.openHeatTransfer)#, font="Arial 18")
+		self.heatTransferButton.place(relx=0.5, rely=0.5, relwidth=0.75, relheight=0.15, anchor="s")
 
-		self.solidMechanicsButton = tk.Button(self.page, text="Solid Mechanics Application", font="Arial 18", command=self.openSolidMechanics)
-		self.solidMechanicsButton.place(relx=0.5, rely=0.5, relwidth=0.75, relheight=0.25, anchor="n")
+		self.solidMechanicsButton = tk.Button(self.page, text="Solid Mechanics Application", command=self.openSolidMechanics)#, font="Arial 18")
+		self.solidMechanicsButton.place(relx=0.5, rely=0.5, relwidth=0.75, relheight=0.15, anchor="n")
 
 	def show(self):
-		self.page.pack(side="top", fill="both", expand="yes")
+		self.page.pack(side="top", fill="both", expand=1)
 
 	def openHeatTransfer(self):
 		self.page.destroy()
@@ -58,7 +61,6 @@ class MainMenu:
 	def openSolidMechanics(self):
 		self.page.destroy()
 		self.app.solidMechanicsApplication.init()
-
 
 class Application:
 	def __init__(self, root, application):
@@ -87,17 +89,41 @@ class Application:
 		self.BCFrame.place(relx=0.02, rely=0.22, relheight=0.63, relwidth=0.96, anchor="nw")
 
 		# Footer
-		bottomFrame = tk.Frame(self.page1)
-		bottomFrame.place(relx=0.02, rely=0.87, relheight=0.1, relwidth=0.96, anchor="nw" )
+		self.BCBottomFrame = tk.Frame(self.page1)
+		self.BCBottomFrame.place(relx=0.02, rely=0.87, relheight=0.1, relwidth=0.96, anchor="nw" )
 
-		nextButton = tk.Button(bottomFrame, text="Next", command=self.page1Next)
+		nextButton = tk.Button(self.BCBottomFrame, text="Next", command=self.page1Next)
 		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
-		prevButton = tk.Button(bottomFrame, text="Prev", command=self.page1Prev)
+		prevButton = tk.Button(self.BCBottomFrame, text="Prev", command=self.page1Prev)
 		prevButton.place(relx=0.78, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
+		def showFigFunc():
+			if self.showFigVar.get():
+				self.showMeshVar.set(False)
+				self.hideBCMesh()
+				self.showBCFig()
+			else:
+				self.hideBCFig()
+		def showMeshFunc():
+			if self.showMeshVar.get():
+				self.showFigVar.set(False)
+				self.hideBCFig()
+				self.showBCMesh()
+			else:
+				self.hideBCMesh()
+
+		self.showFigVar = tk.BooleanVar()
+		self.showFigVar.set(False)
+		self.showFigCheckbox = tk.Checkbutton(self.BCBottomFrame, text="Show Figure", variable=self.showFigVar, command=showFigFunc, state="disabled")
+		self.showFigCheckbox.place(relx=0.0, rely=0.25, anchor="w")
+		self.showMeshVar = tk.BooleanVar()
+		self.showMeshVar.set(False)
+		self.showMeshCheckbox = tk.Checkbutton(self.BCBottomFrame, text="Show Mesh", variable=self.showMeshVar, command=showMeshFunc, state="disabled")
+		self.showMeshCheckbox.place(relx=0.0, rely=0.75, anchor="w")
+
 	def showPage1(self):
-		self.page1.pack(side="left", fill="both", expand="yes")
+		self.page1.pack(side="left", fill="both", expand=1)
 
 	def hidePage1(self):
 		self.page1.pack_forget()
@@ -261,12 +287,9 @@ class Application:
 		fieldsIValueFrames[0].place(relx=0.0, rely=0.85, relwidth=1.0, relheight=0.15, anchor="nw")
 		self.BCFrame.configure(text="Boundary Conditions Settings - {} [{}/{}]".format( self.fields[self.currentField] , self.currentField+1, len(self.fields)))
 
-	def drawMesh(self):
+	def populateBCFig(self):
 		self.drawn = True
-		self.page1.pack_forget()
-		self.meshDrawCanvas = tk.Canvas(self.root, width=600, height=500)
-		self.meshDrawCanvas.pack(side="left", fill="both", expand="yes")
-		self.showPage1()
+		self.figDrawCanvas = tk.Canvas(self.root, width=600, height=500)
 
 		figure = matplotlib.figure.Figure()
 		plot = figure.add_subplot()
@@ -281,8 +304,34 @@ class Application:
 
 			i+=1
 		plot.legend()
+		canvas = FigureCanvasTkAgg(figure, self.figDrawCanvas)
+		canvas.get_tk_widget().pack(side="left", fill="both", expand=1)
+
+	def showBCFig(self):
+		self.figDrawCanvas.pack(side="left", fill="both", expand=1)
+
+	def hideBCFig(self):
+		self.figDrawCanvas.pack_forget()
+
+	def populateBCMesh(self):
+		self.drawn = True
+		self.meshDrawCanvas = tk.Canvas(self.root, width=600, height=500)
+
+		figure = matplotlib.figure.Figure()
+		plot = figure.add_subplot()
+
+		for element in self.meshData.elementsConnectivities:
+			x,y,z = zip(*[self.meshData.vertices[vertexIdx] for vertexIdx in element+[element[0]] ])
+			plot.plot(x,y,color="k")
+
 		canvas = FigureCanvasTkAgg(figure, self.meshDrawCanvas)
-		canvas.get_tk_widget().pack(side="left", fill="both", expand="yes")
+		canvas.get_tk_widget().pack(side="left", fill="both", expand=1)
+
+	def showBCMesh(self):
+		self.meshDrawCanvas.pack(side="left", fill="both", expand=1)
+
+	def hideBCMesh(self):
+		self.meshDrawCanvas.pack_forget()
 
 	def populatePage2(self): #
 		self.page2 = tk.Canvas(self.root, height=500, width=600)
@@ -452,7 +501,7 @@ class Application:
 		self.populated = True
 
 	def showPage2(self): #
-		self.page2.pack(side="top", fill="both", expand="yes")
+		self.page2.pack(side="top", fill="both", expand=1)
 
 	def hidePage2(self):
 		self.page2.pack_forget()
@@ -475,8 +524,12 @@ class Application:
 			self.grid = Grid( self.meshData )
 			if self.grid.dimension == 2:
 				if self.drawn:
-					self.meshDrawCanvas.destroy()
-				self.drawMesh()
+					self.figDrawCanvas.destroy()
+				self.showFigCheckbox.configure(state="normal")
+				self.showMeshCheckbox.configure(state="normal")
+				self.populateBCFig()
+				self.populateBCMesh()
+
 			self.fileLabel["text"] = self.meshFileName
 			self.populateBCFrame()
 			self.populatePage2()
@@ -547,7 +600,6 @@ class Application:
 					messagebox.showwarning("Warning", "Invalid input in {} field".format(numericalSetting))
 					raise Exception("Invalid input in {} field".format(numericalSetting))
 			i+=1
-
 
 class SolidMechanicsApplication(Application):
 	def settings(self):
@@ -647,7 +699,9 @@ class SolidMechanicsApplication(Application):
 
 			verbosity=True 
 		)
-		self.root.destroy()
+		# self.root.destroy()
+		self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
+		self.app.post.init()
 
 class HeatTransferApplication(Application):
 	def settings(self):
@@ -762,20 +816,31 @@ class HeatTransferApplication(Application):
 			transient = transient,
 			verbosity = True
 		)
-		self.root.destroy()
+		# self.root.destroy()
+		self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
+		self.app.post.init()
 
-class HeatTransferApplication2(HeatTransferApplication):
-	def __init__(self, root):
+class Post:
+	def __init__(self, root, application):
 		self.root = root
-
-		self.meshFileName = "/home/gustavoe/Documents/Sinmec/HTRelated/PyEFVLib/meshes/Square.msh"
-		# self.meshFileName = "/home/gustavoe/Documents/Sinmec/HTRelated/PyEFVLib/meshes/dualRegion.msh"
-		self.meshData = MSHReader(self.meshFileName).getData()
-
+		self.app = application
 		self.settings()
 
-		self.populatePage2()
-		self.showPage2()
+	def settings(self):
+		pass
+
+	def init(self):
+		self.populate()
+		self.show()
+
+	def populate(self):
+		self.page = tk.Canvas(self.root, width=600, height=500)
+
+	def show(self):
+		self.page.pack(side="left", fill="both", expand=1)
+
+	def setResultsPath(self, path):
+		self.resultsPath = path
 
 if __name__ == "__main__":
 	app = PyEFVLibGUI()

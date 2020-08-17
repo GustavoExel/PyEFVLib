@@ -4,10 +4,12 @@ Library for implementing the Element-based Finite Volumes Method. The input mesh
 ## Prerequisites
 
 This project is writen in Python 3
-You may install numpy
+You may install numpy, scipy and matplotlib
 
 ```bash
 pip install numpy
+pip install scipy
+pip install matplotlib
 ```
 
 Also, for CGNS writing C++ is used, and two libraries are required: [CGNS](https://cgns.github.io) and [Boost](https://www.boost.org).

@@ -11,13 +11,19 @@ import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib import pyplot as plt
+from matplotlib import cm
+from matplotlib.colors import ListedColormap as CM, Normalize
 
 import numpy as np
+import pandas as pd
+from scipy.interpolate import griddata
+
 
 class PyEFVLibGUI:
 	def __init__(self):
 		self.root = tk.Tk()
 		self.root.title("PyEFVLib GUI")
+		self.root.iconbitmap("icon.ico")
 		self.root.bind("<Key>", lambda key: self.root.destroy() if key.char=="\x17" else 0) # Close window if Ctrl+W is pressed
 
 		self.HEIGHT, self.WIDTH = (500, 600)
@@ -27,9 +33,9 @@ class PyEFVLibGUI:
 		self.solidMechanicsApplication = SolidMechanicsApplication(self.root, self)
 		self.post = Post(self.root, self)
 
-		# self.mainMenu.init()
-		self.post.setResultsPath("/home/gustavoe/Documents/Sinmec/HTRelated/PyEFVLib/results/gui/Results.csv")
-		self.post.init()
+		self.mainMenu.init()
+		# self.post.setResultsPath( os.path.join(os.path.dirname(__file__), "..", "results", "gui", "Results.csv") )
+		# self.post.init()
 
 		self.root.mainloop()
 
@@ -601,6 +607,9 @@ class Application:
 					raise Exception("Invalid input in {} field".format(numericalSetting))
 			i+=1
 
+	def quit(self):
+		self.root.destroy()
+
 class SolidMechanicsApplication(Application):
 	def settings(self):
 		self.fields = ["u", "v"]
@@ -653,6 +662,11 @@ class SolidMechanicsApplication(Application):
 		self.meshFileName = ""
 
 	def runSimulation(self):
+		if self.grid.dimension != 2:
+			messagebox.showwarning("Warning","Stress Equilibrium Problem not implemented yet for 3D cases")
+			self.quit()
+			raise Exception("Stress Equilibrium Problem not implemented yet for 3D cases")
+
 		# Boundary Conditions
 		initialValues = { field : self.unitsConvert[ self.initialValueUnitVars[field].get() ](float( self.initialValueEntries[field].get() )) for field in self.fields}
 		
@@ -700,6 +714,7 @@ class SolidMechanicsApplication(Application):
 			verbosity=True 
 		)
 		# self.root.destroy()
+		self.hidePage2()
 		self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
 		self.app.post.init()
 
@@ -804,9 +819,9 @@ class HeatTransferApplication(Application):
 			grid 	  = self.grid,
 			propertyData = self.propertyData,
 			
-			initialValues = {"temperature": [ self.unitsConvert[self.initialValueUnitVars["temperature"].get()]( float(self.initialValueEntries["temperature"].get()) ) ] * grid.vertices.size},
-			neumannBoundaries = {"temperature":[NeumannBoundaryCondition(grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},
-			dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET"]},
+			initialValues = {"temperature": [ self.unitsConvert[self.initialValueUnitVars["temperature"].get()]( float(self.initialValueEntries["temperature"].get()) ) ] * self.grid.vertices.size},
+			neumannBoundaries = {"temperature":[NeumannBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},
+			dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET"]},
  
 			timeStep  = timeStep ,
 			finalTime = finalTime,
@@ -817,6 +832,7 @@ class HeatTransferApplication(Application):
 			verbosity = True
 		)
 		# self.root.destroy()
+		self.hidePage2()
 		self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
 		self.app.post.init()
 
@@ -827,17 +843,93 @@ class Post:
 		self.settings()
 
 	def settings(self):
-		pass
+		self.first = True
 
 	def init(self):
+		self.readData()
 		self.populate()
 		self.show()
+
+	def readData(self):
+		self.resultsData = pd.read_csv(self.resultsPath)
+		self.coords = np.array(self.resultsData[["X","Y","Z"]]).T
+		self.fields = list( {"".join(fieldName.split(" - ")[1:]) for fieldName in self.resultsData.columns[3:]} )
+		self.timeSteps = [ fieldName.split(" - ")[0] for fieldName in self.resultsData.columns[3:] ]
+		self.timeSteps = [ ts for idx, ts in enumerate(self.timeSteps) if ts not in self.timeSteps[:idx] ]
+		self.numberOfTimeSteps = len(self.timeSteps)
 
 	def populate(self):
 		self.page = tk.Canvas(self.root, width=600, height=500)
 
+		# Settings
+
+		self.CMSettingsFrame = tk.LabelFrame(self.page, text="Colormap Settings")
+
+		centerFrame = tk.Frame(self.CMSettingsFrame)
+
+		timeStepLabel = tk.Label(centerFrame, text="Time Step:")
+		timeStepLabel.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+
+		self.timeStepVar = tk.IntVar(value=self.numberOfTimeSteps)
+		timeStepBox = tk.Spinbox(centerFrame, textvariable=self.timeStepVar, from_=1, to=self.numberOfTimeSteps, width=5, state="normal" if self.numberOfTimeSteps > 1 else "disabled")
+		timeStepBox.grid(row=0, column=1, padx=5, pady=5)
+
+		maxTimeStepLabel = tk.Label(centerFrame, text=f"/{self.numberOfTimeSteps}")
+		maxTimeStepLabel.grid(row=0, column=2, padx=5, pady=5)
+
+		showButton = tk.Button(centerFrame, text="Show", command=self.showColorMap)
+		showButton.grid(row=0, column=3, padx=35, pady=5)
+
+		fieldLabel = tk.Label(centerFrame, text="Field:")
+		fieldLabel.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+
+		self.fieldVar = tk.StringVar()
+		self.fieldVar.set(self.fields[0])
+
+		fieldMenu = tk.OptionMenu(centerFrame, self.fieldVar, *self.fields)
+		fieldMenu.grid(row=1, column=1, columnspan=3, padx=5, pady=5)
+
+		centerFrame.place(relx=0.5, rely=0.0, anchor="n")
+		self.CMSettingsFrame.place(relx=0.02,rely=0.98,relwidth=0.96,relheight=150/500-0.02,anchor="sw")
+
+		# Colormap
+
+		self.colormapCanvas = tk.Canvas(self.page)
+
+		self.figure = matplotlib.figure.Figure()
+		self.plot = self.figure.add_subplot()
+
+		self.matplotlibCanvas = FigureCanvasTkAgg(self.figure, self.colormapCanvas)
+		self.matplotlibCanvas.get_tk_widget().pack(side="left", fill="both", expand=1)
+
+		self.colormapCanvas.place(relx=0.0,rely=0.0,relwidth=1.0,relheight=350/500,anchor="nw")
+
 	def show(self):
 		self.page.pack(side="left", fill="both", expand=1)
+
+	def showColorMap(self):
+		X,Y = self.coords[:-1]
+
+		try:
+			if int( self.timeStepVar.get() ) > self.numberOfTimeSteps or int( self.timeStepVar.get() ) < 1:
+				raise Exception
+		except:
+			messagebox.showwarning("Warning", "Invalid Time Step\nIt must range from 1 to {}".format(self.numberOfTimeSteps))
+			raise Exception("Invalid Time Step")
+
+		label = "TimeStep{} - {}".format( self.timeStepVar.get(), self.fieldVar.get())
+		numericalField = self.resultsData[label]
+
+		Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), max(Y), len(Y)) )
+		nF = griddata((X,Y), numericalField, (Xi,Yi), method="linear")
+
+		if self.first:
+			self.first = False
+		else:
+			self.cbar.remove()
+		self.cdata = self.plot.pcolor(Xi,Yi,nF, cmap=CM( cm.get_cmap("RdBu",64)(np.linspace(1,0,64)) )) # Makes BuRd instead of RdBu
+		self.cbar = self.figure.colorbar(self.cdata)
+		self.matplotlibCanvas.draw()
 
 	def setResultsPath(self, path):
 		self.resultsPath = path

@@ -4,11 +4,12 @@ Library for implementing the Element-based Finite Volumes Method. The input mesh
 ## Prerequisites
 
 This project is writen in Python 3
-You may install numpy, scipy and matplotlib
+You may install numpy, scipy, pandas and matplotlib
 
 ```bash
 pip install numpy
 pip install scipy
+pip install pandas
 pip install matplotlib
 ```
 

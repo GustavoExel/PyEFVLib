@@ -135,7 +135,7 @@ def heatTransfer(
 		#-------------------------SAVE RESULTS--------------------------------------
 		# saver.timeSteps	= np.append(saver.timeSteps,  currentTime)
 		# saver.fields  = np.vstack([saver.fields, temperatureField])
-		saver.save("temperature field", temperatureField, currentTime)
+		saver.save("temperature", temperatureField, currentTime)
 
 		#-------------------------CHECK CONVERGENCE---------------------------------
 		converged = False

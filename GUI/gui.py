@@ -34,8 +34,6 @@ class PyEFVLibGUI:
 		self.post = Post(self.root, self)
 
 		self.mainMenu.init()
-		# self.post.setResultsPath( os.path.join(os.path.dirname(__file__), "..", "results", "gui", "Results.csv") )
-		# self.post.init()
 
 		self.root.mainloop()
 
@@ -50,12 +48,18 @@ class MainMenu:
 
 	def populate(self):
 		self.page = tk.Frame(self.root, width=300, height=250)
+		centerFrame = tk.Frame(self.page)
 
-		self.heatTransferButton = tk.Button(self.page, text="Heat Transfer Application", command=self.openHeatTransfer)#, font="Arial 18")
-		self.heatTransferButton.place(relx=0.5, rely=0.5, relwidth=0.75, relheight=0.15, anchor="s")
+		self.heatTransferButton = tk.Button(centerFrame, text="Heat Transfer Application", command=self.openHeatTransfer)
+		self.heatTransferButton.grid(row=0, sticky=["w","e"])
 
-		self.solidMechanicsButton = tk.Button(self.page, text="Solid Mechanics Application", command=self.openSolidMechanics)#, font="Arial 18")
-		self.solidMechanicsButton.place(relx=0.5, rely=0.5, relwidth=0.75, relheight=0.15, anchor="n")
+		self.solidMechanicsButton = tk.Button(centerFrame, text="Solid Mechanics Application", command=self.openSolidMechanics)
+		self.solidMechanicsButton.grid(row=1, sticky=["w","e"])
+
+		self.postButton = tk.Button(centerFrame, text="Post", command=self.openPost)
+		self.postButton.grid(row=2, sticky=["w","e"])
+
+		centerFrame.place(relx=0.5, rely=0.33, anchor="n")
 
 	def show(self):
 		self.page.pack(side="top", fill="both", expand=1)
@@ -67,6 +71,12 @@ class MainMenu:
 	def openSolidMechanics(self):
 		self.page.destroy()
 		self.app.solidMechanicsApplication.init()
+
+	def openPost(self):
+		self.page.destroy()
+		self.app.post.setResultsPath( os.path.join(os.path.realpath(os.path.dirname(__file__)), "..", "results", "gui", "Results.csv") )
+		self.app.post.init()
+
 
 class Application:
 	def __init__(self, root, application):
@@ -278,10 +288,10 @@ class Application:
 			unitMenu = ttk.OptionMenu(initialValueFrame, self.initialValueUnitVars[field], *self.dirichletUnits[field])
 			unitMenu.place(x=270, rely=0.5, anchor="w")
 
-			prevButton = tk.Button(initialValueFrame, text="<", command=prevField, state="disabled" if field == self.fields[0] else "normal")
+			prevButton = tk.Button(initialValueFrame, text="  <  ", command=prevField, state="disabled" if field == self.fields[0] else "normal")
 			prevButton.place(relx=0.9, rely=0.5, anchor="e")
 
-			nextButton = tk.Button(initialValueFrame, text=">", command=nextField, state="disabled" if field == self.fields[-1] else "normal")
+			nextButton = tk.Button(initialValueFrame, text="  >  ", command=nextField, state="disabled" if field == self.fields[-1] else "normal")
 			nextButton.place(relx=0.9, rely=0.5, anchor="w")
 
 		for field in self.fields:
@@ -504,8 +514,8 @@ class Application:
 		numericalFrame.place(relx=0.02, rely=0.47, relheight=0.38, relwidth=0.96, anchor="nw")
 
 
-		self.populated = True
-
+		self.populated = True      
+  
 	def showPage2(self): #
 		self.page2.pack(side="top", fill="both", expand=1)
 
@@ -927,12 +937,17 @@ class Post:
 			self.first = False
 		else:
 			self.cbar.remove()
-		self.cdata = self.plot.pcolor(Xi,Yi,nF, cmap=CM( cm.get_cmap("RdBu",64)(np.linspace(1,0,64)) )) # Makes BuRd instead of RdBu
+		try:
+			self.cdata = self.plot.pcolor(Xi,Yi,nF, cmap=CM( cm.get_cmap("RdBu",64)(np.linspace(1,0,64)) )) # Makes BuRd instead of RdBu
+		except:
+			messagebox.showerror("Error", "Unable to allocate the memory")
+			raise Exception("Unable to allocate the memory")
 		self.cbar = self.figure.colorbar(self.cdata)
 		self.matplotlibCanvas.draw()
 
 	def setResultsPath(self, path):
 		self.resultsPath = path
+		self.root.title("PyEFVLib GUI - {}".format(path))
 
 if __name__ == "__main__":
 	app = PyEFVLibGUI()

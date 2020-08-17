@@ -4,6 +4,9 @@ from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver, NeumannB
 from apps.heat_transfer import heatTransfer
 from apps.stress_equilibrium import stressEquilibrium
 
+from contextlib import redirect_stdout
+import io
+
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
 
@@ -35,7 +38,6 @@ class PyEFVLibGUI:
 		self.mainMenu.init()
 		# self.post.setResultsPath( "C:\\Users\\gusta\\OneDrive\\Documentos\\Programming\\Python\\PyEFVLib\\results\\heat_transfer_2d\\linear\\Results.csv" )
 		# self.post.init()
-		# self.post.page1Next()
 
 		self.root.mainloop()
 
@@ -86,7 +88,6 @@ class MainMenu:
 			self.page.destroy()
 			self.app.post.setResultsPath( os.path.realpath( resultsFileName ) )
 			self.app.post.init()
-
 
 class Application:
 	def __init__(self, root, application):
@@ -381,6 +382,7 @@ class Application:
 		prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
 		# Property Frame
+
 		self.propertyEntries = dict()
 		self.propertyUnitVars = dict()
 		self.propertiesFrames = []
@@ -398,7 +400,11 @@ class Application:
 				self.propertiesFrames[self.currentRegion].place_forget()
 				self.propertiesFrames[self.currentRegion-1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=1.00-0.04, anchor="nw")
 				self.currentRegion -= 1
-
+		def insertProperties(materialName):
+			currentRegionName = self.meshData.regionsNames[self.currentRegion]
+			for propertyName in self.materials[materialName].keys():
+				self.propertyEntries[currentRegionName][propertyName].delete( 0, tk.END )
+				self.propertyEntries[currentRegionName][propertyName].insert( tk.END, self.materials[materialName][propertyName] )
 
 		for regionCount, region in enumerate(self.meshData.regionsNames):
 			propertiesFrame = tk.LabelFrame(self.page2, text="Material Properties")
@@ -410,6 +416,10 @@ class Application:
 
 			self.regionCountLabel = tk.Label(centerFrame, text=f"{region}\t[{regionCount+1}/{numberOfRegions}]")
 			self.regionCountLabel.grid(row=0, column=0, pady=5, sticky="W")
+
+			tk.Label(centerFrame, text="Material Database:").grid(row=0, column=4)
+			materialsTable = tk.OptionMenu(centerFrame, tk.StringVar(value="Select Material"), *self.materials.keys(), command=lambda propertyName:insertProperties(propertyName))#, region))
+			materialsTable.grid(row=0, column=5, sticky="nswe")
 
 			i=1
 			for propertyName in self.properties:
@@ -439,9 +449,9 @@ class Application:
 
 			nextButton = tk.Button(centerFrame, text=">", command=nextRegion, state="disabled" if numberOfRegions==1 or regionCount==numberOfRegions-1 else "normal")
 			nextButton.bind('<Return>', lambda e:nextRegion())
-			nextButton.grid(row=i, column=3)
+			nextButton.grid(row=i, column=3, sticky="W")
 
-			centerFrame.place(relx=0.5, rely=0.0, anchor="n")
+			centerFrame.place(relx=0.02, rely=0.0, anchor="nw")
 
 		self.propertiesFrames[0].place(relx=0.02, rely=0.02, relheight=0.45, relwidth=1.00-0.04, anchor="nw")
 		
@@ -533,7 +543,6 @@ class Application:
 
 		numericalFrame.place(relx=0.02, rely=0.45+0.02, relheight=0.40-0.02, relwidth=1.00-0.04, anchor="nw")
 
-
 		self.populated = True      
   
 	def showPage2(self): #
@@ -592,7 +601,7 @@ class Application:
 	def checkPage1Data(self):
 		if not self.meshFileName:
 			messagebox.showwarning("Warning","Must Select a mesh File")
-			# raise Exception("Must select a mesh file")
+			raise Exception("Must select a mesh file")
 		for field in self.fields:
 			for boundaryName, entry, bType in zip(self.boundariesNames, self.boundaryValueEntries[field], self.boundaryTypeVars[field]):
 				try:
@@ -691,6 +700,12 @@ class SolidMechanicsApplication(Application):
 			"weeks"		: lambda t: 604800.0*t,
 		}
 
+		self.materials = {
+			"Select material": { "Density": "", "PoissonsRatio": "", "ShearModulus": "", "Gravity": "" },
+			"Material 01": { "Density": 2400, "PoissonsRatio": 0.33, "ShearModulus": 6.0, "Gravity": -9.81 },
+
+		}
+
 		self.meshFileName = ""
 
 	def runSimulation(self):
@@ -730,25 +745,41 @@ class SolidMechanicsApplication(Application):
 				self.propertyData[-1][propertyName] = float( self.propertyEntries[region.name][propertyName].get() )
 				self.propertyData[-1][propertyName] = self.unitsConvert[ self.propertyUnitVars[region.name][propertyName].get() ]( self.propertyData[-1][propertyName] )
 
-		stressEquilibrium(
-			libraryPath = os.path.join(os.path.dirname(__file__), os.path.pardir),
-			outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
-			extension = "csv",
-			
-			grid 	  = self.grid,
-			propertyData = self.propertyData,
+		f = io.StringIO()
+		with redirect_stdout(f):
+			print("\n{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
+			stressEquilibrium(
+				libraryPath = os.path.join(os.path.dirname(__file__), os.path.pardir),
+				outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
+				extension = "csv",
+				
+				grid 	  = self.grid,
+				propertyData = self.propertyData,
 
-			initialValues = initialValues,
-			neumannBoundaries = neumannBoundaries,
-			dirichletBoundaries = dirichletBoundaries,
-			boundaryConditions = list(boundaryConditionsDict.values()),
+				initialValues = initialValues,
+				neumannBoundaries = neumannBoundaries,
+				dirichletBoundaries = dirichletBoundaries,
+				boundaryConditions = list(boundaryConditionsDict.values()),
 
-			verbosity=True 
-		)
-		# self.root.destroy()
+				verbosity=True 
+			)
+
+		def gotopost():
+			outputCanvas.destroy()
+			self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
+			self.app.post.init()
+
 		self.hidePage2()
-		self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
-		self.app.post.init()
+		outputCanvas = tk.Canvas(self.root, width=600, height=500)
+		outputCanvas.pack(side="top", fill="both", expand=1)
+
+		output = tk.Text(outputCanvas)
+		output.insert(tk.END, f.getvalue())
+		output.configure(state="disabled")
+		output.pack()
+
+		nextButton = tk.Button(outputCanvas, text="Next", command=gotopost)
+		nextButton.pack()
 
 class HeatTransferApplication(Application):
 	def settings(self):
@@ -788,6 +819,12 @@ class HeatTransferApplication(Application):
 			"h"		: lambda t: 3600*t,
 			"days"	: lambda t: 86400.0*t,
 			"weeks"	: lambda t: 604800.0*t,
+		}
+
+		self.materials = {
+			"Select material": { "Density": "", "HeatCapacity": "", "Conductivity": "", "HeatGeneration": "" },
+			"Material 01": { "Density": 1200, "HeatCapacity": 300, "Conductivity": 30, "HeatGeneration": 0.0 },
+
 		}
 
 		self.meshFileName = ""
@@ -843,30 +880,46 @@ class HeatTransferApplication(Application):
 
 		transient = self.numericalSettingsBools[list(self.numericalSettingsOp.keys()).index("Transient")].get()
 
-		heatTransfer(
-			libraryPath = os.path.join(os.path.dirname(__file__), os.path.pardir),
-			outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
-			extension = "csv",
-			
-			grid 	  = self.grid,
-			propertyData = self.propertyData,
-			
-			initialValues = {"temperature": [ self.unitsConvert[self.initialValueUnitVars["temperature"].get()]( float(self.initialValueEntries["temperature"].get()) ) ] * self.grid.vertices.size},
-			neumannBoundaries = {"temperature":[NeumannBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},
-			dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET"]},
- 
-			timeStep  = timeStep ,
-			finalTime = finalTime,
-			maxNumberOfIterations = maxNumberOfIterations,
-			tolerance = tolerance,
-			
-			transient = transient,
-			verbosity = True
-		)
-		# self.root.destroy()
+		f = io.StringIO()
+		with redirect_stdout(f):
+			print("\n{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
+			heatTransfer(
+				libraryPath = os.path.join(os.path.dirname(__file__), os.path.pardir),
+				outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
+				extension = "csv",
+				
+				grid 	  = self.grid,
+				propertyData = self.propertyData,
+				
+				initialValues = {"temperature": [ self.unitsConvert[self.initialValueUnitVars["temperature"].get()]( float(self.initialValueEntries["temperature"].get()) ) ] * self.grid.vertices.size},
+				neumannBoundaries = {"temperature":[NeumannBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},
+				dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET"]},
+	 
+				timeStep  = timeStep ,
+				finalTime = finalTime,
+				maxNumberOfIterations = maxNumberOfIterations,
+				tolerance = tolerance,
+				
+				transient = transient,
+				verbosity = True
+			)
+
+		def gotopost():
+			outputCanvas.destroy()
+			self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
+			self.app.post.init()
+
 		self.hidePage2()
-		self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
-		self.app.post.init()
+		outputCanvas = tk.Canvas(self.root, width=600, height=500)
+		outputCanvas.pack(side="top", fill="both", expand=1)
+
+		output = tk.Text(outputCanvas)
+		output.insert(tk.END, f.getvalue())
+		output.configure(state="disabled")
+		output.pack()
+
+		nextButton = tk.Button(outputCanvas, text="Next", command=gotopost)
+		nextButton.pack()
 
 class Post:
 	def __init__(self, root, application):
@@ -917,10 +970,11 @@ class Post:
 
 		self.timeStepVar = tk.IntVar(value=self.numberOfTimeSteps)
 		
-		timeStepSlider = ttk.Scale(centerFrame, from_=1, to=self.numberOfTimeSteps, tickinterval=1, orient="horizontal")
+		timeStepSlider = ttk.Scale(centerFrame, from_=1, to=self.numberOfTimeSteps, orient="horizontal", variable=self.timeStepVar)
+		# timeStepSlider = tk.Scale(centerFrame, from_=1, to=self.numberOfTimeSteps, orient="horizontal", variable=self.timeStepVar, tickinterval=1)
 		timeStepSlider.grid(row=0, column=1, padx=5, pady=5)
 
-		timeStepBox = tk.Spinbox(centerFrame, textvariable=self.timeStepVar, from_=1, to=self.numberOfTimeSteps, width=5, state="normal" if self.numberOfTimeSteps > 1 else "disabled")
+		timeStepBox = tk.Spinbox(centerFrame, textvariable=self.timeStepVar, from_=1, to=self.numberOfTimeSteps, width=5, state="readonly" if self.numberOfTimeSteps > 1 else "disabled")
 		timeStepBox.grid(row=0, column=2, pady=5)
 
 		maxTimeStepLabel = tk.Label(centerFrame, text=f"/{self.numberOfTimeSteps}")

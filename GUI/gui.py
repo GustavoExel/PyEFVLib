@@ -1,14 +1,11 @@
-import sys,os
+import sys,os,io
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver, NeumannBoundaryCondition, DirichletBoundaryCondition
 from apps.heat_transfer import heatTransfer
 from apps.stress_equilibrium import stressEquilibrium
 
-from contextlib import redirect_stdout
-import io
-
 import tkinter as tk
-from tkinter import filedialog, ttk, messagebox
+from tkinter import filedialog, ttk, messagebox, scrolledtext
 
 import matplotlib
 matplotlib.use("TkAgg")
@@ -17,9 +14,16 @@ from matplotlib import pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import ListedColormap as CM, Normalize
 
+from contextlib import redirect_stdout
 import numpy as np
+from numpy import pi, sin, cos, tan, arcsin, arccos, arctan, sinh, cosh, tanh, arcsinh, arccosh, arctanh, sqrt, e , log, exp, inf, mod, floor
 import pandas as pd
 from scipy.interpolate import griddata
+
+def getFunction(expr):
+	def function(x,y,z,t):
+		return eval( expr.replace('x',str(x)).replace('y',str(y)).replace('z',str(z)).replace('t',str(t)) )
+	return function
 
 class PyEFVLibGUI:
 	def __init__(self):
@@ -30,16 +34,17 @@ class PyEFVLibGUI:
 
 		self.HEIGHT, self.WIDTH = (500, 600)
 
+		self.init()
+
+		self.root.mainloop()
+
+	def init(self):
 		self.mainMenu = MainMenu(self.root, self)
 		self.heatTransferApplication = HeatTransferApplication(self.root, self)
 		self.solidMechanicsApplication = SolidMechanicsApplication(self.root, self)
 		self.post = Post(self.root, self)
 
 		self.mainMenu.init()
-		# self.post.setResultsPath( "C:\\Users\\gusta\\OneDrive\\Documentos\\Programming\\Python\\PyEFVLib\\results\\heat_transfer_2d\\linear\\Results.csv" )
-		# self.post.init()
-
-		self.root.mainloop()
 
 class MainMenu:
 	def __init__(self, root, application):
@@ -51,7 +56,7 @@ class MainMenu:
 		self.show()
 
 	def populate(self):
-		self.page = tk.Frame(self.root, width=600, height=500)
+		self.page = tk.Frame(self.root, width=300, height=250)
 		# self.page = tk.Frame(self.root, width=300, height=250)
 		centerFrame = tk.Frame(self.page)
 
@@ -96,7 +101,10 @@ class Application:
 		self.settings()
 
 	def init(self):
+		self.meshFileName = ""
+		self.simulated = False
 		self.drawn = False
+
 		self.populatePage1()
 		self.showPage1()
 
@@ -120,13 +128,13 @@ class Application:
 		self.BCBottomFrame = tk.Frame(self.page1)
 		self.BCBottomFrame.place(relx=0.02, rely=0.85+0.02, relheight=0.1, relwidth=1.00-0.04, anchor="nw" )
 
-		nextButton = tk.Button(self.BCBottomFrame, text="Next", command=self.page1Next)
-		nextButton.bind('<Return>', lambda e:self.page1Next())
-		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-
 		prevButton = tk.Button(self.BCBottomFrame, text="Prev", command=self.page1Prev)
 		prevButton.bind('<Return>', lambda e:self.page1Prev())
 		prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+
+		nextButton = tk.Button(self.BCBottomFrame, text="Next", command=self.page1Next)
+		nextButton.bind('<Return>', lambda e:self.page1Next())
+		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
 		def showFigFunc():
 			if self.showFigVar.get():
@@ -145,7 +153,7 @@ class Application:
 
 		self.showFigVar = tk.BooleanVar()
 		self.showFigVar.set(False)
-		self.showFigCheckbox = tk.Checkbutton(self.BCBottomFrame, text="Show Figure", variable=self.showFigVar, command=showFigFunc, state="disabled")
+		self.showFigCheckbox = tk.Checkbutton(self.BCBottomFrame, text="Show Boundaries", variable=self.showFigVar, command=showFigFunc, state="disabled")
 		self.showFigCheckbox.place(relx=0.0, rely=0.25, anchor="w")
 		self.showMeshVar = tk.BooleanVar()
 		self.showMeshVar.set(False)
@@ -373,13 +381,13 @@ class Application:
 		bottomFrame = tk.Frame(self.page2)
 		bottomFrame.place(relx=0.02, rely=0.85+0.02, relheight=0.1, relwidth=1.00-0.04, anchor="nw" )
 
-		nextButton = tk.Button(bottomFrame, text="RUN", command=self.page2Next)
-		nextButton.bind('<Return>', lambda e:self.page2Next())
-		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-
 		prevButton = tk.Button(bottomFrame, text="Prev", command=self.page2Prev)
 		prevButton.bind('<Return>', lambda e:self.page2Prev())
 		prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+		
+		nextButton = tk.Button(bottomFrame, text="Next", command=self.page2Next)
+		nextButton.bind('<Return>', lambda e:self.page2Next())
+		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
 		# Property Frame
 
@@ -457,6 +465,21 @@ class Application:
 		
 		# Numerical Frame
 		numericalFrame = tk.LabelFrame(self.page2, text="Numerical Settings")
+
+		if "temperature" in self.fields:
+			def spaninfo():
+				h=1
+				alpha=1
+				regionName = self.meshData.regionsNames[self.currentRegion]
+				print([entry.get() == "" for entry in self.propertyEntries[regionName].values()])
+				if not True in [entry.get() == "" for entry in self.propertyEntries[regionName].values()]:
+					messagebox.showinfo("Help", f"{regionName} info.\nCharacteristic mesh length (h) = {h} m\nDiffusivity (α=k/(ρ cp) = {alpha} m²/s")
+				else:
+					messagebox.showinfo("Help", f"Fill in {regionName} properties to see its diffusivity and characteristic mesh length")
+			
+
+			infobox = tk.Button(numericalFrame, text="  ?  ", command=spaninfo)
+			infobox.place(relx=0.96, rely=0.0, anchor="ne")
 
 		self.numericalSettingsEntries = []
 		self.numericalSettingsUnits = []
@@ -553,17 +576,22 @@ class Application:
 
 	def openFile(self):
 		initialdir = os.path.join( os.path.dirname(__file__), os.path.pardir, "meshes" )
+		prevMeshFileName = self.meshFileName
 		self.meshFileName = tk.filedialog.askopenfilename(initialdir=initialdir, title="Select a mesh file", filetypes=(("MSH files", "*.msh"),("All files", "*")))
 
 		if self.meshFileName: # Prevents against not choosing a file
+			if not ".msh" in self.meshFileName:
+				# Prevents from forgetting already selected mesh if select mesh button is accidentally pressed
+				self.meshFileName = prevMeshFileName
+				messagebox.showwarning("Warning","Must be a .msh file")
+				raise Exception("Must be a .msh file")
 			try:
 				self.meshData = MSHReader(self.meshFileName).getData()
 			except:
+				# Prevents from forgetting already selected mesh if select mesh button is accidentally pressed
+				self.meshFileName = prevMeshFileName
 				messagebox.showwarning("Warning","Invalid mesh file")
 				raise Exception("Invalid mesh file")
-			if not ".msh" in self.meshFileName:
-				messagebox.showwarning("Warning","Must be a .msh file")
-				raise Exception("Must be a .msh file")
 			
 
 			self.grid = Grid( self.meshData )
@@ -578,13 +606,17 @@ class Application:
 			self.fileLabel["text"] = self.meshFileName
 			self.populateBCFrame()
 			self.populatePage2()
+		else:
+			self.meshFileName = prevMeshFileName
 
 	def page1Prev(self):
 		self.page1.destroy()
-		self.app.mainMenu.init()
+		self.app.init()
+		# self.app.mainMenu.init()
 	
 	def page1Next(self):
-		self.checkPage1Data()
+		self.checkFile()
+		# self.checkPage1Data()
 		self.hidePage1()
 		self.hideBCFig()
 		self.hideBCMesh()
@@ -595,28 +627,55 @@ class Application:
 		self.showPage1()
 	
 	def page2Next(self):
-		self.checkPage2Data()
-		self.runSimulation()
-	
-	def checkPage1Data(self):
+		simulate = True
+		if self.simulated:
+			if "no" == tk.messagebox.askquestion("Warning", "A simulation has already been calculated. Do you want to calculate another one?"):
+				simulate = False
+				self.hidePage2()
+				self.app.post.showConsole()
+				return
+
+		if simulate:
+			self.simulated = True
+			self.checkPage1Data()
+			self.checkPage2Data()
+			self.runSimulation()
+
+			self.hidePage2()
+			self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
+			self.app.post.init()
+
+	def checkFile(self):
 		if not self.meshFileName:
 			messagebox.showwarning("Warning","Must Select a mesh File")
 			raise Exception("Must select a mesh file")
+
+	def checkPage1Data(self):
 		for field in self.fields:
 			for boundaryName, entry, bType in zip(self.boundariesNames, self.boundaryValueEntries[field], self.boundaryTypeVars[field]):
+				BCExpression = entry.get()
 				try:
-					float( entry.get() )
+					float( BCExpression )
 				except:
-					messagebox.showwarning("Warning","Invalid value in \"{} - {}\" field".format(field, boundaryName))
-					raise Exception("Invalid value in \"{} - {}\" field".format(field, boundaryName))
+					try:
+						# Try to parse expression
+						getFunction( BCExpression )( *np.random.rand((4)) )
+					except:
+						messagebox.showwarning("Warning","Invalid value in \"{} - {}\" field".format(field, boundaryName))
+						raise Exception("Invalid value in \"{} - {}\" field".format(field, boundaryName))
 				if bType.get() == 0:
 					messagebox.showwarning("Warning","Must select either Neumann or Dirichlet Boundary Condition")
 					raise Exception("Must select either Neumann or Dirichlet Boundary Condition")
+			initialExpression = self.initialValueEntries[field].get()
 			try:
-				float( self.initialValueEntries[field].get() )
+				float( initialExpression )
 			except:
-				messagebox.showwarning("Warning", "Invalid Value in Initial Value field")
-				raise Exception("Invalid Value in Initial Value field")
+				try:
+					# Try to parse expression
+					getFunction( initialExpression )( *np.random.rand((4)) )
+				except:
+					messagebox.showwarning("Warning", "Invalid Value in Initial Value field")
+					raise Exception("Invalid Value in Initial Value field")
 	
 	def checkPage2Data(self):
 		for region in self.meshData.regionsNames:
@@ -630,11 +689,11 @@ class Application:
 	
 		transientIndex = list(self.numericalSettingsOp.keys()).index("Transient")
 		finalTimeIndex = list(self.numericalSettingsOp.keys()).index("Final time")
-		maxNOfItIndex = list(self.numericalSettingsOp.keys()).index("Max number of iterations")
+		numberOfTSIndex = list(self.numericalSettingsOp.keys()).index("Max number of time steps")
 		toleranceIndex = list(self.numericalSettingsOp.keys()).index("Tolerance")
 		
 		if self.numericalSettingsBools[transientIndex].get():
-			if not self.numericalSettingsBools[finalTimeIndex].get() and not self.numericalSettingsBools[maxNOfItIndex].get() and not self.numericalSettingsBools[toleranceIndex].get():
+			if not self.numericalSettingsBools[finalTimeIndex].get() and not self.numericalSettingsBools[numberOfTSIndex].get() and not self.numericalSettingsBools[toleranceIndex].get():
 				messagebox.showwarning("Warning", "There is no way of reaching convergence. Set at least one of final time, max number of iterations or tolerance fields")
 				raise Exception("There is no way of reaching convergence. Set at least one of final time, max number of iterations or tolerance fields")
 
@@ -643,6 +702,10 @@ class Application:
 			if self.numericalSettingsOp[numericalSetting]["option"][0] and self.numericalSettingsBools[i].get():
 				try:
 					float( self.numericalSettingsEntries[i].get() )
+					if numericalSetting == "Time Step" and float( self.numericalSettingsEntries[i].get() ) <= 0.0:
+						# messagebox.showwarning("Time Step must be positive")
+						self.numericalSettingsEntries[i].delete( 0, tk.END )
+						raise Exception("Warning", "Time Step must be positive")
 				except:
 					messagebox.showwarning("Warning", "Invalid input in {} field".format(numericalSetting))
 					raise Exception("Invalid input in {} field".format(numericalSetting))
@@ -670,7 +733,7 @@ class SolidMechanicsApplication(Application):
 		self.numericalSettingsOp = {	# "option": [entry, unit, checkbox]
 			"Time Step"					:{"option":[1,1,0,0],"units":["s", "min", "h", "days", "weeks"]},
 			"Final time"				:{"option":[1,1,0,0],"units":["s", "min", "h", "days", "weeks"]},
-			"Max number of iterations"	:{"option":[1,0,0,0],"units":[""]},
+			"Max number of time steps"	:{"option":[1,0,0,0],"units":[""]},
 			"Tolerance"					:{"option":[1,1,0,0],"units":["K"]},
 			"Transient"					:{"option":[0,0,0,0],"units":[""]}
 		}
@@ -705,8 +768,6 @@ class SolidMechanicsApplication(Application):
 			"Material 01": { "Density": 2400, "PoissonsRatio": 0.33, "ShearModulus": 6.0, "Gravity": -9.81 },
 
 		}
-
-		self.meshFileName = ""
 
 	def runSimulation(self):
 		if self.grid.dimension != 2:
@@ -764,22 +825,7 @@ class SolidMechanicsApplication(Application):
 				verbosity=True 
 			)
 
-		def gotopost():
-			outputCanvas.destroy()
-			self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
-			self.app.post.init()
-
-		self.hidePage2()
-		outputCanvas = tk.Canvas(self.root, width=600, height=500)
-		outputCanvas.pack(side="top", fill="both", expand=1)
-
-		output = tk.Text(outputCanvas)
-		output.insert(tk.END, f.getvalue())
-		output.configure(state="disabled")
-		output.pack()
-
-		nextButton = tk.Button(outputCanvas, text="Next", command=gotopost)
-		nextButton.pack()
+		self.app.post.setOutputTextVar(f)
 
 class HeatTransferApplication(Application):
 	def settings(self):
@@ -799,8 +845,8 @@ class HeatTransferApplication(Application):
 		self.numericalSettingsOp = {	# "option": [entry, unit, checkbox]
 			"Time Step"					:{"option":[1,1,0,1],"units":["s", "min", "h", "days", "weeks"]},
 			"Final time"				:{"option":[1,1,1,0],"units":["s", "min", "h", "days", "weeks"]},
-			"Max number of iterations"	:{"option":[1,0,1,0],"units":[""]},
-			"Tolerance"					:{"option":[1,1,1,1],"units":["K"]},
+			"Max number of time steps"	:{"option":[1,0,1,1],"units":[""]},
+			"Tolerance"					:{"option":[1,1,1,0],"units":["K"]},
 			"Transient"					:{"option":[0,0,1,1],"units":[""]}
 		}
 
@@ -826,8 +872,6 @@ class HeatTransferApplication(Application):
 			"Material 01": { "Density": 1200, "HeatCapacity": 300, "Conductivity": 30, "HeatGeneration": 0.0 },
 
 		}
-
-		self.meshFileName = ""
 
 	def runSimulation(self):
 		# Boundary Conditions
@@ -866,11 +910,11 @@ class HeatTransferApplication(Application):
 		else:
 			finalTime = None
 
-		index = list(self.numericalSettingsOp.keys()).index("Max number of iterations")
+		index = list(self.numericalSettingsOp.keys()).index("Max number of time steps")
 		if self.numericalSettingsBools[index].get():
-			maxNumberOfIterations = float(self.numericalSettingsEntries[index].get())
+			maxNumberOfTimeSteps = float(self.numericalSettingsEntries[index].get())
 		else:
-			maxNumberOfIterations = None
+			maxNumberOfTimeSteps = None
 
 		index = list(self.numericalSettingsOp.keys()).index("Tolerance")
 		if self.numericalSettingsBools[index].get():
@@ -880,7 +924,7 @@ class HeatTransferApplication(Application):
 
 		transient = self.numericalSettingsBools[list(self.numericalSettingsOp.keys()).index("Transient")].get()
 
-		f = io.StringIO()
+		f = io.StringIO()		
 		with redirect_stdout(f):
 			print("\n{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
 			heatTransfer(
@@ -897,29 +941,14 @@ class HeatTransferApplication(Application):
 	 
 				timeStep  = timeStep ,
 				finalTime = finalTime,
-				maxNumberOfIterations = maxNumberOfIterations,
+				maxNumberOfIterations = maxNumberOfTimeSteps,
 				tolerance = tolerance,
 				
 				transient = transient,
 				verbosity = True
 			)
 
-		def gotopost():
-			outputCanvas.destroy()
-			self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
-			self.app.post.init()
-
-		self.hidePage2()
-		outputCanvas = tk.Canvas(self.root, width=600, height=500)
-		outputCanvas.pack(side="top", fill="both", expand=1)
-
-		output = tk.Text(outputCanvas)
-		output.insert(tk.END, f.getvalue())
-		output.configure(state="disabled")
-		output.pack()
-
-		nextButton = tk.Button(outputCanvas, text="Next", command=gotopost)
-		nextButton.pack()
+		self.app.post.setOutputTextVar(f)
 
 class Post:
 	def __init__(self, root, application):
@@ -932,9 +961,42 @@ class Post:
 
 	def init(self):
 		self.readData()
+		self.populateConsole()
 		self.populatePage1()
 		self.populatePage2()
-		self.showPage1()
+
+		self.showConsole()
+
+	def populateConsole(self):
+		def prevFunc():
+			self.outputCanvas.pack_forget()
+			self.app.heatTransferApplication.showPage2()
+
+		def nextFunc():
+			self.outputCanvas.pack_forget()
+			self.showPage1()
+
+		self.outputCanvas = tk.Canvas(self.root, width=600, height=500)
+
+		tk.Label(self.outputCanvas, text="Console:").place(relx=0.02, rely=0.02, anchor="nw")
+
+		outputText = scrolledtext.ScrolledText(self.outputCanvas)
+		outputText.insert(tk.END, self.outputTextVar.getvalue())
+		outputText.configure(state="disabled")
+		outputText.place(relx=0.02, rely=0.02+0.05, relheight=0.80, relwidth=1.00-0.04, anchor="nw" )
+
+		# Bottom Frame
+		bottomFrame = tk.Frame(self.outputCanvas)
+		bottomFrame.place(relx=0.02, rely=0.85+0.02, relheight=0.1, relwidth=1.00-0.04, anchor="nw" )
+
+		prevButton = tk.Button(bottomFrame, text="Prev", command=prevFunc)
+		prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+		
+		nextButton = tk.Button(bottomFrame, text="Next", command=nextFunc)
+		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+
+	def showConsole(self):
+		self.outputCanvas.pack(side="top", fill="both", expand=1)
 
 	def readData(self):
 		self.resultsData = pd.read_csv(self.resultsPath)
@@ -951,13 +1013,13 @@ class Post:
 		footerFrame = tk.Frame(self.page1)
 		footerFrame.place(relx=0.02, rely=1.00-0.02, relwidth=1.00-0.04, relheight=0.10-0.02, anchor="sw")
 
-		nextButton = tk.Button(footerFrame, text="Next", command=self.page1Next)
-		nextButton.bind('<Return>', lambda e:self.page1Next())
-		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-
 		prevButton = tk.Button(footerFrame, text="Prev", command=self.page1Prev)
 		prevButton.bind('<Return>', lambda e:self.page1Prev())
 		prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+
+		nextButton = tk.Button(footerFrame, text="Next", command=self.page1Next)
+		nextButton.bind('<Return>', lambda e:self.page1Next())
+		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
 
 		# Settings
 
@@ -970,12 +1032,11 @@ class Post:
 
 		self.timeStepVar = tk.IntVar(value=self.numberOfTimeSteps)
 		
-		timeStepSlider = ttk.Scale(centerFrame, from_=1, to=self.numberOfTimeSteps, orient="horizontal", variable=self.timeStepVar)
-		# timeStepSlider = tk.Scale(centerFrame, from_=1, to=self.numberOfTimeSteps, orient="horizontal", variable=self.timeStepVar, tickinterval=1)
-		timeStepSlider.grid(row=0, column=1, padx=5, pady=5)
-
 		timeStepBox = tk.Spinbox(centerFrame, textvariable=self.timeStepVar, from_=1, to=self.numberOfTimeSteps, width=5, state="readonly" if self.numberOfTimeSteps > 1 else "disabled")
 		timeStepBox.grid(row=0, column=2, pady=5)
+
+		timeStepSlider = ttk.Scale(centerFrame, from_=1, to=self.numberOfTimeSteps, orient="horizontal", variable=self.timeStepVar, command=lambda value: self.timeStepVar.set( round(float( value )) ))
+		timeStepSlider.grid(row=0, column=1, padx=5, pady=5)
 
 		maxTimeStepLabel = tk.Label(centerFrame, text=f"/{self.numberOfTimeSteps}")
 		maxTimeStepLabel.grid(row=0, column=3, pady=5)
@@ -1051,9 +1112,13 @@ class Post:
 		self.resultsPath = path
 		self.root.title("PyEFVLib GUI - {}".format(path))
 
+	def setOutputTextVar(self, textVar):
+		self.outputTextVar = textVar
+
 	def page1Prev(self):
-		self.page1.destroy()
-		self.app.mainMenu.init()
+		# self.page1.destroy()
+		self.page1.pack_forget()
+		self.showConsole()
 
 	def page1Next(self):
 		self.page1.pack_forget()
@@ -1066,12 +1131,13 @@ class Post:
 		footerFrame = tk.Frame(self.page2)
 		footerFrame.place(relx=0.02, rely=1.00-0.02, relwidth=1.00-0.04, relheight=0.10-0.02, anchor="sw")
 
-		nextButton = tk.Button(footerFrame, text="Next", state="disabled")
-		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-
 		prevButton = tk.Button(footerFrame, text="Prev", command=self.page2Prev)
 		prevButton.bind('<Return>', lambda e:self.page2Prev())
 		prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+		
+		nextButton = tk.Button(footerFrame, text="Next", state="disabled")
+		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+
 
 		# Settings
 
@@ -1173,7 +1239,6 @@ class Post:
 				self.matplotlibCanvas2.draw()
 		except:
 			messagebox.showerror("Error", "An error has occuried")
-
 
 	def page2Prev(self):
 		self.page2.pack_forget()

@@ -201,6 +201,7 @@ class Application:
 			for propertyName in self.materials[materialName].keys():
 				self.propertyEntries[currentRegionName][propertyName].delete( 0, tk.END )
 				self.propertyEntries[currentRegionName][propertyName].insert( tk.END, self.materials[materialName][propertyName] )
+				self.propertyUnitVars[currentRegionName][propertyName].set(self.propertyUnits[propertyName][0])
 
 		for regionCount, region in enumerate(self.meshData.regionsNames):
 			propertiesFrame = tk.LabelFrame(self.page2, text="Material Properties")
@@ -254,6 +255,7 @@ class Application:
 		# Numerical Frame
 		numericalFrame = tk.LabelFrame(self.page2, text="Numerical Settings")
 
+		# Help Button
 		if "temperature" in self.fields:
 			def spaninfo():
 				# This variable indicates whether it was possible to calculate h and alpha.
@@ -269,6 +271,11 @@ class Application:
 						k = float( self.propertyEntries[regionName]["Conductivity"].get() )
 						rho = float( self.propertyEntries[regionName]["Density"].get() )
 						cp = float( self.propertyEntries[regionName]["HeatCapacity"].get() )
+						
+						k   = self.unitsConvert[ self.propertyUnitVars[regionName]["Conductivity"].get() ](k)
+						rho = self.unitsConvert[ self.propertyUnitVars[regionName]["Density"].get() ](rho)
+						cp  = self.unitsConvert[ self.propertyUnitVars[regionName]["HeatCapacity"].get() ](cp)
+						
 						alpha = k / (rho * cp)
 						
 						gotParameters = True
@@ -282,10 +289,10 @@ class Application:
 				else:
 					messagebox.showinfo("Help", f"Fill in {regionName} properties to see its diffusivity and characteristic mesh length")
 			
-
 			infobox = tk.Button(numericalFrame, text="  ?  ", command=spaninfo)
 			infobox.place(relx=0.96, rely=0.0, anchor="ne")
 
+		# Numerical Settings
 		self.numericalSettingsEntries = []
 		self.numericalSettingsUnits = []
 		self.numericalSettingsUnitMenus = []
@@ -811,26 +818,21 @@ class SolidMechanicsApplication(Application):
 				self.propertyData[-1][propertyName] = float( self.propertyEntries[region.name][propertyName].get() )
 				self.propertyData[-1][propertyName] = self.unitsConvert[ self.propertyUnitVars[region.name][propertyName].get() ]( self.propertyData[-1][propertyName] )
 
-		f = io.StringIO()
-		with redirect_stdout(f):
-			print("\n{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
-			stressEquilibrium(
-				libraryPath = os.path.join(os.path.dirname(__file__), os.path.pardir),
-				outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
-				extension = "csv",
-				
-				grid 	  = self.grid,
-				propertyData = self.propertyData,
+		stressEquilibrium(
+			libraryPath = os.path.join(os.path.dirname(__file__), os.path.pardir),
+			outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
+			extension = "csv",
+			
+			grid 	  = self.grid,
+			propertyData = self.propertyData,
 
-				initialValues = initialValues,
-				neumannBoundaries = neumannBoundaries,
-				dirichletBoundaries = dirichletBoundaries,
-				boundaryConditions = list(boundaryConditionsDict.values()),
+			initialValues = initialValues,
+			neumannBoundaries = neumannBoundaries,
+			dirichletBoundaries = dirichletBoundaries,
+			boundaryConditions = list(boundaryConditionsDict.values()),
 
-				verbosity=True 
-			)
-
-		self.app.post.setOutputTextVar(f)
+			verbosity=True 
+		)
 
 class HeatTransferApplication(Application):
 	def settings(self):
@@ -950,7 +952,8 @@ class HeatTransferApplication(Application):
 				tolerance = tolerance,
 				
 				transient = transient,
-				verbosity = True
+				verbosity = True,
+				color=False
 			)
 
 		self.app.post.setOutputTextVar(f)

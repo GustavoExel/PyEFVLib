@@ -25,7 +25,8 @@ def heatTransfer(
 		
 		fileName="Results",		# File name
 		transient=True,			# If False, the transient term is not added to the equation, and it's solved in one iteration
-		verbosity=True 			# If False does not print iteration info
+		verbosity=True, 			# If False does not print iteration info
+		color=True
 	):
 
 	#-------------------------SETTINGS----------------------------------------------
@@ -45,6 +46,8 @@ def heatTransfer(
 	iteration = 0
 	converged = False
 
+	def print_purple(text, end="\n"):
+		print(f"\n\t\033[1;35m{text}\033[0m", end=end)
 	def add(i, j, val):
 		coords.append((i,j))
 		matrixVals.append(val)
@@ -160,7 +163,8 @@ def heatTransfer(
 	if verbosity:
 		print("Saved file: elapsed {:.2f}s".format(time.time()-finalSimulationTime))
 
-		print("\n\t\033[1;35mresult:\033[0m", saver.outputPath, "\n")
+		[print, print_purple][color]("\n\tresult: ", end="")
+		print(os.path.realpath(saver.outputPath), "\n")
 
 	return temperatureField
 
@@ -214,7 +218,7 @@ if __name__ == "__main__":
 		tolerance = problemData.tolerance,
 		
 		transient = not "-p" in sys.argv,
-		verbosity = not "-s" in sys.argv
+		verbosity = not "-s" in sys.argv,
 	)
 
 	#-------------------------------------------------------------------------------

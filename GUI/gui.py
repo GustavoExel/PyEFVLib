@@ -256,12 +256,29 @@ class Application:
 
 		if "temperature" in self.fields:
 			def spaninfo():
-				h=1
-				alpha=1
+				# This variable indicates whether it was possible to calculate h and alpha.
+				# This prevents the "?" button to scream at the user for not filled the 
+				# 	entries properly
+				gotParameters = False
+
 				regionName = self.meshData.regionsNames[self.currentRegion]
-				print([entry.get() == "" for entry in self.propertyEntries[regionName].values()])
 				if not True in [entry.get() == "" for entry in self.propertyEntries[regionName].values()]:
-					messagebox.showinfo("Help", f"{regionName} info.\nCharacteristic mesh length (h) = {h} m\nDiffusivity (α=k/(ρ cp) = {alpha} m²/s")
+					try:
+						h = ( sum([element.volume for element in self.grid.elements])/self.grid.elements.size ) ** (1/self.grid.dimension)
+
+						k = float( self.propertyEntries[regionName]["Conductivity"].get() )
+						rho = float( self.propertyEntries[regionName]["Density"].get() )
+						cp = float( self.propertyEntries[regionName]["HeatCapacity"].get() )
+						alpha = k / (rho * cp)
+						
+						gotParameters = True
+					except: 
+						# Note that when expression properties get implemented,
+						# this will throw an error here
+						print("Properties parameters have not been properly filled yet")
+
+				if gotParameters:
+					messagebox.showinfo("Help", f"{regionName} info.\nCharacteristic mesh length (h) = {h:.03e} m\nDiffusivity (α=k/(ρ cp) = {alpha:.03e} m²/s\nParameter for timeStep (h²/α) = {h**2/alpha:.03e} s")
 				else:
 					messagebox.showinfo("Help", f"Fill in {regionName} properties to see its diffusivity and characteristic mesh length")
 			
@@ -1065,7 +1082,7 @@ class Post:
 
 		self.timeStepStrVar = tk.StringVar(value=self.timeSteps[-1])
 		timeStepMenu = tk.OptionMenu(centerFrame, self.timeStepStrVar, *self.timeSteps)
-		timeStepMenu.grid(row=1, column=3, columnspan=2, padx=5, pady=5, sticky="e")
+		timeStepMenu.grid(row=1, column=4, columnspan=2, padx=5, pady=5, sticky="e")
 
 		plotButton = tk.Button(centerFrame, text="Plot", command=self.plotFieldProfile)
 		plotButton.bind('<Return>', lambda e:self.plotFieldProfile())

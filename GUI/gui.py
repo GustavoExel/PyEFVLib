@@ -997,6 +997,11 @@ class Post:
 	def populatePage1(self):
 		self.page1 = Page(self.root, width=600, height=500, prevFunc=self.page1Prev,nextFunc=self.page1Next)
 		# Settings
+		def changeTSStringVar():
+			self.timeStepStrVar.set( self.timeSteps[ self.timeStepVar.get()-1 ] )
+		def slideTSIntVar(value):
+			self.timeStepVar.set( round(float( value )) )
+			changeTSStringVar()
 
 		self.CMSettingsFrame = tk.LabelFrame(self.page1, text="Colormap Settings")
 
@@ -1010,7 +1015,7 @@ class Post:
 		timeStepBox = tk.Spinbox(centerFrame, textvariable=self.timeStepVar, from_=1, to=self.numberOfTimeSteps, width=5, state="readonly" if self.numberOfTimeSteps > 1 else "disabled")
 		timeStepBox.grid(row=0, column=2, pady=5)
 
-		timeStepSlider = ttk.Scale(centerFrame, from_=1, to=self.numberOfTimeSteps, orient="horizontal", variable=self.timeStepVar, command=lambda value: self.timeStepVar.set( round(float( value )) ))
+		timeStepSlider = ttk.Scale(centerFrame, from_=1, to=self.numberOfTimeSteps, orient="horizontal", variable=self.timeStepVar, command=slideTSIntVar)
 		timeStepSlider.grid(row=0, column=1, padx=5, pady=5)
 
 		maxTimeStepLabel = tk.Label(centerFrame, text=f"/{self.numberOfTimeSteps}")
@@ -1039,7 +1044,8 @@ class Post:
 
 		self.figure1 = matplotlib.figure.Figure()
 		self.plot1 = self.figure1.add_subplot()
-		self.plot1.set_position([0.125,0.15,0.8,0.75])
+		self.plot1.set_position([0.125,0.15,0.75,0.75])
+
 
 		self.figure1.patch.set_facecolor((240/255,240/255,237/255))
 		self.plot1.patch.set_facecolor((240/255,240/255,237/255))
@@ -1055,6 +1061,9 @@ class Post:
 	def populatePage2(self):
 		self.page2 = Page(self.root, width=600, height=500, prevFunc=self.page2Prev, nextFunc=lambda:1)
 		self.page2.nextButton.configure(state="disabled")
+
+		def changeTSIntVar(stringVal):
+			self.timeStepVar.set( int(stringVal.replace("TimeStep", "")) )
 
 		# Settings
 
@@ -1081,7 +1090,7 @@ class Post:
 		fieldMenu.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="w")
 
 		self.timeStepStrVar = tk.StringVar(value=self.timeSteps[-1])
-		timeStepMenu = tk.OptionMenu(centerFrame, self.timeStepStrVar, *self.timeSteps)
+		timeStepMenu = tk.OptionMenu(centerFrame, self.timeStepStrVar, command=changeTSIntVar, *self.timeSteps)
 		timeStepMenu.grid(row=1, column=4, columnspan=2, padx=5, pady=5, sticky="e")
 
 		plotButton = tk.Button(centerFrame, text="Plot", command=self.plotFieldProfile)
@@ -1135,7 +1144,11 @@ class Post:
 		except:
 			messagebox.showerror("Error", "Unable to allocate the memory")
 			raise Exception("Unable to allocate the memory")
-		self.cbar = self.figure1.colorbar(self.cdata)
+		
+		cbaxes = self.figure1.add_axes([0.90, 0.15, 0.03, 0.75]) 
+		self.cbar = self.figure1.colorbar(self.cdata, cax=cbaxes)
+
+		self.plot1.set_position([0.125,0.15,0.75,0.75])
 		self.matplotlibCanvas1.draw()
 
 	def page1Prev(self):
@@ -1167,11 +1180,11 @@ class Post:
 		label = "{} - {}".format( self.timeStepStrVar.get(), self.fieldVar.get())
 
 		try:
-			x0 = y0 = float( self.lineEntry.get() )
+			w0 = float( self.lineEntry.get() )
 			if self.devEntry.get() == "":
-				dx = dy = 0.0
+				dw = 0.0
 			else:
-				dx = dy = float( self.devEntry.get() )
+				dw = float( self.devEntry.get() )
 		except:
 			messagebox.showwarning("Warning", "Invalid parameters")
 			raise Exception("Invalid parameters")
@@ -1179,31 +1192,33 @@ class Post:
 		self.plot2.clear()
 		self.plot2.patch.set_facecolor((240/255,240/255,237/255))
 
-		try:
-			if self.directionVar.get() == "x":
-				if x0-dx > max(X) or x0+dx < min(X):
-					messagebox.showwarning("Warning", "The line does not pass through the domain")
-					# raise Exception("The line does not pass through the domain")
-					return
-				Y, numericalField = zip(*[(y, nR) for x,y,nR in zip(X, Y, self.resultsData[label]) if abs(x-x0)<dx])
-				Y, numericalField = zip(*sorted(zip(Y,numericalField)))
-				self.plot2.plot(Y,numericalField, color="k", marker=".")
-				self.plot2.set_xlabel("y [m]")
-				self.plot2.set_ylabel(self.fieldVar.get())
-				self.matplotlibCanvas2.draw()
-			elif self.directionVar.get() == "y":
-				if y0-dy > max(Y) or y0+dy < min(Y):
-					messagebox.showwarning("Warning", "The line does not pass through the domain")
-					raise Exception("The line does not pass through the domain")
-					return
-				X, numericalField = zip(*[(x, nR) for x,y,nR in zip(X, Y, self.resultsData[label]) if abs(y-y0)<y0])
-				X, numericalField = zip(*sorted(zip(X,numericalField)))
-				self.plot2.plot(X,numericalField, color="k", marker=".")
-				self.plot2.set_xlabel("x [m]")
-				self.plot2.set_ylabel(self.fieldVar.get())
-				self.matplotlibCanvas2.draw()
-		except:
-			messagebox.showerror("Error", "An error has occuried")
+		# try:
+		wStr = self.directionVar.get()
+		tStr = "x" if wStr == "y" else "y"
+
+		W = {"x": X, "y": Y}[wStr]
+		T = {"x": X, "y": Y}[tStr]
+
+		# Here w represents the chosen axis, and t the other one
+		if w0-dw > max(W) or w0+dw < min(W):
+			messagebox.showwarning("Warning", "This range does not contain the domain")
+			return
+		data = [(t, nR) for w,t,nR in zip(W, T, self.resultsData[label]) if abs(w-w0)<dw]
+		if not data:
+			messagebox.showwarning("Warning", "No point passes through this range")
+			return
+		T, numericalField = zip(*data)
+		T, numericalField = zip(*sorted(zip(T,numericalField)))
+		self.plot2.plot(T,numericalField, color="k", marker=".")
+
+		self.plot2.set_xlim([min(T), max(T)])
+		self.plot2.set_ylim([min(self.resultsData[label]), max(self.resultsData[label])])		
+		self.plot2.set_xlabel(f"{tStr} [m]")
+		self.plot2.set_ylabel(self.fieldVar.get())
+		self.matplotlibCanvas2.draw()
+
+		# except:
+		# 	messagebox.showerror("Error", "An error has occuried")
 
 	def readData(self):
 		self.resultsData = pd.read_csv(self.resultsPath)

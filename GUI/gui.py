@@ -94,6 +94,33 @@ class MainMenu:
 			self.app.post.setResultsPath( os.path.realpath( resultsFileName ) )
 			self.app.post.init()
 
+class Page(tk.Canvas):
+	def __init__(self, root, width, height, prevFunc, nextFunc):
+		tk.Canvas.__init__(self, root, width=width, height=height)
+		self.root = root
+		self.prevFunc = prevFunc
+		self.nextFunc = nextFunc
+
+		self.placeFooter()
+
+	def placeFooter(self):
+		self.footerFrame = tk.Frame(self)
+		self.footerFrame.place(relx=0.02, rely=1.00-0.02, relwidth=1.00-0.04, relheight=0.10-0.02, anchor="sw")
+
+		self.prevButton = tk.Button(self.footerFrame, text="Prev", command=self.prevFunc)
+		self.prevButton.bind('<Return>', lambda e:self.prevFunc())
+		self.prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+
+		self.nextButton = tk.Button(self.footerFrame, text="Next", command=self.nextFunc)
+		self.nextButton.bind('<Return>', lambda e:self.nextFunc())
+		self.nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
+
+	def show(self):
+		self.pack(side="left", fill="both", expand=1)
+
+	def hide(self):
+		self.pack_forget()
+
 class Application:
 	def __init__(self, root, application):
 		self.root = root
@@ -106,10 +133,10 @@ class Application:
 		self.drawn = False
 
 		self.populatePage1()
-		self.showPage1()
+		self.page1.show()
 
 	def populatePage1(self):
-		self.page1 = tk.Canvas(self.root, height=500, width=600)
+		self.page1 = Page(self.root, height=500, width=600, prevFunc=self.page1Prev, nextFunc=self.page1Next)
 
 		self.openFrame = tk.LabelFrame(self.page1, text="Open Mesh File")
 		self.openFrame.place(relx=0.02, rely=0.02, relheight=0.20-0.02, relwidth=1.00-0.04, anchor="nw")
@@ -124,19 +151,7 @@ class Application:
 		self.BCFrame = tk.LabelFrame(self.page1, text="Boundary Conditions Settings")
 		self.BCFrame.place(relx=0.02, rely=0.20+0.02, relheight=0.65-0.02, relwidth=1.00-0.04, anchor="nw")
 
-		# Footer
-		self.BCBottomFrame = tk.Frame(self.page1)
-		self.BCBottomFrame.place(relx=0.02, rely=0.85+0.02, relheight=0.1, relwidth=1.00-0.04, anchor="nw" )
-
-		prevButton = tk.Button(self.BCBottomFrame, text="Prev", command=self.page1Prev)
-		prevButton.bind('<Return>', lambda e:self.page1Prev())
-		prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-
-		nextButton = tk.Button(self.BCBottomFrame, text="Next", command=self.page1Next)
-		nextButton.bind('<Return>', lambda e:self.page1Next())
-		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-
-		def showFigFunc():
+		def showBoundariesFunc():
 			if self.showFigVar.get():
 				self.showMeshVar.set(False)
 				self.hideBCMesh()
@@ -153,19 +168,194 @@ class Application:
 
 		self.showFigVar = tk.BooleanVar()
 		self.showFigVar.set(False)
-		self.showFigCheckbox = tk.Checkbutton(self.BCBottomFrame, text="Show Boundaries", variable=self.showFigVar, command=showFigFunc, state="disabled")
+		self.showFigCheckbox = tk.Checkbutton(self.page1.footerFrame, text="Show Boundaries", variable=self.showFigVar, command=showBoundariesFunc, state="disabled")
 		self.showFigCheckbox.place(relx=0.0, rely=0.25, anchor="w")
 		self.showMeshVar = tk.BooleanVar()
 		self.showMeshVar.set(False)
-		self.showMeshCheckbox = tk.Checkbutton(self.BCBottomFrame, text="Show Mesh", variable=self.showMeshVar, command=showMeshFunc, state="disabled")
+		self.showMeshCheckbox = tk.Checkbutton(self.page1.footerFrame, text="Show Mesh", variable=self.showMeshVar, command=showMeshFunc, state="disabled")
 		self.showMeshCheckbox.place(relx=0.0, rely=0.75, anchor="w")
 
-	def showPage1(self):
-		self.page1.pack(side="left", fill="both", expand=1)
+	def populatePage2(self):
+		self.page2 = Page(self.root, height=500, width=600, prevFunc=self.page2Prev, nextFunc=self.page2Next)
+		# Property Frame
 
-	def hidePage1(self):
-		self.page1.pack_forget()
+		self.propertyEntries = dict()
+		self.propertyUnitVars = dict()
+		self.propertiesFrames = []
+		self.currentRegion = 0
 
+		numberOfRegions = len(self.meshData.regionsNames)
+
+		def nextRegion():
+			if self.currentRegion < numberOfRegions-1:
+				self.propertiesFrames[self.currentRegion].place_forget()
+				self.propertiesFrames[self.currentRegion+1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=1.00-0.04, anchor="nw")
+				self.currentRegion += 1
+		def prevRegion():
+			if self.currentRegion > 0:
+				self.propertiesFrames[self.currentRegion].place_forget()
+				self.propertiesFrames[self.currentRegion-1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=1.00-0.04, anchor="nw")
+				self.currentRegion -= 1
+		def insertProperties(materialName):
+			currentRegionName = self.meshData.regionsNames[self.currentRegion]
+			for propertyName in self.materials[materialName].keys():
+				self.propertyEntries[currentRegionName][propertyName].delete( 0, tk.END )
+				self.propertyEntries[currentRegionName][propertyName].insert( tk.END, self.materials[materialName][propertyName] )
+
+		for regionCount, region in enumerate(self.meshData.regionsNames):
+			propertiesFrame = tk.LabelFrame(self.page2, text="Material Properties")
+			self.propertiesFrames.append(propertiesFrame)
+			centerFrame = tk.Frame(propertiesFrame)
+
+			self.propertyEntries[region] = dict()
+			self.propertyUnitVars[region] = dict()
+
+			self.regionCountLabel = tk.Label(centerFrame, text=f"{region}\t[{regionCount+1}/{numberOfRegions}]")
+			self.regionCountLabel.grid(row=0, column=0, pady=5, sticky="W")
+
+			tk.Label(centerFrame, text="Material Database:").grid(row=0, column=4)
+			materialsTable = tk.OptionMenu(centerFrame, tk.StringVar(value="Select Material"), *self.materials.keys(), command=lambda propertyName:insertProperties(propertyName))#, region))
+			materialsTable.grid(row=0, column=5, sticky="nswe")
+
+			i=1
+			for propertyName in self.properties:
+				options = self.propertyUnits[propertyName]
+
+				unitVar = tk.StringVar(centerFrame)
+				unitVar.set(self.propertyUnits[propertyName][0])
+				bTypeVar = tk.IntVar(centerFrame)
+
+				nameLabel = ttk.Label(centerFrame, text=propertyName)
+				nameLabel.grid(row=i, column=0, sticky="W", padx=5)
+
+				valEntry = ttk.Entry(centerFrame)
+				valEntry.grid(row=i,column=1)
+
+				unitMenu = tk.OptionMenu(centerFrame, unitVar, *options)
+				unitMenu.grid(row=i, column=2, sticky="E")
+
+
+				self.propertyEntries[region][propertyName] = valEntry
+				self.propertyUnitVars[region][propertyName] = unitVar
+				i+=1
+
+			prevButton = tk.Button(centerFrame, text="<", command=prevRegion, state="disabled" if numberOfRegions==1 or regionCount==0 else "normal")
+			prevButton.bind('<Return>', lambda e:prevRegion())
+			prevButton.grid(row=i, column=2, sticky="E")
+
+			nextButton = tk.Button(centerFrame, text=">", command=nextRegion, state="disabled" if numberOfRegions==1 or regionCount==numberOfRegions-1 else "normal")
+			nextButton.bind('<Return>', lambda e:nextRegion())
+			nextButton.grid(row=i, column=3, sticky="W")
+
+			centerFrame.place(relx=0.02, rely=0.0, anchor="nw")
+
+		self.propertiesFrames[0].place(relx=0.02, rely=0.02, relheight=0.45, relwidth=1.00-0.04, anchor="nw")
+		
+		# Numerical Frame
+		numericalFrame = tk.LabelFrame(self.page2, text="Numerical Settings")
+
+		if "temperature" in self.fields:
+			def spaninfo():
+				h=1
+				alpha=1
+				regionName = self.meshData.regionsNames[self.currentRegion]
+				print([entry.get() == "" for entry in self.propertyEntries[regionName].values()])
+				if not True in [entry.get() == "" for entry in self.propertyEntries[regionName].values()]:
+					messagebox.showinfo("Help", f"{regionName} info.\nCharacteristic mesh length (h) = {h} m\nDiffusivity (α=k/(ρ cp) = {alpha} m²/s")
+				else:
+					messagebox.showinfo("Help", f"Fill in {regionName} properties to see its diffusivity and characteristic mesh length")
+			
+
+			infobox = tk.Button(numericalFrame, text="  ?  ", command=spaninfo)
+			infobox.place(relx=0.96, rely=0.0, anchor="ne")
+
+		self.numericalSettingsEntries = []
+		self.numericalSettingsUnits = []
+		self.numericalSettingsUnitMenus = []
+		self.numericalSettingsBools = []
+		self.numericalSettingsCheckboxes = []
+
+		def toggleCheckbox(i):
+			def toggleCheckboxFunc():
+				setting = list(self.numericalSettingsOp.keys())[i]
+				state = self.numericalSettingsBools[i].get()
+
+				if setting != "Transient":
+					# Entry
+					if self.numericalSettingsOp[setting]["option"][0]:
+						if state:
+							self.numericalSettingsEntries[i].grid(row=i, column=1, padx=5, pady=5, sticky="W")
+						else:
+							self.numericalSettingsEntries[i].grid_forget()
+					# Unit
+					if self.numericalSettingsOp[setting]["option"][1]:
+						if state:
+							self.numericalSettingsUnitMenus[i].grid(row=i, column=2, sticky="E")
+						else:
+							self.numericalSettingsUnitMenus[i].grid_forget()
+				else:
+					if state:
+						j=0
+						for loopSetting, entry, unitMenu, boolVar, checkbox in zip( self.numericalSettingsOp.keys(), self.numericalSettingsEntries, self.numericalSettingsUnitMenus, self.numericalSettingsBools, self.numericalSettingsCheckboxes ):
+							if self.numericalSettingsOp[loopSetting]["option"][0] and self.numericalSettingsOp[loopSetting]["option"][3]:
+								entry.grid(row=j, column=1, padx=5, pady=5, sticky="W")
+							
+							if self.numericalSettingsOp[loopSetting]["option"][1] and self.numericalSettingsOp[loopSetting]["option"][3]:
+								unitMenu.grid(row=j, column=2, sticky="E")
+							boolVar.set(self.numericalSettingsOp[loopSetting]["option"][3])
+							if loopSetting != "Time Step":
+								checkbox.configure(state="normal")
+							j+=1
+					else:
+						for loopSetting, entry, unitMenu, boolVar, checkbox in zip( self.numericalSettingsOp.keys(), self.numericalSettingsEntries, self.numericalSettingsUnitMenus, self.numericalSettingsBools, self.numericalSettingsCheckboxes ):
+							if loopSetting != "Transient":
+								entry.grid_forget()
+								unitMenu.grid_forget()
+								boolVar.set(False)
+								checkbox.configure(state="disabled")
+
+			return toggleCheckboxFunc
+
+		i=0
+		for setting in self.numericalSettingsOp.keys():
+			# Label
+			label = tk.Label(numericalFrame, text=setting)
+			label.grid(row=i, column=0, padx=5, pady=5, sticky="W")
+
+			# Entry
+			entry = tk.Entry(numericalFrame)
+			if self.numericalSettingsOp[setting]["option"][0] and self.numericalSettingsOp[setting]["option"][3]:
+				entry.grid(row=i, column=1, padx=5, pady=5, sticky="W")
+
+			self.numericalSettingsEntries.append(entry)
+
+			# Unit
+			unitVar = tk.StringVar(numericalFrame)
+			unitVar.set(self.numericalSettingsOp[setting]["units"][0])
+
+			unitMenu = tk.OptionMenu(numericalFrame, unitVar, *self.numericalSettingsOp[setting]["units"])
+			if self.numericalSettingsOp[setting]["option"][1] and self.numericalSettingsOp[setting]["option"][3]:
+				unitMenu.grid(row=i, column=2, sticky="E")
+
+			self.numericalSettingsUnits.append(unitVar)
+			self.numericalSettingsUnitMenus.append(unitMenu)
+
+			# Checkbox
+			boolVar = tk.BooleanVar()
+			boolVar.set(self.numericalSettingsOp[setting]["option"][3])
+
+			checkbox = tk.Checkbutton(numericalFrame, variable=boolVar, command=toggleCheckbox(i), state= "normal" if self.numericalSettingsOp[setting]["option"][2] else "disabled")
+			checkbox.grid(row=i, column=3)
+
+			self.numericalSettingsBools.append(boolVar)
+			self.numericalSettingsCheckboxes.append(checkbox)
+
+			i+=1
+
+		numericalFrame.place(relx=0.02, rely=0.45+0.02, relheight=0.40-0.02, relwidth=1.00-0.04, anchor="nw")
+
+		self.populated = True      
+  
 	def populateBCFrame(self):
 		self.boundariesNames = self.meshData.boundariesNames
 		self.currentField = 0
@@ -348,12 +538,6 @@ class Application:
 		canvas = FigureCanvasTkAgg(figure, self.figDrawCanvas)
 		canvas.get_tk_widget().pack(side="left", fill="both", expand=1)
 
-	def showBCFig(self):
-		self.figDrawCanvas.pack(side="left", fill="both", expand=1)
-
-	def hideBCFig(self):
-		self.figDrawCanvas.pack_forget()
-
 	def populateBCMesh(self):
 		self.drawn = True
 		self.meshDrawCanvas = tk.Canvas(self.root, width=600, height=500)
@@ -368,211 +552,52 @@ class Application:
 		canvas = FigureCanvasTkAgg(figure, self.meshDrawCanvas)
 		canvas.get_tk_widget().pack(side="left", fill="both", expand=1)
 
+	def showBCFig(self):
+		self.figDrawCanvas.pack(side="left", fill="both", expand=1)
+
 	def showBCMesh(self):
 		self.meshDrawCanvas.pack(side="left", fill="both", expand=1)
+
+	def hideBCFig(self):
+		self.figDrawCanvas.pack_forget()
 
 	def hideBCMesh(self):
 		self.meshDrawCanvas.pack_forget()
 
-	def populatePage2(self): #
-		self.page2 = tk.Canvas(self.root, height=500, width=600)
+	def page1Prev(self):
+		self.page1.destroy()
+		self.app.init()
+		# self.app.mainMenu.init()
+	
+	def page1Next(self):
+		self.checkFile()
+		self.page1.hide()
+		self.hideBCFig()
+		self.hideBCMesh()
+		self.page2.show()
+	
+	def page2Prev(self):
+		self.page2.hide()
+		self.page1.show()
+	
+	def page2Next(self):
+		simulate = True
+		if self.simulated:
+			if "no" == tk.messagebox.askquestion("Warning", "A simulation has already been calculated. Do you want to calculate another one?"):
+				simulate = False
+				self.page2.hide()
+				self.app.post.consolePage.show()
+				return
 
-		# Bottom Frame
-		bottomFrame = tk.Frame(self.page2)
-		bottomFrame.place(relx=0.02, rely=0.85+0.02, relheight=0.1, relwidth=1.00-0.04, anchor="nw" )
+		if simulate:
+			self.checkPage1Data()
+			self.checkPage2Data()
+			self.runSimulation()
+			self.simulated = True
 
-		prevButton = tk.Button(bottomFrame, text="Prev", command=self.page2Prev)
-		prevButton.bind('<Return>', lambda e:self.page2Prev())
-		prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-		
-		nextButton = tk.Button(bottomFrame, text="Next", command=self.page2Next)
-		nextButton.bind('<Return>', lambda e:self.page2Next())
-		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-
-		# Property Frame
-
-		self.propertyEntries = dict()
-		self.propertyUnitVars = dict()
-		self.propertiesFrames = []
-		self.currentRegion = 0
-
-		numberOfRegions = len(self.meshData.regionsNames)
-
-		def nextRegion():
-			if self.currentRegion < numberOfRegions-1:
-				self.propertiesFrames[self.currentRegion].place_forget()
-				self.propertiesFrames[self.currentRegion+1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=1.00-0.04, anchor="nw")
-				self.currentRegion += 1
-		def prevRegion():
-			if self.currentRegion > 0:
-				self.propertiesFrames[self.currentRegion].place_forget()
-				self.propertiesFrames[self.currentRegion-1].place(relx=0.02, rely=0.02, relheight=0.81, relwidth=1.00-0.04, anchor="nw")
-				self.currentRegion -= 1
-		def insertProperties(materialName):
-			currentRegionName = self.meshData.regionsNames[self.currentRegion]
-			for propertyName in self.materials[materialName].keys():
-				self.propertyEntries[currentRegionName][propertyName].delete( 0, tk.END )
-				self.propertyEntries[currentRegionName][propertyName].insert( tk.END, self.materials[materialName][propertyName] )
-
-		for regionCount, region in enumerate(self.meshData.regionsNames):
-			propertiesFrame = tk.LabelFrame(self.page2, text="Material Properties")
-			self.propertiesFrames.append(propertiesFrame)
-			centerFrame = tk.Frame(propertiesFrame)
-
-			self.propertyEntries[region] = dict()
-			self.propertyUnitVars[region] = dict()
-
-			self.regionCountLabel = tk.Label(centerFrame, text=f"{region}\t[{regionCount+1}/{numberOfRegions}]")
-			self.regionCountLabel.grid(row=0, column=0, pady=5, sticky="W")
-
-			tk.Label(centerFrame, text="Material Database:").grid(row=0, column=4)
-			materialsTable = tk.OptionMenu(centerFrame, tk.StringVar(value="Select Material"), *self.materials.keys(), command=lambda propertyName:insertProperties(propertyName))#, region))
-			materialsTable.grid(row=0, column=5, sticky="nswe")
-
-			i=1
-			for propertyName in self.properties:
-				options = self.propertyUnits[propertyName]
-
-				unitVar = tk.StringVar(centerFrame)
-				unitVar.set(self.propertyUnits[propertyName][0])
-				bTypeVar = tk.IntVar(centerFrame)
-
-				nameLabel = ttk.Label(centerFrame, text=propertyName)
-				nameLabel.grid(row=i, column=0, sticky="W", padx=5)
-
-				valEntry = ttk.Entry(centerFrame)
-				valEntry.grid(row=i,column=1)
-
-				unitMenu = tk.OptionMenu(centerFrame, unitVar, *options)
-				unitMenu.grid(row=i, column=2, sticky="E")
-
-
-				self.propertyEntries[region][propertyName] = valEntry
-				self.propertyUnitVars[region][propertyName] = unitVar
-				i+=1
-
-			prevButton = tk.Button(centerFrame, text="<", command=prevRegion, state="disabled" if numberOfRegions==1 or regionCount==0 else "normal")
-			prevButton.bind('<Return>', lambda e:prevRegion())
-			prevButton.grid(row=i, column=2, sticky="E")
-
-			nextButton = tk.Button(centerFrame, text=">", command=nextRegion, state="disabled" if numberOfRegions==1 or regionCount==numberOfRegions-1 else "normal")
-			nextButton.bind('<Return>', lambda e:nextRegion())
-			nextButton.grid(row=i, column=3, sticky="W")
-
-			centerFrame.place(relx=0.02, rely=0.0, anchor="nw")
-
-		self.propertiesFrames[0].place(relx=0.02, rely=0.02, relheight=0.45, relwidth=1.00-0.04, anchor="nw")
-		
-		# Numerical Frame
-		numericalFrame = tk.LabelFrame(self.page2, text="Numerical Settings")
-
-		if "temperature" in self.fields:
-			def spaninfo():
-				h=1
-				alpha=1
-				regionName = self.meshData.regionsNames[self.currentRegion]
-				print([entry.get() == "" for entry in self.propertyEntries[regionName].values()])
-				if not True in [entry.get() == "" for entry in self.propertyEntries[regionName].values()]:
-					messagebox.showinfo("Help", f"{regionName} info.\nCharacteristic mesh length (h) = {h} m\nDiffusivity (α=k/(ρ cp) = {alpha} m²/s")
-				else:
-					messagebox.showinfo("Help", f"Fill in {regionName} properties to see its diffusivity and characteristic mesh length")
-			
-
-			infobox = tk.Button(numericalFrame, text="  ?  ", command=spaninfo)
-			infobox.place(relx=0.96, rely=0.0, anchor="ne")
-
-		self.numericalSettingsEntries = []
-		self.numericalSettingsUnits = []
-		self.numericalSettingsUnitMenus = []
-		self.numericalSettingsBools = []
-		self.numericalSettingsCheckboxes = []
-
-		def toggleCheckbox(i):
-			def toggleCheckboxFunc():
-				setting = list(self.numericalSettingsOp.keys())[i]
-				state = self.numericalSettingsBools[i].get()
-
-				if setting != "Transient":
-					# Entry
-					if self.numericalSettingsOp[setting]["option"][0]:
-						if state:
-							self.numericalSettingsEntries[i].grid(row=i, column=1, padx=5, pady=5, sticky="W")
-						else:
-							self.numericalSettingsEntries[i].grid_forget()
-					# Unit
-					if self.numericalSettingsOp[setting]["option"][1]:
-						if state:
-							self.numericalSettingsUnitMenus[i].grid(row=i, column=2, sticky="E")
-						else:
-							self.numericalSettingsUnitMenus[i].grid_forget()
-				else:
-					if state:
-						j=0
-						for loopSetting, entry, unitMenu, boolVar, checkbox in zip( self.numericalSettingsOp.keys(), self.numericalSettingsEntries, self.numericalSettingsUnitMenus, self.numericalSettingsBools, self.numericalSettingsCheckboxes ):
-							if self.numericalSettingsOp[loopSetting]["option"][0] and self.numericalSettingsOp[loopSetting]["option"][3]:
-								entry.grid(row=j, column=1, padx=5, pady=5, sticky="W")
-							
-							if self.numericalSettingsOp[loopSetting]["option"][1] and self.numericalSettingsOp[loopSetting]["option"][3]:
-								unitMenu.grid(row=j, column=2, sticky="E")
-							boolVar.set(self.numericalSettingsOp[loopSetting]["option"][3])
-							if loopSetting != "Time Step":
-								checkbox.configure(state="normal")
-							j+=1
-					else:
-						for loopSetting, entry, unitMenu, boolVar, checkbox in zip( self.numericalSettingsOp.keys(), self.numericalSettingsEntries, self.numericalSettingsUnitMenus, self.numericalSettingsBools, self.numericalSettingsCheckboxes ):
-							if loopSetting != "Transient":
-								entry.grid_forget()
-								unitMenu.grid_forget()
-								boolVar.set(False)
-								checkbox.configure(state="disabled")
-
-			return toggleCheckboxFunc
-
-		i=0
-		for setting in self.numericalSettingsOp.keys():
-			# Label
-			label = tk.Label(numericalFrame, text=setting)
-			label.grid(row=i, column=0, padx=5, pady=5, sticky="W")
-
-			# Entry
-			entry = tk.Entry(numericalFrame)
-			if self.numericalSettingsOp[setting]["option"][0] and self.numericalSettingsOp[setting]["option"][3]:
-				entry.grid(row=i, column=1, padx=5, pady=5, sticky="W")
-
-			self.numericalSettingsEntries.append(entry)
-
-			# Unit
-			unitVar = tk.StringVar(numericalFrame)
-			unitVar.set(self.numericalSettingsOp[setting]["units"][0])
-
-			unitMenu = tk.OptionMenu(numericalFrame, unitVar, *self.numericalSettingsOp[setting]["units"])
-			if self.numericalSettingsOp[setting]["option"][1] and self.numericalSettingsOp[setting]["option"][3]:
-				unitMenu.grid(row=i, column=2, sticky="E")
-
-			self.numericalSettingsUnits.append(unitVar)
-			self.numericalSettingsUnitMenus.append(unitMenu)
-
-			# Checkbox
-			boolVar = tk.BooleanVar()
-			boolVar.set(self.numericalSettingsOp[setting]["option"][3])
-
-			checkbox = tk.Checkbutton(numericalFrame, variable=boolVar, command=toggleCheckbox(i), state= "normal" if self.numericalSettingsOp[setting]["option"][2] else "disabled")
-			checkbox.grid(row=i, column=3)
-
-			self.numericalSettingsBools.append(boolVar)
-			self.numericalSettingsCheckboxes.append(checkbox)
-
-			i+=1
-
-		numericalFrame.place(relx=0.02, rely=0.45+0.02, relheight=0.40-0.02, relwidth=1.00-0.04, anchor="nw")
-
-		self.populated = True      
-  
-	def showPage2(self): #
-		self.page2.pack(side="top", fill="both", expand=1)
-
-	def hidePage2(self):
-		self.page2.pack_forget()
+			self.page2.hide()
+			self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
+			self.app.post.init()
 
 	def openFile(self):
 		initialdir = os.path.join( os.path.dirname(__file__), os.path.pardir, "meshes" )
@@ -608,42 +633,6 @@ class Application:
 			self.populatePage2()
 		else:
 			self.meshFileName = prevMeshFileName
-
-	def page1Prev(self):
-		self.page1.destroy()
-		self.app.init()
-		# self.app.mainMenu.init()
-	
-	def page1Next(self):
-		self.checkFile()
-		# self.checkPage1Data()
-		self.hidePage1()
-		self.hideBCFig()
-		self.hideBCMesh()
-		self.showPage2()
-	
-	def page2Prev(self):
-		self.hidePage2()
-		self.showPage1()
-	
-	def page2Next(self):
-		simulate = True
-		if self.simulated:
-			if "no" == tk.messagebox.askquestion("Warning", "A simulation has already been calculated. Do you want to calculate another one?"):
-				simulate = False
-				self.hidePage2()
-				self.app.post.showConsole()
-				return
-
-		if simulate:
-			self.simulated = True
-			self.checkPage1Data()
-			self.checkPage2Data()
-			self.runSimulation()
-
-			self.hidePage2()
-			self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
-			self.app.post.init()
 
 	def checkFile(self):
 		if not self.meshFileName:
@@ -702,10 +691,9 @@ class Application:
 			if self.numericalSettingsOp[numericalSetting]["option"][0] and self.numericalSettingsBools[i].get():
 				try:
 					float( self.numericalSettingsEntries[i].get() )
-					if numericalSetting == "Time Step" and float( self.numericalSettingsEntries[i].get() ) <= 0.0:
-						# messagebox.showwarning("Time Step must be positive")
+					if float( self.numericalSettingsEntries[i].get() ) <= 0.0:
 						self.numericalSettingsEntries[i].delete( 0, tk.END )
-						raise Exception("Warning", "Time Step must be positive")
+						raise Exception("Warning", "Numerical settings must be positive")
 				except:
 					messagebox.showwarning("Warning", "Invalid input in {} field".format(numericalSetting))
 					raise Exception("Invalid input in {} field".format(numericalSetting))
@@ -958,6 +946,7 @@ class Post:
 
 	def settings(self):
 		self.first = True
+		self.consoleTextSet = False
 
 	def init(self):
 		self.readData()
@@ -965,62 +954,31 @@ class Post:
 		self.populatePage1()
 		self.populatePage2()
 
-		self.showConsole()
+		if self.consoleTextSet:
+			self.consolePage.show()
+		else:
+			self.page1.show()
 
 	def populateConsole(self):
 		def prevFunc():
-			self.outputCanvas.pack_forget()
-			self.app.heatTransferApplication.showPage2()
-
+			self.consolePage.hide()
+			self.app.heatTransferApplication.page2.show()
 		def nextFunc():
-			self.outputCanvas.pack_forget()
-			self.showPage1()
+			self.consolePage.hide()
+			self.page1.show()
 
-		self.outputCanvas = tk.Canvas(self.root, width=600, height=500)
+		self.consolePage = Page(self.root, width=600, height=500, prevFunc=prevFunc, nextFunc=nextFunc)
 
-		tk.Label(self.outputCanvas, text="Console:").place(relx=0.02, rely=0.02, anchor="nw")
+		tk.Label(self.consolePage, text="Console:").place(relx=0.02, rely=0.02, anchor="nw")
 
-		outputText = scrolledtext.ScrolledText(self.outputCanvas)
-		outputText.insert(tk.END, self.outputTextVar.getvalue())
-		outputText.configure(state="disabled")
-		outputText.place(relx=0.02, rely=0.02+0.05, relheight=0.80, relwidth=1.00-0.04, anchor="nw" )
-
-		# Bottom Frame
-		bottomFrame = tk.Frame(self.outputCanvas)
-		bottomFrame.place(relx=0.02, rely=0.85+0.02, relheight=0.1, relwidth=1.00-0.04, anchor="nw" )
-
-		prevButton = tk.Button(bottomFrame, text="Prev", command=prevFunc)
-		prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-		
-		nextButton = tk.Button(bottomFrame, text="Next", command=nextFunc)
-		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-
-	def showConsole(self):
-		self.outputCanvas.pack(side="top", fill="both", expand=1)
-
-	def readData(self):
-		self.resultsData = pd.read_csv(self.resultsPath)
-		self.coords = np.array(self.resultsData[["X","Y","Z"]]).T
-		self.fields = list( {"".join(fieldName.split(" - ")[1:]) for fieldName in self.resultsData.columns[3:]} )
-		self.timeSteps = [ fieldName.split(" - ")[0] for fieldName in self.resultsData.columns[3:] ]
-		self.timeSteps = [ ts for idx, ts in enumerate(self.timeSteps) if ts not in self.timeSteps[:idx] ]
-		self.numberOfTimeSteps = len(self.timeSteps)
+		if self.consoleTextSet:
+			outputText = scrolledtext.ScrolledText(self.consolePage)
+			outputText.insert(tk.END, self.outputTextVar.getvalue())
+			outputText.configure(state="disabled")
+			outputText.place(relx=0.02, rely=0.02+0.05, relheight=0.80, relwidth=1.00-0.04, anchor="nw" )
 
 	def populatePage1(self):
-		self.page1 = tk.Canvas(self.root, width=600, height=500)
-
-		# Footer
-		footerFrame = tk.Frame(self.page1)
-		footerFrame.place(relx=0.02, rely=1.00-0.02, relwidth=1.00-0.04, relheight=0.10-0.02, anchor="sw")
-
-		prevButton = tk.Button(footerFrame, text="Prev", command=self.page1Prev)
-		prevButton.bind('<Return>', lambda e:self.page1Prev())
-		prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-
-		nextButton = tk.Button(footerFrame, text="Next", command=self.page1Next)
-		nextButton.bind('<Return>', lambda e:self.page1Next())
-		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-
+		self.page1 = Page(self.root, width=600, height=500, prevFunc=self.page1Prev,nextFunc=self.page1Next)
 		# Settings
 
 		self.CMSettingsFrame = tk.LabelFrame(self.page1, text="Colormap Settings")
@@ -1077,67 +1035,9 @@ class Post:
 
 		self.colormapCanvas.place(relx=0.02,rely=0.02,relwidth=1.00-0.04,relheight=0.65-0.04,anchor="nw")
 
-	def showPage1(self):
-		self.page1.pack(side="left", fill="both", expand=1)
-
-	def showColorMap(self):
-		X,Y = self.coords[:-1]
-
-		try:
-			if int( self.timeStepVar.get() ) > self.numberOfTimeSteps or int( self.timeStepVar.get() ) < 1:
-				raise Exception
-		except:
-			messagebox.showwarning("Warning", "Invalid Time Step\nIt must range from 1 to {}".format(self.numberOfTimeSteps))
-			raise Exception("Invalid Time Step")
-
-		label = "TimeStep{} - {}".format( self.timeStepVar.get(), self.fieldVar.get())
-		numericalField = self.resultsData[label]
-
-		Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), max(Y), len(Y)) )
-		nF = griddata((X,Y), numericalField, (Xi,Yi), method="linear")
-
-		if self.first:
-			self.first = False
-		else:
-			self.cbar.remove()
-		try:
-			self.cdata = self.plot1.pcolor(Xi,Yi,nF, cmap=CM( cm.get_cmap("RdBu",64)(np.linspace(1,0,64)) )) # Makes BuRd instead of RdBu
-		except:
-			messagebox.showerror("Error", "Unable to allocate the memory")
-			raise Exception("Unable to allocate the memory")
-		self.cbar = self.figure1.colorbar(self.cdata)
-		self.matplotlibCanvas1.draw()
-
-	def setResultsPath(self, path):
-		self.resultsPath = path
-		self.root.title("PyEFVLib GUI - {}".format(path))
-
-	def setOutputTextVar(self, textVar):
-		self.outputTextVar = textVar
-
-	def page1Prev(self):
-		# self.page1.destroy()
-		self.page1.pack_forget()
-		self.showConsole()
-
-	def page1Next(self):
-		self.page1.pack_forget()
-		self.showPage2()
-
 	def populatePage2(self):
-		self.page2 = tk.Canvas(self.root, width=600, height=500)
-
-		# Footer
-		footerFrame = tk.Frame(self.page2)
-		footerFrame.place(relx=0.02, rely=1.00-0.02, relwidth=1.00-0.04, relheight=0.10-0.02, anchor="sw")
-
-		prevButton = tk.Button(footerFrame, text="Prev", command=self.page2Prev)
-		prevButton.bind('<Return>', lambda e:self.page2Prev())
-		prevButton.place(relx=0.80-0.02, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-		
-		nextButton = tk.Button(footerFrame, text="Next", state="disabled")
-		nextButton.place(relx=1.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="e")
-
+		self.page2 = Page(self.root, width=600, height=500, prevFunc=self.page2Prev, nextFunc=lambda:1)
+		self.page2.nextButton.configure(state="disabled")
 
 		# Settings
 
@@ -1193,8 +1093,56 @@ class Post:
 
 		self.plotCanvas.place(relx=0.02,rely=0.02,relwidth=1.00-0.04,relheight=0.65-0.04,anchor="nw")
 
-	def showPage2(self):
-		self.page2.pack(side="left", fill="both", expand=1)
+	def showColorMap(self):
+		X,Y = self.coords[:-1]
+
+		try:
+			if int( self.timeStepVar.get() ) > self.numberOfTimeSteps or int( self.timeStepVar.get() ) < 1:
+				raise Exception
+		except:
+			messagebox.showwarning("Warning", "Invalid Time Step\nIt must range from 1 to {}".format(self.numberOfTimeSteps))
+			raise Exception("Invalid Time Step")
+
+		label = "TimeStep{} - {}".format( self.timeStepVar.get(), self.fieldVar.get())
+		numericalField = self.resultsData[label]
+
+		Xi, Yi = np.meshgrid( np.linspace(min(X), max(X), len(X)), np.linspace(min(Y), max(Y), len(Y)) )
+		nF = griddata((X,Y), numericalField, (Xi,Yi), method="linear")
+
+		if self.first:
+			self.first = False
+		else:
+			self.cbar.remove()
+		try:
+			self.cdata = self.plot1.pcolor(Xi,Yi,nF, cmap=CM( cm.get_cmap("RdBu",64)(np.linspace(1,0,64)) )) # Makes BuRd instead of RdBu
+		except:
+			messagebox.showerror("Error", "Unable to allocate the memory")
+			raise Exception("Unable to allocate the memory")
+		self.cbar = self.figure1.colorbar(self.cdata)
+		self.matplotlibCanvas1.draw()
+
+	def page1Prev(self):
+		self.page1.hide()
+		if self.consoleTextSet:
+			self.consolePage.show()
+		else:
+			self.app.init()
+
+	def page1Next(self):
+		self.page1.hide()
+		self.page2.show()
+
+	def page2Prev(self):
+		self.page2.hide()
+		self.page1.show()
+
+	def setResultsPath(self, path):
+		self.resultsPath = path
+		self.root.title("PyEFVLib GUI - {}".format(path))
+
+	def setOutputTextVar(self, textVar):
+		self.outputTextVar = textVar
+		self.consoleTextSet = True
 
 	def plotFieldProfile(self):
 		X,Y = self.coords[:-1]
@@ -1240,9 +1188,15 @@ class Post:
 		except:
 			messagebox.showerror("Error", "An error has occuried")
 
-	def page2Prev(self):
-		self.page2.pack_forget()
-		self.showPage1()
+	def readData(self):
+		self.resultsData = pd.read_csv(self.resultsPath)
+		self.coords = np.array(self.resultsData[["X","Y","Z"]]).T
+		self.fields = list( {"".join(fieldName.split(" - ")[1:]) for fieldName in self.resultsData.columns[3:]} )
+		self.timeSteps = [ fieldName.split(" - ")[0] for fieldName in self.resultsData.columns[3:] ]
+		self.timeSteps = [ ts for idx, ts in enumerate(self.timeSteps) if ts not in self.timeSteps[:idx] ]
+		self.numberOfTimeSteps = len(self.timeSteps)
+
+
 
 if __name__ == "__main__":
 	app = PyEFVLibGUI()

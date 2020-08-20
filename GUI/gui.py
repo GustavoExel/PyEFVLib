@@ -1040,7 +1040,7 @@ class Post:
 		self.fieldVar = tk.StringVar()
 		self.fieldVar.set(self.fields[0])
 
-		fieldMenu = tk.OptionMenu(centerFrame, self.fieldVar, *self.fields)
+		fieldMenu = tk.OptionMenu(centerFrame, self.fieldVar, *self.fields, command=lambda value: self.showColorMap())
 		fieldMenu.grid(row=1, column=1, columnspan=4, padx=5, pady=5, sticky="e")
 
 		centerFrame.place(relx=0.5, rely=0.0, anchor="n")
@@ -1052,7 +1052,7 @@ class Post:
 
 		self.figure1 = matplotlib.figure.Figure()
 		self.plot1 = self.figure1.add_subplot()
-		self.plot1.set_position([0.125,0.15,0.75,0.75])
+		self.plot1.set_position([0.125,0.15,0.75-0.075,0.75])
 
 
 		self.figure1.patch.set_facecolor((240/255,240/255,237/255))
@@ -1094,7 +1094,7 @@ class Post:
 		self.devEntry.grid(row=0, column=4, padx=5, pady=5)
 		self.devEntry.bind('<Return>', lambda e:self.plotFieldProfile())
 
-		fieldMenu = tk.OptionMenu(centerFrame, self.fieldVar, *self.fields)
+		fieldMenu = tk.OptionMenu(centerFrame, self.fieldVar, *self.fields, command=lambda value: self.showColorMap())
 		fieldMenu.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="w")
 
 		self.timeStepStrVar = tk.StringVar(value=self.timeSteps[-1])
@@ -1152,11 +1152,11 @@ class Post:
 		except:
 			messagebox.showerror("Error", "Unable to allocate the memory")
 			raise Exception("Unable to allocate the memory")
-		
-		cbaxes = self.figure1.add_axes([0.90, 0.15, 0.03, 0.75]) 
+	
+		cbaxes = self.figure1.add_axes([0.825, 0.15, 0.03, 0.75]) 
 		self.cbar = self.figure1.colorbar(self.cdata, cax=cbaxes)
 
-		self.plot1.set_position([0.125,0.15,0.75,0.75])
+		self.plot1.set_position([0.125,0.15,0.75-0.075,0.75])
 		self.matplotlibCanvas1.draw()
 
 	def page1Prev(self):

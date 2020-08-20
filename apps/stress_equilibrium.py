@@ -15,7 +15,6 @@ def stressEquilibrium(
 		grid,					# Object of class Grid
 		propertyData,			# List of dictionaries containing the properties
 
-		initialValues,			# Dictionary whose keys are the field names, and values are the field values
 		neumannBoundaries,		# Dictionary whose keys are the field names, and values are objects of the class NeumannBoundaryCondition
 		dirichletBoundaries,	# Dictionary whose keys are the field names, and values are objects of the class DirichletBoundaryCondition
 		boundaryConditions,		# List of dictionaries whose keys are field names and values are BoundaryCondition objects
@@ -32,8 +31,7 @@ def stressEquilibrium(
 
 	currentTime = 0.0
 	numberOfVertices = grid.vertices.size
-	displacements = np.concatenate(( np.repeat(initialValues["u"], numberOfVertices),
-									np.repeat(initialValues["v"], numberOfVertices) ))
+	displacements = np.repeat(0.0, 2*numberOfVertices)
 
 	coords,matrixVals = [], []
 	#---------------------------HELPER FUNCTIONS------------------------------------
@@ -170,7 +168,6 @@ if __name__ == "__main__":
 		grid 	  = grid,
 		propertyData = problemData.propertyData,
 		
-		initialValues = problemData.initialValues,
 		neumannBoundaries = problemData.neumannBoundaries,
 		dirichletBoundaries = problemData.dirichletBoundaries,
 		boundaryConditions = problemData.boundaryConditions,

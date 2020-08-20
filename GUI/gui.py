@@ -514,16 +514,19 @@ class Application:
 			fieldsIValueFrames.append(initialValueFrame)
 
 			initialValueLabel = tk.Label(initialValueFrame, text="Frame's\ninitial value")
-			initialValueLabel.place(relx=0.0, rely=0.5, anchor="w")
 
 			self.initialValueEntries[field] = tk.Entry(initialValueFrame)
-			self.initialValueEntries[field].place(x=100, rely=0.5, anchor="w")
 
 			self.initialValueUnitVars[field] = tk.StringVar(initialValueFrame)
 			self.initialValueUnitVars[field].set("")
 
 			unitMenu = ttk.OptionMenu(initialValueFrame, self.initialValueUnitVars[field], *self.dirichletUnits[field])
-			unitMenu.place(x=270, rely=0.5, anchor="w")
+
+			if self.initialValuesNeeded:
+				initialValueLabel.place(relx=0.0, rely=0.5, anchor="w")
+				self.initialValueEntries[field].place(x=100, rely=0.5, anchor="w")
+				unitMenu.place(x=270, rely=0.5, anchor="w")
+
 
 			prevButton = tk.Button(initialValueFrame, text="  <  ", command=prevField, state="disabled" if field == self.fields[0] else "normal")
 			prevButton.bind('<Return>', lambda e:prevField())
@@ -680,6 +683,8 @@ class Application:
 					messagebox.showwarning("Warning","Must select either Neumann or Dirichlet Boundary Condition")
 					raise Exception("Must select either Neumann or Dirichlet Boundary Condition")
 			initialExpression = self.initialValueEntries[field].get()
+			if not self.initialValuesNeeded:
+				initialExpression = "0.0"
 			try:
 				float( initialExpression )
 			except:
@@ -687,8 +692,8 @@ class Application:
 					# Try to parse expression
 					getFunction( initialExpression )( *np.random.rand((4)) )
 				except:
-					messagebox.showwarning("Warning", "Invalid Value in Initial Value field")
-					raise Exception("Invalid Value in Initial Value field")
+					messagebox.showwarning("Warning", "Invalid value in Initial Value field")
+					raise Exception("Invalid value in Initial Value field")
 	
 	def checkPage2Data(self):
 		for region in self.meshData.regionsNames:
@@ -729,6 +734,7 @@ class Application:
 class SolidMechanicsApplication(Application):
 	def settings(self):
 		self.fields = ["u", "v"]
+		self.initialValuesNeeded = False
 
 		self.neumannUnits = {"u": ["Pa", "kPa", "MPa", "GPa", "kgf/m²", "psi"], "v": ["Pa", "kPa", "MPa", "GPa", "kgf/m²", "psi"]}
 		self.dirichletUnits = {"u": ["m", "mm", "cm", "μm", "inch"], "v": ["m", "mm", "cm", "μm", "inch"]}
@@ -788,7 +794,6 @@ class SolidMechanicsApplication(Application):
 			raise Exception("Stress Equilibrium Problem not implemented yet for 3D cases")
 
 		# Boundary Conditions
-		initialValues = { field : self.unitsConvert[ self.initialValueUnitVars[field].get() ](float( self.initialValueEntries[field].get() )) for field in self.fields}
 		
 		neumannBoundaries = dict()
 		dirichletBoundaries = dict()
@@ -826,7 +831,6 @@ class SolidMechanicsApplication(Application):
 			grid 	  = self.grid,
 			propertyData = self.propertyData,
 
-			initialValues = initialValues,
 			neumannBoundaries = neumannBoundaries,
 			dirichletBoundaries = dirichletBoundaries,
 			boundaryConditions = list(boundaryConditionsDict.values()),
@@ -837,6 +841,7 @@ class SolidMechanicsApplication(Application):
 class HeatTransferApplication(Application):
 	def settings(self):
 		self.fields = ["temperature"]
+		self.initialValuesNeeded = True
 
 		self.neumannUnits = {"temperature": ["K/m"]}
 		self.dirichletUnits = {"temperature": ["K", "°C", "°F"]}

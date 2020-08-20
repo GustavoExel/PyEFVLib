@@ -224,7 +224,6 @@ class Application:
 
 				unitVar = tk.StringVar(centerFrame)
 				unitVar.set(self.propertyUnits[propertyName][0])
-				bTypeVar = tk.IntVar(centerFrame)
 
 				nameLabel = ttk.Label(centerFrame, text=propertyName)
 				nameLabel.grid(row=i, column=0, sticky="W", padx=5)
@@ -690,7 +689,9 @@ class Application:
 			except:
 				try:
 					# Try to parse expression
-					getFunction( initialExpression )( *np.random.rand((4)) )
+					# Variable initial expression not implemented yet
+					# getFunction( initialExpression )( *np.random.rand((4)) )
+					raise Exception("Variable expression not implemented yet (uncomment line above to activate it)")
 				except:
 					messagebox.showwarning("Warning", "Invalid value in Initial Value field")
 					raise Exception("Invalid value in Initial Value field")
@@ -888,16 +889,42 @@ class HeatTransferApplication(Application):
 	def runSimulation(self):
 		# Boundary Conditions
 		boundaryConditionsData = dict()
-		for bName, entry, unit, bType in zip(self.boundariesNames, self.boundaryValueEntries["temperature"], self.boundaryUnitVars["temperature"], self.boundaryTypeVars["temperature"]):
+		for bName, entry, unit, condition in zip(self.boundariesNames, self.boundaryValueEntries["temperature"], self.boundaryUnitVars["temperature"], self.boundaryTypeVars["temperature"]):
+			try:
+				value = float( entry.get() )
+				bType = "CONSTANT"
+			except:
+				value = entry.get()
+				bType = "VARIABLE"
 			boundaryConditionsData[bName] = {
-				"condition": ["NEUMANN", "DIRICHLET"][bType.get()-1],
-				"type": "CONSTANT",
-				"value": float( entry.get() )
+				"condition": ["NEUMANN", "DIRICHLET"][condition.get()-1],
+				"type": bType,
+				"value": value,
+				"expression": bType == "VARIABLE"
 			}
 
-		initialValues = {"temperature": [float(self.initialValueEntries["temperature"].get())] * self.grid.vertices.size},
-		neumannBoundaries = {"temperature":[NeumannBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},
-		dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET"]}
+		initialValues = {"temperature": float(self.initialValueEntries["temperature"].get())}
+
+		neumannBoundaries = { "temperature": [] }
+		dirichletBoundaries = { "temperature": [] }
+		for handle, boundary in enumerate(self.grid.boundaries):
+			if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN":
+				neumannBoundaries["temperature"].append( NeumannBoundaryCondition(
+					self.grid,
+					boundary,
+					boundaryConditionsData[boundary.name]["value"],
+					handle,
+					expression=boundaryConditionsData[boundary.name]["expression"]
+				) )
+			elif boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET":
+				dirichletBoundaries["temperature"].append( DirichletBoundaryCondition(
+					self.grid,
+					boundary,
+					boundaryConditionsData[boundary.name]["value"],
+					handle,
+					expression=boundaryConditionsData[boundary.name]["expression"]
+				) )
+
 
 		# Property Data
 		self.propertyData = []
@@ -947,9 +974,9 @@ class HeatTransferApplication(Application):
 				grid 	  = self.grid,
 				propertyData = self.propertyData,
 				
-				initialValues = {"temperature": [ self.unitsConvert[self.initialValueUnitVars["temperature"].get()]( float(self.initialValueEntries["temperature"].get()) ) ] * self.grid.vertices.size},
-				neumannBoundaries = {"temperature":[NeumannBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},
-				dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET"]},
+				initialValues = initialValues,
+				neumannBoundaries = neumannBoundaries,
+				dirichletBoundaries = dirichletBoundaries,
 	 
 				timeStep  = timeStep ,
 				finalTime = finalTime,

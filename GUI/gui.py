@@ -1124,6 +1124,7 @@ class Post:
 
 		self.lineEntry = tk.Entry(centerFrame, width=10)
 		self.lineEntry.grid(row=0, column=2, padx=5, pady=5)
+		self.lineEntry.bind('<Return>', lambda e:self.plotFieldProfile())
 
 		self.devEntry = tk.Entry(centerFrame, width=10)
 		self.devEntry.grid(row=0, column=4, padx=5, pady=5)
@@ -1139,6 +1140,11 @@ class Post:
 		plotButton = tk.Button(centerFrame, text="Plot", command=self.plotFieldProfile)
 		plotButton.bind('<Return>', lambda e:self.plotFieldProfile())
 		plotButton.grid(row=0, column=5, padx=5, pady=5, sticky="e")
+
+		self.plotOnCMapVar = tk.BooleanVar(value=False)
+		plotOnCMapCheck = tk.Checkbutton(centerFrame, text="Plot on \ncolormap", variable=self.plotOnCMapVar)
+		plotOnCMapCheck.grid(row=0,column=6,rowspan=2, sticky="nw")
+
 
 		centerFrame.place(relx=0.5, rely=0.0, anchor="n")
 		self.PPSettingsFrame.place(relx=0.02,rely=0.65,relwidth=1.00-0.04,relheight=0.25-0.02,anchor="nw")
@@ -1194,6 +1200,72 @@ class Post:
 		self.plot1.set_position([0.125,0.15,0.75-0.075,0.75])
 		self.matplotlibCanvas1.draw()
 
+	def plotFieldProfile(self):
+		X,Y = self.coords[:-1]
+		numberOfVertices = len(X)
+		label = "{} - {}".format( self.timeStepStrVar.get(), self.fieldVar.get())
+
+		wStr = self.directionVar.get()
+		tStr = "x" if wStr == "y" else "y"
+
+		W = {"x": X, "y": Y}[wStr]
+		T = {"x": X, "y": Y}[tStr]
+
+		try:
+			# W0(t), dW(t)
+			W0 = [ float( self.lineEntry.get() ) ] * numberOfVertices
+			if self.devEntry.get() == "":
+				dW = [ 0.0 ] * numberOfVertices
+			else:
+				dW = [ float( self.devEntry.get() ) ] * numberOfVertices
+		except:
+			try:
+				W0 = [ eval( self.lineEntry.get().replace(tStr,str(t)).replace("^", "**") ) for t in T ]
+				if self.devEntry.get() == "":
+					dW = [ 0.0 ] * numberOfVertices
+				else:
+					dW = [ eval( self.devEntry.get().replace(tStr,str(t)).replace("^", "**") ) for t in T ]
+			except:
+				messagebox.showwarning("Warning", "Invalid parameters")
+				raise Exception("Invalid parameters")
+
+		self.plot2.clear()
+		self.plot2.patch.set_facecolor((240/255,240/255,237/255))
+
+		try:
+			# Here w represents the chosen axis, and t the other one
+			# The comparison is with the global max and min because the mesh is unstructured
+			if not [1 for t,w0,dw in zip(T,W0,dW) if w0+dw>min(W) and w0-dw<max(W)]:
+				messagebox.showwarning("Warning", "This range does not contain the domain")
+				return
+			data = [(t, nR) for w,w0,dw,t,nR in zip(W, W0, dW, T, self.resultsData[label]) if abs(w-w0)<dw]
+			if not data:
+				messagebox.showwarning("Warning", "No point passes through this range")
+				return
+			rT, numericalField = zip(*data)
+			rT, numericalField = zip(*sorted(zip(rT,numericalField)))
+			self.plot2.plot(rT,numericalField, color="k", marker=".")
+
+			self.plot2.set_xlim([min(rT), max(rT)])
+			self.plot2.set_ylim([min(self.resultsData[label]), max(self.resultsData[label])])		
+			self.plot2.set_xlabel(f"{tStr} [m]")
+			self.plot2.set_ylabel(self.fieldVar.get())
+			self.matplotlibCanvas2.draw()
+
+		except:
+			messagebox.showerror("Error", "An error has occuried")
+
+		if self.plotOnCMapVar.get():
+			uT, upper = zip( *[(t, w0+dw) for w0,dw,t in zip(W0,dW,T) if w0+dw<max(W)] )
+			lT, lower = zip( *[(t, w0-dw) for w0,dw,t in zip(W0,dW,T) if w0-dw>min(W)] )
+			uT, upper = zip(*sorted(zip(uT, upper)))
+			lT, lower = zip(*sorted(zip(lT, lower)))
+			self.plot1.clear()
+			self.showColorMap()
+			self.plot1.plot(lT,lower,color="k", linewidth=0.75)
+			self.plot1.plot(uT,upper,color="k", linewidth=0.75)
+			self.matplotlibCanvas1.draw()
+
 	def page1Prev(self):
 		self.page1.hide()
 		if self.consoleTextSet:
@@ -1217,52 +1289,6 @@ class Post:
 		self.outputTextVar = textVar
 		self.consoleTextSet = True
 
-	def plotFieldProfile(self):
-		X,Y = self.coords[:-1]
-
-		label = "{} - {}".format( self.timeStepStrVar.get(), self.fieldVar.get())
-
-		try:
-			w0 = float( self.lineEntry.get() )
-			if self.devEntry.get() == "":
-				dw = 0.0
-			else:
-				dw = float( self.devEntry.get() )
-		except:
-			messagebox.showwarning("Warning", "Invalid parameters")
-			raise Exception("Invalid parameters")
-
-		self.plot2.clear()
-		self.plot2.patch.set_facecolor((240/255,240/255,237/255))
-
-		# try:
-		wStr = self.directionVar.get()
-		tStr = "x" if wStr == "y" else "y"
-
-		W = {"x": X, "y": Y}[wStr]
-		T = {"x": X, "y": Y}[tStr]
-
-		# Here w represents the chosen axis, and t the other one
-		if w0-dw > max(W) or w0+dw < min(W):
-			messagebox.showwarning("Warning", "This range does not contain the domain")
-			return
-		data = [(t, nR) for w,t,nR in zip(W, T, self.resultsData[label]) if abs(w-w0)<dw]
-		if not data:
-			messagebox.showwarning("Warning", "No point passes through this range")
-			return
-		T, numericalField = zip(*data)
-		T, numericalField = zip(*sorted(zip(T,numericalField)))
-		self.plot2.plot(T,numericalField, color="k", marker=".")
-
-		self.plot2.set_xlim([min(T), max(T)])
-		self.plot2.set_ylim([min(self.resultsData[label]), max(self.resultsData[label])])		
-		self.plot2.set_xlabel(f"{tStr} [m]")
-		self.plot2.set_ylabel(self.fieldVar.get())
-		self.matplotlibCanvas2.draw()
-
-		# except:
-		# 	messagebox.showerror("Error", "An error has occuried")
-
 	def readData(self):
 		self.resultsData = pd.read_csv(self.resultsPath)
 		self.coords = np.array(self.resultsData[["X","Y","Z"]]).T
@@ -1270,8 +1296,6 @@ class Post:
 		self.timeSteps = [ fieldName.split(" - ")[0] for fieldName in self.resultsData.columns[3:] ]
 		self.timeSteps = [ ts for idx, ts in enumerate(self.timeSteps) if ts not in self.timeSteps[:idx] ]
 		self.numberOfTimeSteps = len(self.timeSteps)
-
-
 
 if __name__ == "__main__":
 	app = PyEFVLibGUI()

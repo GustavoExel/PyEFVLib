@@ -1,6 +1,6 @@
 import sys,os,io
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
-from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver, NeumannBoundaryCondition, DirichletBoundaryCondition
+from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver, NeumannBoundaryCondition, DirichletBoundaryCondition, BoundaryCondition
 from apps.heat_transfer import heatTransfer
 from apps.stress_equilibrium import stressEquilibrium
 
@@ -20,9 +20,9 @@ from numpy import pi, sin, cos, tan, arcsin, arccos, arctan, sinh, cosh, tanh, a
 import pandas as pd
 from scipy.interpolate import griddata
 
-def getFunction(expr):
-	def function(x,y,z,t):
-		return eval( expr.replace('x',str(x)).replace('y',str(y)).replace('z',str(z)).replace('t',str(t)) )
+def getFunction(expr, conversion=lambda x:x):
+	def function(x,y,z,t=0.0):
+		return conversion( eval( expr.replace('x',str(x)).replace('y',str(y)).replace('z',str(z)).replace('t',str(t)) ) )
 	return function
 
 class PyEFVLibGUI:
@@ -690,8 +690,7 @@ class Application:
 				try:
 					# Try to parse expression
 					# Variable initial expression not implemented yet
-					# getFunction( initialExpression )( *np.random.rand((4)) )
-					raise Exception("Variable expression not implemented yet (uncomment line above to activate it)")
+					getFunction( initialExpression )( *np.random.rand((4)) )
 				except:
 					messagebox.showwarning("Warning", "Invalid value in Initial Value field")
 					raise Exception("Invalid value in Initial Value field")
@@ -887,44 +886,42 @@ class HeatTransferApplication(Application):
 		}
 
 	def runSimulation(self):
-		# Boundary Conditions
-		boundaryConditionsData = dict()
-		for bName, entry, unit, condition in zip(self.boundariesNames, self.boundaryValueEntries["temperature"], self.boundaryUnitVars["temperature"], self.boundaryTypeVars["temperature"]):
-			try:
-				value = float( entry.get() )
-				bType = "CONSTANT"
-			except:
-				value = entry.get()
-				bType = "VARIABLE"
-			boundaryConditionsData[bName] = {
-				"condition": ["NEUMANN", "DIRICHLET"][condition.get()-1],
-				"type": bType,
-				"value": value,
-				"expression": bType == "VARIABLE"
-			}
+		convertFunc = self.unitsConvert[ self.initialValueUnitVars["temperature"].get() ]
+		initialValue = self.initialValueEntries["temperature"].get()
+		try:
+			initialValue = float(initialValue)
+			initialValueFunc = lambda x,y,z:convertFunc(initialValue)
+		except:
+			initialValueFunc = getFunction(initialValue, convertFunc)
 
-		initialValues = {"temperature": float(self.initialValueEntries["temperature"].get())}
+		initialValues = {"temperature": [initialValueFunc( *v.getCoordinates() ) for v in self.grid.vertices]}
 
+		# Boundaries
 		neumannBoundaries = { "temperature": [] }
 		dirichletBoundaries = { "temperature": [] }
-		for handle, boundary in enumerate(self.grid.boundaries):
-			if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN":
-				neumannBoundaries["temperature"].append( NeumannBoundaryCondition(
-					self.grid,
-					boundary,
-					boundaryConditionsData[boundary.name]["value"],
-					handle,
-					expression=boundaryConditionsData[boundary.name]["expression"]
-				) )
-			elif boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET":
-				dirichletBoundaries["temperature"].append( DirichletBoundaryCondition(
-					self.grid,
-					boundary,
-					boundaryConditionsData[boundary.name]["value"],
-					handle,
-					expression=boundaryConditionsData[boundary.name]["expression"]
-				) )
+		handle = 0
+		for bName, boundary, entry, unit, condition in zip(self.boundariesNames,self.grid.boundaries,self.boundaryValueEntries["temperature"],self.boundaryUnitVars["temperature"],self.boundaryTypeVars["temperature"] ):
+			conversionFunc = self.unitsConvert[unit.get()]
+			condition = ["NEUMANN", "DIRICHLET"][condition.get()-1]
+			
+			try:
+				value = conversionFunc( float( entry.get() ) )
+				expression = False
+			except:
+				value = entry.get()
+				expression = True
 
+			boundaryCondition = BoundaryCondition(self.grid, boundary, value, handle)
+			boundaryCondition.__type__   = condition
+			boundaryCondition.expression = expression
+			boundaryCondition.function   = getFunction( value, conversion=conversionFunc )
+
+			if condition == "NEUMANN":
+				neumannBoundaries["temperature"].append(boundaryCondition)
+			elif condition == "DIRICHLET":
+				dirichletBoundaries["temperature"].append(boundaryCondition)
+
+			handle += 1
 
 		# Property Data
 		self.propertyData = []

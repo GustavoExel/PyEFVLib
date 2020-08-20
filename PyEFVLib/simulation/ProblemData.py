@@ -37,8 +37,6 @@ class BoundaryConditions:
 		self.build()
 
 	def readBoundaryConditionsData(self):
-		# with open(self.paths["Boundary"], "r") as f:
-		# 	data = json.load(f)
 		self.boundaryConditionData = dict()
 		self.initialValues = dict()
 		for path in list( os.walk(self.paths["Boundary"]) )[0][2]:
@@ -47,7 +45,7 @@ class BoundaryConditions:
 
 			variableName = path.strip(".json") 
 			self.boundaryConditionData[variableName] = {key : data[key] for key in data.keys() if key != "InitialValue"}
-			self.initialValues[variableName] = data["InitialValue"]
+			self.initialValues[variableName] = [ data["InitialValue"] ] * self.grid.vertices.size
 
 	def build(self):
 		self.dirichletBoundaries = dict()

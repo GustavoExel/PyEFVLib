@@ -805,12 +805,23 @@ class SolidMechanicsApplication(Application):
 			handle = 0
 
 			for bName, boundary, entry, unit, bType in zip(self.boundariesNames, self.grid.boundaries, self.boundaryValueEntries[field], self.boundaryUnitVars[field], self.boundaryTypeVars[field]):
-				value = self.unitsConvert[unit.get()]( float( entry.get() ) )
+				convertFunc = self.unitsConvert[unit.get()]
+				value = entry.get()
+				try:
+					value = convertFunc( float(value) )
+					expression = False
+				except:
+					expression = True
+
 				if bType.get() == 1:
 					bc = NeumannBoundaryCondition(self.grid, boundary, value, handle)
+					bc.expression = expression
+					bc.function = getFunction( value, convertFunc )
 					neumannBoundaries[field].append(bc)
 				if bType.get() == 2:
 					bc = DirichletBoundaryCondition(self.grid, boundary, value, handle)
+					bc.expression = expression
+					bc.function = getFunction( value, convertFunc )
 					dirichletBoundaries[field].append(bc)
 				boundaryConditionsDict[bName][field] = bc
 				handle += 1

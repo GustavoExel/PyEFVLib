@@ -1,6 +1,6 @@
 import sys,os,io
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
-from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver, NeumannBoundaryCondition, DirichletBoundaryCondition
+from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver, NeumannBoundaryCondition, DirichletBoundaryCondition, BoundaryCondition
 from apps.heat_transfer import heatTransfer
 from apps.stress_equilibrium import stressEquilibrium
 
@@ -20,9 +20,9 @@ from numpy import pi, sin, cos, tan, arcsin, arccos, arctan, sinh, cosh, tanh, a
 import pandas as pd
 from scipy.interpolate import griddata
 
-def getFunction(expr):
-	def function(x,y,z,t):
-		return eval( expr.replace('x',str(x)).replace('y',str(y)).replace('z',str(z)).replace('t',str(t)) )
+def getFunction(expr, conversion=lambda x:x):
+	def function(x,y,z,t=0.0):
+		return conversion( eval( expr.replace('x',str(x)).replace('y',str(y)).replace('z',str(z)).replace('t',str(t)) ) )
 	return function
 
 class PyEFVLibGUI:
@@ -201,6 +201,7 @@ class Application:
 			for propertyName in self.materials[materialName].keys():
 				self.propertyEntries[currentRegionName][propertyName].delete( 0, tk.END )
 				self.propertyEntries[currentRegionName][propertyName].insert( tk.END, self.materials[materialName][propertyName] )
+				self.propertyUnitVars[currentRegionName][propertyName].set(self.propertyUnits[propertyName][0])
 
 		for regionCount, region in enumerate(self.meshData.regionsNames):
 			propertiesFrame = tk.LabelFrame(self.page2, text="Material Properties")
@@ -223,7 +224,6 @@ class Application:
 
 				unitVar = tk.StringVar(centerFrame)
 				unitVar.set(self.propertyUnits[propertyName][0])
-				bTypeVar = tk.IntVar(centerFrame)
 
 				nameLabel = ttk.Label(centerFrame, text=propertyName)
 				nameLabel.grid(row=i, column=0, sticky="W", padx=5)
@@ -254,6 +254,7 @@ class Application:
 		# Numerical Frame
 		numericalFrame = tk.LabelFrame(self.page2, text="Numerical Settings")
 
+		# Help Button
 		if "temperature" in self.fields:
 			def spaninfo():
 				# This variable indicates whether it was possible to calculate h and alpha.
@@ -269,6 +270,11 @@ class Application:
 						k = float( self.propertyEntries[regionName]["Conductivity"].get() )
 						rho = float( self.propertyEntries[regionName]["Density"].get() )
 						cp = float( self.propertyEntries[regionName]["HeatCapacity"].get() )
+						
+						k   = self.unitsConvert[ self.propertyUnitVars[regionName]["Conductivity"].get() ](k)
+						rho = self.unitsConvert[ self.propertyUnitVars[regionName]["Density"].get() ](rho)
+						cp  = self.unitsConvert[ self.propertyUnitVars[regionName]["HeatCapacity"].get() ](cp)
+						
 						alpha = k / (rho * cp)
 						
 						gotParameters = True
@@ -282,10 +288,10 @@ class Application:
 				else:
 					messagebox.showinfo("Help", f"Fill in {regionName} properties to see its diffusivity and characteristic mesh length")
 			
-
 			infobox = tk.Button(numericalFrame, text="  ?  ", command=spaninfo)
 			infobox.place(relx=0.96, rely=0.0, anchor="ne")
 
+		# Numerical Settings
 		self.numericalSettingsEntries = []
 		self.numericalSettingsUnits = []
 		self.numericalSettingsUnitMenus = []
@@ -507,16 +513,19 @@ class Application:
 			fieldsIValueFrames.append(initialValueFrame)
 
 			initialValueLabel = tk.Label(initialValueFrame, text="Frame's\ninitial value")
-			initialValueLabel.place(relx=0.0, rely=0.5, anchor="w")
 
 			self.initialValueEntries[field] = tk.Entry(initialValueFrame)
-			self.initialValueEntries[field].place(x=100, rely=0.5, anchor="w")
 
 			self.initialValueUnitVars[field] = tk.StringVar(initialValueFrame)
 			self.initialValueUnitVars[field].set("")
 
 			unitMenu = ttk.OptionMenu(initialValueFrame, self.initialValueUnitVars[field], *self.dirichletUnits[field])
-			unitMenu.place(x=270, rely=0.5, anchor="w")
+
+			if self.initialValuesNeeded:
+				initialValueLabel.place(relx=0.0, rely=0.5, anchor="w")
+				self.initialValueEntries[field].place(x=100, rely=0.5, anchor="w")
+				unitMenu.place(x=270, rely=0.5, anchor="w")
+
 
 			prevButton = tk.Button(initialValueFrame, text="  <  ", command=prevField, state="disabled" if field == self.fields[0] else "normal")
 			prevButton.bind('<Return>', lambda e:prevField())
@@ -673,15 +682,18 @@ class Application:
 					messagebox.showwarning("Warning","Must select either Neumann or Dirichlet Boundary Condition")
 					raise Exception("Must select either Neumann or Dirichlet Boundary Condition")
 			initialExpression = self.initialValueEntries[field].get()
+			if not self.initialValuesNeeded:
+				initialExpression = "0.0"
 			try:
 				float( initialExpression )
 			except:
 				try:
 					# Try to parse expression
+					# Variable initial expression not implemented yet
 					getFunction( initialExpression )( *np.random.rand((4)) )
 				except:
-					messagebox.showwarning("Warning", "Invalid Value in Initial Value field")
-					raise Exception("Invalid Value in Initial Value field")
+					messagebox.showwarning("Warning", "Invalid value in Initial Value field")
+					raise Exception("Invalid value in Initial Value field")
 	
 	def checkPage2Data(self):
 		for region in self.meshData.regionsNames:
@@ -722,6 +734,7 @@ class Application:
 class SolidMechanicsApplication(Application):
 	def settings(self):
 		self.fields = ["u", "v"]
+		self.initialValuesNeeded = False
 
 		self.neumannUnits = {"u": ["Pa", "kPa", "MPa", "GPa", "kgf/m²", "psi"], "v": ["Pa", "kPa", "MPa", "GPa", "kgf/m²", "psi"]}
 		self.dirichletUnits = {"u": ["m", "mm", "cm", "μm", "inch"], "v": ["m", "mm", "cm", "μm", "inch"]}
@@ -781,7 +794,6 @@ class SolidMechanicsApplication(Application):
 			raise Exception("Stress Equilibrium Problem not implemented yet for 3D cases")
 
 		# Boundary Conditions
-		initialValues = { field : self.unitsConvert[ self.initialValueUnitVars[field].get() ](float( self.initialValueEntries[field].get() )) for field in self.fields}
 		
 		neumannBoundaries = dict()
 		dirichletBoundaries = dict()
@@ -811,30 +823,25 @@ class SolidMechanicsApplication(Application):
 				self.propertyData[-1][propertyName] = float( self.propertyEntries[region.name][propertyName].get() )
 				self.propertyData[-1][propertyName] = self.unitsConvert[ self.propertyUnitVars[region.name][propertyName].get() ]( self.propertyData[-1][propertyName] )
 
-		f = io.StringIO()
-		with redirect_stdout(f):
-			print("\n{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
-			stressEquilibrium(
-				libraryPath = os.path.join(os.path.dirname(__file__), os.path.pardir),
-				outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
-				extension = "csv",
-				
-				grid 	  = self.grid,
-				propertyData = self.propertyData,
+		stressEquilibrium(
+			libraryPath = os.path.join(os.path.dirname(__file__), os.path.pardir),
+			outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
+			extension = "csv",
+			
+			grid 	  = self.grid,
+			propertyData = self.propertyData,
 
-				initialValues = initialValues,
-				neumannBoundaries = neumannBoundaries,
-				dirichletBoundaries = dirichletBoundaries,
-				boundaryConditions = list(boundaryConditionsDict.values()),
+			neumannBoundaries = neumannBoundaries,
+			dirichletBoundaries = dirichletBoundaries,
+			boundaryConditions = list(boundaryConditionsDict.values()),
 
-				verbosity=True 
-			)
-
-		self.app.post.setOutputTextVar(f)
+			verbosity=True 
+		)
 
 class HeatTransferApplication(Application):
 	def settings(self):
 		self.fields = ["temperature"]
+		self.initialValuesNeeded = True
 
 		self.neumannUnits = {"temperature": ["K/m"]}
 		self.dirichletUnits = {"temperature": ["K", "°C", "°F"]}
@@ -879,18 +886,42 @@ class HeatTransferApplication(Application):
 		}
 
 	def runSimulation(self):
-		# Boundary Conditions
-		boundaryConditionsData = dict()
-		for bName, entry, unit, bType in zip(self.boundariesNames, self.boundaryValueEntries["temperature"], self.boundaryUnitVars["temperature"], self.boundaryTypeVars["temperature"]):
-			boundaryConditionsData[bName] = {
-				"condition": ["NEUMANN", "DIRICHLET"][bType.get()-1],
-				"type": "CONSTANT",
-				"value": float( entry.get() )
-			}
+		convertFunc = self.unitsConvert[ self.initialValueUnitVars["temperature"].get() ]
+		initialValue = self.initialValueEntries["temperature"].get()
+		try:
+			initialValue = float(initialValue)
+			initialValueFunc = lambda x,y,z:convertFunc(initialValue)
+		except:
+			initialValueFunc = getFunction(initialValue, convertFunc)
 
-		initialValues = {"temperature": [float(self.initialValueEntries["temperature"].get())] * self.grid.vertices.size},
-		neumannBoundaries = {"temperature":[NeumannBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},
-		dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET"]}
+		initialValues = {"temperature": [initialValueFunc( *v.getCoordinates() ) for v in self.grid.vertices]}
+
+		# Boundaries
+		neumannBoundaries = { "temperature": [] }
+		dirichletBoundaries = { "temperature": [] }
+		handle = 0
+		for bName, boundary, entry, unit, condition in zip(self.boundariesNames,self.grid.boundaries,self.boundaryValueEntries["temperature"],self.boundaryUnitVars["temperature"],self.boundaryTypeVars["temperature"] ):
+			conversionFunc = self.unitsConvert[unit.get()]
+			condition = ["NEUMANN", "DIRICHLET"][condition.get()-1]
+			
+			try:
+				value = conversionFunc( float( entry.get() ) )
+				expression = False
+			except:
+				value = entry.get()
+				expression = True
+
+			boundaryCondition = BoundaryCondition(self.grid, boundary, value, handle)
+			boundaryCondition.__type__   = condition
+			boundaryCondition.expression = expression
+			boundaryCondition.function   = getFunction( value, conversion=conversionFunc )
+
+			if condition == "NEUMANN":
+				neumannBoundaries["temperature"].append(boundaryCondition)
+			elif condition == "DIRICHLET":
+				dirichletBoundaries["temperature"].append(boundaryCondition)
+
+			handle += 1
 
 		# Property Data
 		self.propertyData = []
@@ -940,9 +971,9 @@ class HeatTransferApplication(Application):
 				grid 	  = self.grid,
 				propertyData = self.propertyData,
 				
-				initialValues = {"temperature": [ self.unitsConvert[self.initialValueUnitVars["temperature"].get()]( float(self.initialValueEntries["temperature"].get()) ) ] * self.grid.vertices.size},
-				neumannBoundaries = {"temperature":[NeumannBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "NEUMANN"]},
-				dirichletBoundaries = {"temperature":[DirichletBoundaryCondition(self.grid, boundary, boundaryConditionsData[boundary.name]["value"], handle) for handle, boundary in enumerate(self.grid.boundaries) if boundaryConditionsData[boundary.name]["condition"] == "DIRICHLET"]},
+				initialValues = initialValues,
+				neumannBoundaries = neumannBoundaries,
+				dirichletBoundaries = dirichletBoundaries,
 	 
 				timeStep  = timeStep ,
 				finalTime = finalTime,
@@ -950,7 +981,8 @@ class HeatTransferApplication(Application):
 				tolerance = tolerance,
 				
 				transient = transient,
-				verbosity = True
+				verbosity = True,
+				color=False
 			)
 
 		self.app.post.setOutputTextVar(f)
@@ -1032,7 +1064,7 @@ class Post:
 		self.fieldVar = tk.StringVar()
 		self.fieldVar.set(self.fields[0])
 
-		fieldMenu = tk.OptionMenu(centerFrame, self.fieldVar, *self.fields)
+		fieldMenu = tk.OptionMenu(centerFrame, self.fieldVar, *self.fields, command=lambda value: self.showColorMap())
 		fieldMenu.grid(row=1, column=1, columnspan=4, padx=5, pady=5, sticky="e")
 
 		centerFrame.place(relx=0.5, rely=0.0, anchor="n")
@@ -1044,7 +1076,7 @@ class Post:
 
 		self.figure1 = matplotlib.figure.Figure()
 		self.plot1 = self.figure1.add_subplot()
-		self.plot1.set_position([0.125,0.15,0.75,0.75])
+		self.plot1.set_position([0.125,0.15,0.75-0.075,0.75])
 
 
 		self.figure1.patch.set_facecolor((240/255,240/255,237/255))
@@ -1086,7 +1118,7 @@ class Post:
 		self.devEntry.grid(row=0, column=4, padx=5, pady=5)
 		self.devEntry.bind('<Return>', lambda e:self.plotFieldProfile())
 
-		fieldMenu = tk.OptionMenu(centerFrame, self.fieldVar, *self.fields)
+		fieldMenu = tk.OptionMenu(centerFrame, self.fieldVar, *self.fields, command=lambda value: self.showColorMap())
 		fieldMenu.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="w")
 
 		self.timeStepStrVar = tk.StringVar(value=self.timeSteps[-1])
@@ -1144,11 +1176,11 @@ class Post:
 		except:
 			messagebox.showerror("Error", "Unable to allocate the memory")
 			raise Exception("Unable to allocate the memory")
-		
-		cbaxes = self.figure1.add_axes([0.90, 0.15, 0.03, 0.75]) 
+	
+		cbaxes = self.figure1.add_axes([0.825, 0.15, 0.03, 0.75]) 
 		self.cbar = self.figure1.colorbar(self.cdata, cax=cbaxes)
 
-		self.plot1.set_position([0.125,0.15,0.75,0.75])
+		self.plot1.set_position([0.125,0.15,0.75-0.075,0.75])
 		self.matplotlibCanvas1.draw()
 
 	def page1Prev(self):

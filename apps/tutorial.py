@@ -20,8 +20,8 @@ currentTime = 0.0
 
 saver = CsvSaver(grid, problemData.paths["Output"], problemData.libraryPath)
 
-temperatureField = np.repeat(problemData.initialValues, numberOfVertices)
-prevTemperatureField = np.repeat(problemData.initialValues["temperature"], numberOfVertices)
+temperatureField = np.repeat(0.0, numberOfVertices)
+prevTemperatureField = problemData.initialValues["temperature"].copy()
 
 coords,matrixVals = [], []
 

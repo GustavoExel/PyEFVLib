@@ -39,6 +39,7 @@ class PyEFVLibGUI:
 		self.root.mainloop()
 
 	def init(self):
+		self.root.title("PyEFVLib GUI")
 		self.mainMenu = MainMenu(self.root, self)
 		self.heatTransferApplication = HeatTransferApplication(self.root, self)
 		self.solidMechanicsApplication = SolidMechanicsApplication(self.root, self)
@@ -138,18 +139,15 @@ class Application:
 	def populatePage1(self):
 		self.page1 = Page(self.root, height=500, width=600, prevFunc=self.page1Prev, nextFunc=self.page1Next)
 
-		self.openFrame = tk.LabelFrame(self.page1, text="Open Mesh File")
+		self.openFrame = tk.Frame(self.page1)
 		self.openFrame.place(relx=0.02, rely=0.02, relheight=0.20-0.02, relwidth=1.00-0.04, anchor="nw")
 
 		openButton = tk.Button(self.openFrame, text="Open Mesh File", command=self.openFile)
 		openButton.bind('<Return>', lambda e:self.openFile())
-		openButton.place(relx=0.02, rely=0.5, relheight=0.50, relwidth=0.25, anchor="w")
-
-		self.fileLabel = tk.Label(self.openFrame, text="", bg="white", anchor="e")
-		self.fileLabel.place(relx=0.30, rely=0.5, relheight=0.50, relwidth=0.65, anchor="w")
+		openButton.place(relx=0.5, rely=0.1, relheight=0.50, relwidth=0.25, anchor="n")
 
 		self.BCFrame = tk.LabelFrame(self.page1, text="Boundary Conditions Settings")
-		self.BCFrame.place(relx=0.02, rely=0.20+0.02, relheight=0.65-0.02, relwidth=1.00-0.04, anchor="nw")
+		self.BCFrame.place(relx=0.02, rely=0.15+0.02, relheight=0.70-0.02, relwidth=1.00-0.04, anchor="nw")
 
 		def showBoundariesFunc():
 			if self.showFigVar.get():
@@ -618,11 +616,12 @@ class Application:
 		if simulate:
 			self.checkPage1Data()
 			self.checkPage2Data()
+			self.saveAs()
 			self.runSimulation()
 			self.simulated = True
 
 			self.page2.hide()
-			self.app.post.setResultsPath(os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui", "Results.csv"))
+			self.app.post.setResultsPath(self.resultsPath)
 			self.app.post.init()
 
 	def openFile(self):
@@ -654,11 +653,19 @@ class Application:
 				self.populateBCFig()
 				self.populateBCMesh()
 
-			self.fileLabel["text"] = self.meshFileName
+			self.root.title("PyEFVLib GUI - {}".format(self.meshFileName))
 			self.populateBCFrame()
 			self.populatePage2()
 		else:
 			self.meshFileName = prevMeshFileName
+
+	def saveAs(self):
+		initialdir = os.path.join( os.path.dirname(__file__), os.path.pardir, "results", "gui" )
+		self.resultsPath = tk.filedialog.asksaveasfilename(initialdir=initialdir, defaultextension=".csv", filetypes = (("CSV file", "*.csv"), ("All files", "*")))
+
+		sepIdx = self.resultsPath[::-1].index("/")
+		self.outputFilePath = self.resultsPath[-sepIdx:].replace(".csv", "")
+		self.outputDir = self.resultsPath[:-sepIdx]
 
 	def checkFile(self):
 		if not self.meshFileName:
@@ -976,7 +983,8 @@ class HeatTransferApplication(Application):
 			print("\n{:>9}\t{:>14}\t{:>14}\t{:>14}".format("Iteration", "CurrentTime", "TimeStep", "Difference"))
 			heatTransfer(
 				libraryPath = os.path.join(os.path.dirname(__file__), os.path.pardir),
-				outputPath = os.path.join(os.path.dirname(__file__), os.path.pardir, "results", "gui"),
+				outputPath = self.outputDir,
+				fileName = self.outputFilePath,
 				extension = "csv",
 				
 				grid 	  = self.grid,

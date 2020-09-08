@@ -1,34 +1,3 @@
-"""
-TTK vs TK
-
-Antes: 
- -- TTK -- 
-Frame
-Scrollbar
-OptionMenu
-Scale
-
- -- TK -- 
-Tk
-Frame
-Canvas
-LabelFrame
-
-Entry
-Checkbutton
-Button
-OptionMenu
-IntVar
-Scrollbar
-Spinbox
-Scale
-Radiobutton
-
-messagebox
-filedialog
-_setit
-"""
-
 import sys,os,io
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver, NeumannBoundaryCondition, DirichletBoundaryCondition, BoundaryCondition
@@ -44,6 +13,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib import pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import ListedColormap as CM, Normalize
+
+from PIL import ImageTk, Image
 
 from contextlib import redirect_stdout
 import numpy as np
@@ -74,6 +45,7 @@ class PyEFVLibGUI:
 	def init(self):
 		self.root.title("PyEFVLib GUI")
 		self.mainMenu = MainMenu(self.root, self)
+		self.geoMesh = GeoMesh(self.root, self)
 		self.heatTransferSimulator = HeatTransferSimulator(self.root, self)
 		self.solidMechanicsSimulator = SolidMechanicsSimulator(self.root, self)
 		self.post = Post(self.root, self)
@@ -154,6 +126,93 @@ class Page(tk.Canvas):
 	def hide(self):
 		self.pack_forget()
 
+class GeoMesh:
+	def __init__(self, root, application):
+		self.root = root
+		self.app = application
+
+		self.settings()
+
+	def settings(self):
+		self.parameterNames = {
+			"rectangle": ["width", "height", "dx", "dy"],
+			"polar": ["r1", "r2", "angle", "dθ"]
+		}
+
+	def initPre(self):
+		self.popupGeometrySelection()
+
+	def initContour(self):
+		pass
+
+	def popupGeometrySelection(self):
+		geoSelectionWin = tk.Toplevel()
+		geoSelectionWin.geometry("{}x{}".format(500,100))
+		geoSelectionWin.title("Select Mesh Option")
+
+		geoSelectionFrame = tk.Frame(geoSelectionWin)
+		geoSelectionFrame.pack()
+
+		def rectangleCommand():
+			geoSelectionWin.destroy()
+			self.geometry = "rectangle"
+			self.populatePage1()
+		def polarCommand():
+			geoSelectionWin.destroy()
+			self.geometry = "polar"
+			self.populatePage1()
+
+		tk.Button(geoSelectionFrame, height=4, text="Rectangle", command=rectangleCommand).grid(column=0, row=0, padx=5, pady=5)
+		tk.Button(geoSelectionFrame, height=4, text="Polar", command=polarCommand).grid(column=1, row=0, padx=5, pady=5)
+
+	def preMeshPopupHelp(self):
+		helpWin = tk.Toplevel(self.root, height=500, width=600)
+
+		img = ImageTk.PhotoImage( Image.open( "{}_settings.png".format(self.geometry) ).resize((450, 350), Image.ANTIALIAS) )
+		panel = tk.Label(helpWin, image=img)
+		panel.image = img
+		panel.pack()
+
+	def populatePage1(self):
+		self.page1 = tk.Frame(self.root, width=600, height=500)
+		self.page1.pack()
+
+		self.meshSettingsFrame = tk.LabelFrame(self.page1, text="Mesh Settings")
+		self.meshSettingsFrame.place(relx=0.02,rely=0.52,relwidth=1.00-0.04,relheight=0.46,anchor="nw")
+
+		def previewMesh():
+			pass
+
+		centerFrame = tk.Frame(self.meshSettingsFrame)
+		centerFrame.pack()
+
+		for i, eN in enumerate(self.parameterNames[ self.geometry ]):
+			tk.Label(centerFrame, text=eN).grid(column=0, row=i, sticky="w", padx=10, pady=5)
+			entry = tk.Entry(centerFrame)
+			entry.grid(column=1, row=i)
+
+		tk.Button(centerFrame, text="Preview", command=previewMesh).grid(column=2, row=i, padx=10, pady=5)
+
+		# Mesh
+
+		self.meshCanvas = tk.Canvas(self.page1)
+
+		self.meshFigure = matplotlib.figure.Figure()
+		self.meshPlot = self.meshFigure.add_subplot()
+		self.meshPlot.set_position([0.125,0.15,0.8,0.75])
+
+		plt.setp(self.meshPlot.xaxis.get_ticklabels(), visible=False) 
+		plt.setp(self.meshPlot.yaxis.get_ticklabels(), visible=False) 
+
+		self.meshFigure.patch.set_facecolor((240/255,240/255,237/255))
+		self.meshPlot.patch.set_facecolor((240/255,240/255,237/255))
+
+		self.matplotlibMeshCanvas = FigureCanvasTkAgg(self.meshFigure, self.meshCanvas)
+		self.matplotlibWidget = self.matplotlibMeshCanvas.get_tk_widget()
+		self.matplotlibWidget.pack(side="left", fill="both", expand=1)
+
+		self.meshCanvas.place(relx=0.02,rely=0.02,relwidth=1.00-0.04,relheight=0.5,anchor="nw")
+
 class Simulator:
 	def __init__(self, root, application):
 		self.root = root
@@ -174,8 +233,8 @@ class Simulator:
 		self.openFrame = tk.Frame(self.page1)
 		self.openFrame.place(relx=0.02, rely=0.02, relheight=0.20-0.02, relwidth=1.00-0.04, anchor="nw")
 
-		openButton = tk.Button(self.openFrame, text="Open Mesh File", command=self.openFile)
-		openButton.bind('<Return>', lambda e:self.openFile())
+		openButton = tk.Button(self.openFrame, text="Select Mesh", command=self.askFile)
+		openButton.bind('<Return>', lambda e:self.askFile())
 		openButton.place(relx=0.5, rely=0.1, relheight=0.50, relwidth=0.25, anchor="n")
 
 		self.BCFrame = tk.LabelFrame(self.page1, text="Boundary Conditions Settings")
@@ -660,6 +719,29 @@ class Simulator:
 			self.app.post.setResultsPath(self.resultsPath)
 			self.app.post.setSimulator(self)
 			self.app.post.init()
+
+	def askFile(self):
+		askMeshWin = tk.Toplevel()
+		askMeshWin.geometry("{}x{}".format(500,100))
+		askMeshWin.title("Select Mesh Option")
+
+		askMeshFrame = tk.Frame(askMeshWin)
+		askMeshFrame.pack()
+
+		def selectFileCommand():
+			askMeshWin.destroy()
+			self.openFile()
+		def preGeoCommand():
+			askMeshWin.destroy()
+			self.page1.hide()
+			self.app.geoMesh.initPre()
+		def contourCommand():
+			askMeshWin.destroy()
+			self.page1.hide()
+
+		tk.Button(askMeshFrame, height=4, text="Select Mesh File", command=selectFileCommand).grid(column=0, row=0, padx=5, pady=5)
+		tk.Button(askMeshFrame, height=4, text="Create mesh from\npredetermined geometry", command=preGeoCommand).grid(column=1, row=0, padx=5, pady=5)
+		tk.Button(askMeshFrame, height=4, text="Create mesh from\ncontour points", command=contourCommand).grid(column=2, row=0, padx=5, pady=5)
 
 	def openFile(self):
 		initialdir = os.path.join( os.path.dirname(__file__), os.path.pardir, "meshes" )

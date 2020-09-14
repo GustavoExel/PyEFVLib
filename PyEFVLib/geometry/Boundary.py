@@ -89,7 +89,6 @@ class BoundaryBuilder:
 		# boundaryElement 	 : Element which contains the facet
 		# localFacetVertices : facet's vertices local indices at the element
 		# elemFacetIndex	 : facet's local index of the element
-
 		for boundaryElement, boundaryElementVertices in zip(self.boundariesIndexes, self.boundariesIndexesVertices):
 			if set(facetConnectivity).issubset(boundaryElementVertices):
 				localFacetVertices = [boundaryElementVertices.index(globalHandle) for globalHandle in facetConnectivity]

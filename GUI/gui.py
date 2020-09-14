@@ -134,10 +134,11 @@ class GeoMesh:
 		self.settings()
 
 	def settings(self):
-		self.parameterNames = {
+		self.parameters = {
 			"rectangle": ["width", "height", "dx", "dy"],
-			"polar": ["r1", "r2", "angle", "dθ"]
+			"polar": ["r1", "r2", "θ", "dr", "dθ"]
 		}
+		self.writers = { "rectangle": self.writeRectangle, "polar": self.writePolar }
 
 	def initPre(self):
 		self.popupGeometrySelection()
@@ -147,7 +148,7 @@ class GeoMesh:
 
 	def popupGeometrySelection(self):
 		geoSelectionWin = tk.Toplevel()
-		geoSelectionWin.geometry("{}x{}".format(500,100))
+		geoSelectionWin.geometry("{}x{}".format(300,80))
 		geoSelectionWin.title("Select Mesh Option")
 
 		geoSelectionFrame = tk.Frame(geoSelectionWin)
@@ -162,8 +163,8 @@ class GeoMesh:
 			self.geometry = "polar"
 			self.populatePage1()
 
-		tk.Button(geoSelectionFrame, height=4, text="Rectangle", command=rectangleCommand).grid(column=0, row=0, padx=5, pady=5)
-		tk.Button(geoSelectionFrame, height=4, text="Polar", command=polarCommand).grid(column=1, row=0, padx=5, pady=5)
+		tk.Button(geoSelectionFrame, width=10, height=3, text="Rectangle", command=rectangleCommand).grid(column=0, row=0, padx=5, pady=5)
+		tk.Button(geoSelectionFrame, width=10, height=3, text="Polar", command=polarCommand).grid(column=1, row=0, padx=5, pady=5)
 
 	def preMeshPopupHelp(self):
 		helpWin = tk.Toplevel(self.root, height=500, width=600)
@@ -174,24 +175,43 @@ class GeoMesh:
 		panel.pack()
 
 	def populatePage1(self):
-		self.page1 = tk.Frame(self.root, width=600, height=500)
-		self.page1.pack()
+		def prevFunc():
+			self.page1.hide()
+			self.simulator.page1.show()
+		def nextFunc():
+			previewMesh()
+			self.page1.hide()
+			self.simulator.page1.show()
+			self.simulator.readFile(self.outputPath)
+
+		self.page1 = Page(self.root, width=600, height=500, prevFunc=prevFunc, nextFunc=nextFunc)
+		self.page1.show()
+		# self.page1.pack()
 
 		self.meshSettingsFrame = tk.LabelFrame(self.page1, text="Mesh Settings")
-		self.meshSettingsFrame.place(relx=0.02,rely=0.52,relwidth=1.00-0.04,relheight=0.46,anchor="nw")
+		self.meshSettingsFrame.place(relx=0.02,rely=0.52,relwidth=1.00-0.04,relheight=0.36,anchor="nw")
 
 		def previewMesh():
-			pass
+			self.outputPath = os.path.join(os.path.dirname(__file__),os.path.pardir,"meshes",self.geometry+".msh")
+			self.writers[self.geometry]( *[ param.get() for param in self.parameterEntries], self.outputPath )
+
+			self.drawMesh(self.meshPlot, self.matplotlibMeshCanvas, self.outputPath)
 
 		centerFrame = tk.Frame(self.meshSettingsFrame)
 		centerFrame.pack()
 
-		for i, eN in enumerate(self.parameterNames[ self.geometry ]):
+		self.parameterEntries = []
+		for i, eN in enumerate(self.parameters[ self.geometry ]):
 			tk.Label(centerFrame, text=eN).grid(column=0, row=i, sticky="w", padx=10, pady=5)
 			entry = tk.Entry(centerFrame)
+			entry.bind('<Return>', lambda e:previewMesh())
 			entry.grid(column=1, row=i)
 
-		tk.Button(centerFrame, text="Preview", command=previewMesh).grid(column=2, row=i, padx=10, pady=5)
+			self.parameterEntries.append( entry )
+
+		previewButton = tk.Button(centerFrame, text="Preview", command=previewMesh)
+		previewButton.bind('<Return>', lambda e:previewMesh())
+		previewButton.grid(column=2, row=i, padx=10, pady=5)
 
 		# Mesh
 
@@ -199,7 +219,7 @@ class GeoMesh:
 
 		self.meshFigure = matplotlib.figure.Figure()
 		self.meshPlot = self.meshFigure.add_subplot()
-		self.meshPlot.set_position([0.125,0.15,0.8,0.75])
+		self.meshPlot.set_position([0.2,0.05,0.6,0.95])
 
 		plt.setp(self.meshPlot.xaxis.get_ticklabels(), visible=False) 
 		plt.setp(self.meshPlot.yaxis.get_ticklabels(), visible=False) 
@@ -212,6 +232,125 @@ class GeoMesh:
 		self.matplotlibWidget.pack(side="left", fill="both", expand=1)
 
 		self.meshCanvas.place(relx=0.02,rely=0.02,relwidth=1.00-0.04,relheight=0.5,anchor="nw")
+
+	def setSimulator(self, simulator):
+		self.simulator = simulator
+
+	def writeRectangle(self, widthStr, heightStr, dxStr, dyStr, outputPath):
+		if widthStr=="" or heightStr=="" or dxStr=="" or dxStr=="":
+			messagebox.showerror("Error", "All rectangle parameters must be positive")
+			raise Exception("All rectangle parameters must be positive")
+
+		width, height, dx, dy = float(widthStr), float(heightStr), float(dxStr), float(dyStr)
+		if width<=0 or height<=0 or dx<=0 or dx<=0:
+			messagebox.showerror("Error", "All rectangle parameters must be positive")
+			raise Exception("All rectangle parameters must be positive")
+		elif dx > width:
+			messagebox.showerror("Error", "dx must be less than width")
+			raise Exception("dx must be less than width")
+		elif dy > height:
+			messagebox.showerror("Error", "dy must be less than height")
+			raise Exception("dy must be less than height")
+
+
+		nx = int(width/dx) + 1
+		ny = int(height/dy) + 1
+
+		physicalNames = { "Body":2, "North":1, "South":1, "West":1, "East":1 }
+		nodes = [(x,y,0.0) for y in np.linspace(0,height,ny) for x in np.linspace(0,width,nx)]
+
+		elements = []
+		elements += [[len(elements)+i+1, *(1, 2), *(2, 2), *(vIdx+1,vIdx+2)] for i, vIdx in enumerate( range(nx*(ny-1), nx*ny-1) )]
+		elements += [[len(elements)+i+1, *(1, 2), *(3, 3), *(vIdx+1,vIdx+2)] for i, vIdx in enumerate( range(0, nx-1) )]
+		elements += [[len(elements)+i+1, *(1, 2), *(4, 4), *(vIdx+1,vIdx+nx+1)] for i, vIdx in enumerate( range(0, nx*(ny-1), nx) )]
+		elements += [[len(elements)+i+1, *(1, 2), *(5, 5), *(vIdx+1,vIdx+nx+1)] for i, vIdx in enumerate( range(nx-1, nx*ny-1, nx) )]
+		elements += [[len(elements)+i+1, *(3, 2), *(1, 1), *(vIdx+1, vIdx+2, vIdx+2+nx, vIdx+1+nx)] for i, vIdx in enumerate( [ vIdx for vIdx in range(nx*ny-nx-1) if (vIdx+1)%nx!=0 ] )]
+
+		text = ""
+		text += "$MeshFormat\n2.2 0 8\n$EndMeshFormat\n$PhysicalNames\n"
+		text += str( len(physicalNames) ) + "\n"
+		text += "".join([ "{} {} \"{}\"\n".format(physicalNames[name], idx+1, name) for idx, name in enumerate(physicalNames.keys()) ])
+		text += "$EndPhysicalNames\n$Nodes\n"
+		text += str( len(nodes) ) + "\n"
+		text += "".join([ "{} {} {} {}\n".format(idx+1, x, y, z) for idx,(x,y,z) in enumerate(nodes) ])
+		text += "$EndNodes\n$Elements\n"
+		text += str( len(elements) ) + "\n"
+		text += "\n".join([" ".join([str(ev) for ev in e]) for e in elements])
+		text += "\n$EndElements\n"
+
+		with open(outputPath, "w") as f:
+			f.write(text)
+
+	def writePolar(self, r1Str,r2Str,angleStr, drStr, dThetaStr, outputPath):
+		if r1Str=="" or r2Str=="" or angleStr=="" or drStr=="" or dThetaStr=="":
+			messagebox.showerror("Error","All parameters must be positive")
+			raise Exception("All parameters must be positive")
+
+		r1,r2,angle,dr,dTheta = float(r1Str),float(r2Str),float(angleStr),float(drStr),float(dThetaStr)
+		
+		if r1<=0.0 or r2<=0.0 or angle<=0.0 or dr<=0 or dTheta<=0:
+			messagebox.showerror("Error","All parameters must be positive")
+			raise Exception("All parameters must be positive")
+		elif r2 < r1:
+			messagebox.showerror("Error","r2 must be greater than r1")
+			raise Exception("r2 must be greater than r1")
+		elif dr > r2-r1:
+			messagebox.showerror("Error","dr must be less than r2 - r1")
+			raise Exception("dr must be less than r2 - r1")
+		elif dTheta > angle:
+			messagebox.showerror("Error","dθ must be less than θ")
+			raise Exception("dθ must be less than θ")
+
+		
+		messagebox.showerror("Error", "dy must be less than height")
+		nr = int((r2-r1)/dr) + 1
+		nTheta = int(angle/dTheta) + 1
+
+		def x(r,theta):
+			return r * np.cos(theta)
+		def y(r,theta):
+			return r * np.sin(theta)
+
+		physicalNames = { "Body":2, "Top":1, "Bottom":1, "InWall":1, "OutWall":1 }
+		nodes = [ ( x(r,theta), y(r,theta), 0.0 ) for theta in np.linspace(0,angle,nTheta) for r in np.linspace(r1,r2,nr) ]
+
+		elements = []
+		elements += [[len(elements)+i+1, *(1, 2), *(2, 2), *(vIdx+1,vIdx+2)] for i, vIdx in enumerate( range(nr*(nTheta-1), nr*nTheta-1) )]
+		elements += [[len(elements)+i+1, *(1, 2), *(3, 3), *(vIdx+1,vIdx+2)] for i, vIdx in enumerate( range(0, nr-1) )]
+		elements += [[len(elements)+i+1, *(1, 2), *(4, 4), *(vIdx+1,vIdx+nr+1)] for i, vIdx in enumerate( range(0, nr*(nTheta-1), nr) )]
+		elements += [[len(elements)+i+1, *(1, 2), *(5, 5), *(vIdx+1,vIdx+nr+1)] for i, vIdx in enumerate( range(nr-1, nr*nTheta-1, nr) )]
+		elements += [[len(elements)+i+1, *(3, 2), *(1, 1), *(vIdx+1, vIdx+2, vIdx+2+nr, vIdx+1+nr)] for i, vIdx in enumerate( [ vIdx for vIdx in range(nr*nTheta-nr-1) if (vIdx+1)%nr!=0 ] )]
+
+
+		text = ""
+		text += "$MeshFormat\n2.2 0 8\n$EndMeshFormat\n$PhysicalNames\n"
+		text += str( len(physicalNames) ) + "\n"
+		text += "".join([ "{} {} \"{}\"\n".format(physicalNames[name], idx+1, name) for idx, name in enumerate(physicalNames.keys()) ])
+		text += "$EndPhysicalNames\n$Nodes\n"
+		text += str( len(nodes) ) + "\n"
+		text += "".join([ "{} {} {} {}\n".format(idx+1, x, y, z) for idx,(x,y,z) in enumerate(nodes) ])
+		text += "$EndNodes\n$Elements\n"
+		text += str( len(elements) ) + "\n"
+		text += "\n".join([" ".join([str(ev) for ev in e]) for e in elements])
+		text += "\n$EndElements\n"
+
+		with open(outputPath, "w") as f:
+			f.write(text)
+
+	@staticmethod
+	def drawMesh(ax, canvas, path):
+		ax.clear()
+		grid = Grid( MSHReader(path).getData() )
+
+		for e in grid.elements:
+			x,y = zip( *[ vertex.getCoordinates()[:-1] for vertex in e.vertices ] )
+			x,y = x+(x[0],), y+(y[0],)
+			ax.plot(x,y,color="k")
+
+		plt.setp(ax.xaxis.get_ticklabels(), visible=False) 
+		plt.setp(ax.yaxis.get_ticklabels(), visible=False) 
+
+		canvas.draw()
 
 class Simulator:
 	def __init__(self, root, application):
@@ -721,6 +860,9 @@ class Simulator:
 			self.app.post.init()
 
 	def askFile(self):
+		if self.meshFileName:
+			self.hideBCFig()
+			self.hideBCMesh()
 		askMeshWin = tk.Toplevel()
 		askMeshWin.geometry("{}x{}".format(500,100))
 		askMeshWin.title("Select Mesh Option")
@@ -731,11 +873,15 @@ class Simulator:
 		def selectFileCommand():
 			askMeshWin.destroy()
 			self.openFile()
+			if self.meshFileName:
+				self.readFile(self.meshFileName)
 		def preGeoCommand():
+			self.app.geoMesh.setSimulator(self)
 			askMeshWin.destroy()
 			self.page1.hide()
 			self.app.geoMesh.initPre()
 		def contourCommand():
+			self.app.geoMesh.setSimulator(self)
 			askMeshWin.destroy()
 			self.page1.hide()
 
@@ -747,7 +893,6 @@ class Simulator:
 		initialdir = os.path.join( os.path.dirname(__file__), os.path.pardir, "meshes" )
 		prevMeshFileName = self.meshFileName
 		self.meshFileName = tk.filedialog.askopenfilename(initialdir=initialdir, title="Select a mesh file", filetypes=(("MSH files", "*.msh"),("All files", "*")))
-
 		if self.meshFileName: # Prevents against not choosing a file
 			if not ".msh" in self.meshFileName:
 				# Prevents from forgetting already selected mesh if select mesh button is accidentally pressed
@@ -755,28 +900,30 @@ class Simulator:
 				tk.messagebox.showwarning("Warning","Must be a .msh file")
 				raise Exception("Must be a .msh file")
 			try:
-				self.meshData = MSHReader(self.meshFileName).getData()
+				MSHReader(self.meshFileName).getData()
 			except:
 				# Prevents from forgetting already selected mesh if select mesh button is accidentally pressed
 				self.meshFileName = prevMeshFileName
 				tk.messagebox.showwarning("Warning","Invalid mesh file")
 				raise Exception("Invalid mesh file")
-			
-
-			self.grid = Grid( self.meshData )
-			if self.grid.dimension == 2:
-				if self.drawn:
-					self.figDrawCanvas.destroy()
-				self.showFigCheckbox.configure(state="normal")
-				self.showMeshCheckbox.configure(state="normal")
-				self.populateBCFig()
-				self.populateBCMesh()
-
-			self.root.title("PyEFVLib GUI - {}".format(self.meshFileName))
-			self.populateBCFrame()
-			self.populatePage2()
 		else:
 			self.meshFileName = prevMeshFileName
+
+	def readFile(self, fileName):
+		self.meshFileName = fileName
+		self.meshData = MSHReader(self.meshFileName).getData()
+		self.grid = Grid( self.meshData )
+		if self.grid.dimension == 2:
+			if self.drawn:
+				self.figDrawCanvas.destroy()
+			self.showFigCheckbox.configure(state="normal")
+			self.showMeshCheckbox.configure(state="normal")
+			self.populateBCFig()
+			self.populateBCMesh()
+
+		self.root.title("PyEFVLib GUI - {}".format(self.meshFileName))
+		self.populateBCFrame()
+		self.populatePage2()
 
 	def saveAs(self):
 		initialdir = os.path.join( os.path.dirname(__file__), os.path.pardir, "results", "gui" )

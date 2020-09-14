@@ -133,12 +133,34 @@ class GeoMesh:
 
 		self.settings()
 
+	def __del__(self):
+		if os.path.exists(self.tempPath):
+			os.remove(self.tempPath)
+
 	def settings(self):
+		self.tempPath = os.path.join( os.path.dirname(__file__), "temp.msh" )
+
 		self.parameters = {
 			"rectangle": ["width", "height", "dx", "dy"],
 			"polar": ["r1", "r2", "θ", "dr", "dθ"]
 		}
 		self.writers = { "rectangle": self.writeRectangle, "polar": self.writePolar }
+		
+		length = ["m", "cm", "km", "mm",]
+		angle = ["°", "rad",]
+		self.units = {
+			"width":length, "height":length, "dx":length, "dy":length,
+			"r1":length, "r2":length, "θ":angle, "dr":length, "dθ":angle
+		}
+		self.unitsConvert = {
+			"m": lambda x: 1.0 * x,
+			"cm": lambda x: 0.01 * x,
+			"km": lambda x: 1000.0 * x,
+			"mm": lambda x: 0.001 * x,
+			"°": lambda x: np.pi * x / 180.0,
+			"rad": lambda x: 1.0 * x
+		}
+
 
 	def initPre(self):
 		self.popupGeometrySelection()
@@ -179,10 +201,12 @@ class GeoMesh:
 			self.page1.hide()
 			self.simulator.page1.show()
 		def nextFunc():
+			# self.outputPath = os.path.join(os.path.dirname(__file__),os.path.pardir,"meshes",self.geometry+".msh")
+
 			previewMesh()
 			self.page1.hide()
 			self.simulator.page1.show()
-			self.simulator.readFile(self.outputPath)
+			self.simulator.readFile(self.tempPath)
 
 		self.page1 = Page(self.root, width=600, height=500, prevFunc=prevFunc, nextFunc=nextFunc)
 		self.page1.show()
@@ -192,26 +216,46 @@ class GeoMesh:
 		self.meshSettingsFrame.place(relx=0.02,rely=0.52,relwidth=1.00-0.04,relheight=0.36,anchor="nw")
 
 		def previewMesh():
-			self.outputPath = os.path.join(os.path.dirname(__file__),os.path.pardir,"meshes",self.geometry+".msh")
-			self.writers[self.geometry]( *[ param.get() for param in self.parameterEntries], self.outputPath )
+			if "" in [ param.get() for param in self.parameterEntries]:
+				messagebox.showerror("Error", "All rectangle parameters must be positive")
+				raise Exception("All rectangle parameters must be positive")
 
-			self.drawMesh(self.meshPlot, self.matplotlibMeshCanvas, self.outputPath)
+			try:
+				values = [ float( param.get() ) for param in self.parameterEntries]
+			except:
+				messagebox.showerror("Error", "Invalid input")
+				raise Exception("Invalid input")
+
+			values = [ self.unitsConvert[ unitVar.get() ](value) for value, unitVar in zip(values, self.parameterUnits) ]
+
+			self.writers[self.geometry]( *values, self.tempPath )
+
+			self.drawMesh(self.meshPlot, self.matplotlibMeshCanvas, self.tempPath)
 
 		centerFrame = tk.Frame(self.meshSettingsFrame)
 		centerFrame.pack()
 
 		self.parameterEntries = []
+		self.parameterUnits = []
 		for i, eN in enumerate(self.parameters[ self.geometry ]):
 			tk.Label(centerFrame, text=eN).grid(column=0, row=i, sticky="w", padx=10, pady=5)
 			entry = tk.Entry(centerFrame)
 			entry.bind('<Return>', lambda e:previewMesh())
 			entry.grid(column=1, row=i)
 
+			unitVar = tk.StringVar(centerFrame)
+			unitVar.set(self.units[eN][0])
+
+			unitMenu = tk.OptionMenu(centerFrame, unitVar, *self.units[eN])
+			unitMenu.grid(column=2, row=i, sticky="E")
+
+
 			self.parameterEntries.append( entry )
+			self.parameterUnits.append( unitVar )
 
 		previewButton = tk.Button(centerFrame, text="Preview", command=previewMesh)
 		previewButton.bind('<Return>', lambda e:previewMesh())
-		previewButton.grid(column=2, row=i, padx=10, pady=5)
+		previewButton.grid(column=3, row=i, padx=10, pady=5)
 
 		# Mesh
 
@@ -236,13 +280,8 @@ class GeoMesh:
 	def setSimulator(self, simulator):
 		self.simulator = simulator
 
-	def writeRectangle(self, widthStr, heightStr, dxStr, dyStr, outputPath):
-		if widthStr=="" or heightStr=="" or dxStr=="" or dxStr=="":
-			messagebox.showerror("Error", "All rectangle parameters must be positive")
-			raise Exception("All rectangle parameters must be positive")
-
-		width, height, dx, dy = float(widthStr), float(heightStr), float(dxStr), float(dyStr)
-		if width<=0 or height<=0 or dx<=0 or dx<=0:
+	def writeRectangle(self, width, height, dx, dy, outputPath):
+		if width<=0 or height<=0 or dx<=0 or dy<=0:
 			messagebox.showerror("Error", "All rectangle parameters must be positive")
 			raise Exception("All rectangle parameters must be positive")
 		elif dx > width:
@@ -251,7 +290,6 @@ class GeoMesh:
 		elif dy > height:
 			messagebox.showerror("Error", "dy must be less than height")
 			raise Exception("dy must be less than height")
-
 
 		nx = int(width/dx) + 1
 		ny = int(height/dy) + 1
@@ -281,13 +319,7 @@ class GeoMesh:
 		with open(outputPath, "w") as f:
 			f.write(text)
 
-	def writePolar(self, r1Str,r2Str,angleStr, drStr, dThetaStr, outputPath):
-		if r1Str=="" or r2Str=="" or angleStr=="" or drStr=="" or dThetaStr=="":
-			messagebox.showerror("Error","All parameters must be positive")
-			raise Exception("All parameters must be positive")
-
-		r1,r2,angle,dr,dTheta = float(r1Str),float(r2Str),float(angleStr),float(drStr),float(dThetaStr)
-		
+	def writePolar(self, r1,r2,angle, dr, dTheta, outputPath):
 		if r1<=0.0 or r2<=0.0 or angle<=0.0 or dr<=0 or dTheta<=0:
 			messagebox.showerror("Error","All parameters must be positive")
 			raise Exception("All parameters must be positive")
@@ -301,8 +333,6 @@ class GeoMesh:
 			messagebox.showerror("Error","dθ must be less than θ")
 			raise Exception("dθ must be less than θ")
 
-		
-		messagebox.showerror("Error", "dy must be less than height")
 		nr = int((r2-r1)/dr) + 1
 		nTheta = int(angle/dTheta) + 1
 
@@ -781,7 +811,7 @@ class Simulator:
 
 		i=0
 		for boundary, boundaryName in zip(self.meshData.boundariesIndexes, self.meshData.boundariesNames):
-			boundaryColor = plt.cm.get_cmap("hsv", len(self.meshData.boundariesNames))(i)
+			boundaryColor = plt.cm.get_cmap("hsv", len(self.meshData.boundariesNames)+1)(i)
 			for facet in boundary:
 				pair = self.meshData.boundariesConnectivities[facet]
 				coords = [self.meshData.vertices[v][:-1] for v in pair]
@@ -819,6 +849,9 @@ class Simulator:
 		self.meshDrawCanvas.pack_forget()
 
 	def page1Prev(self):
+		if self.meshFileName:
+			self.hideBCFig()
+			self.hideBCMesh()
 		self.page1.destroy()
 		self.app.init()
 		# self.app.mainMenu.init()
@@ -837,7 +870,7 @@ class Simulator:
 	def page2Next(self):
 		simulate = True
 		if self.simulated:
-			if "no" == tk.tk.messagebox.askquestion("Warning", "A simulation has already been calculated. Do you want to calculate another one?"):
+			if "no" == messagebox.askquestion("Warning", "A simulation has already been calculated. Do you want to calculate another one?"):
 				simulate = False
 				self.page2.hide()
 				if self.app.post.returnToSimulator:
@@ -1540,8 +1573,12 @@ class Post:
 			lT, lower = zip(*sorted(zip(lT, lower)))
 			self.plot1.clear()
 			self.showColorMap()
-			self.plot1.plot(lT,lower,color="k", linewidth=0.75)
-			self.plot1.plot(uT,upper,color="k", linewidth=0.75)
+			if wStr == "x":
+				self.plot1.plot(lower, lT,color="k", linewidth=0.75)
+				self.plot1.plot(upper, uT,color="k", linewidth=0.75)
+			elif wStr == "y":
+				self.plot1.plot(lT,lower,color="k", linewidth=0.75)
+				self.plot1.plot(uT,upper,color="k", linewidth=0.75)
 			self.matplotlibCanvas1.draw()
 
 	def page1Prev(self):

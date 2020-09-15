@@ -161,40 +161,12 @@ class GeoMesh:
 			"rad": lambda x: 1.0 * x
 		}
 
-
 	def initPre(self):
 		self.popupGeometrySelection()
 
 	def initContour(self):
-		pass
-
-	def popupGeometrySelection(self):
-		geoSelectionWin = tk.Toplevel()
-		geoSelectionWin.geometry("{}x{}".format(300,80))
-		geoSelectionWin.title("Select Mesh Option")
-
-		geoSelectionFrame = tk.Frame(geoSelectionWin)
-		geoSelectionFrame.pack()
-
-		def rectangleCommand():
-			geoSelectionWin.destroy()
-			self.geometry = "rectangle"
-			self.populatePage1()
-		def polarCommand():
-			geoSelectionWin.destroy()
-			self.geometry = "polar"
-			self.populatePage1()
-
-		tk.Button(geoSelectionFrame, width=10, height=3, text="Rectangle", command=rectangleCommand).grid(column=0, row=0, padx=5, pady=5)
-		tk.Button(geoSelectionFrame, width=10, height=3, text="Polar", command=polarCommand).grid(column=1, row=0, padx=5, pady=5)
-
-	def preMeshPopupHelp(self):
-		helpWin = tk.Toplevel(self.root, height=500, width=600)
-
-		img = ImageTk.PhotoImage( Image.open( "{}_settings.png".format(self.geometry) ).resize((450, 350), Image.ANTIALIAS) )
-		panel = tk.Label(helpWin, image=img)
-		panel.image = img
-		panel.pack()
+		self.simulator.page1.hide()
+		self.populatePage2()
 
 	def populatePage1(self):
 		def prevFunc():
@@ -257,6 +229,10 @@ class GeoMesh:
 		previewButton.bind('<Return>', lambda e:previewMesh())
 		previewButton.grid(column=3, row=i, padx=10, pady=5)
 
+		helpButton = tk.Button(centerFrame, text="  ?  ", command=self.preMeshPopupHelp)
+		helpButton.bind('<Return>', lambda e:previewMesh())
+		helpButton.grid(column=3, row=0, padx=10, pady=5)
+
 		# Mesh
 
 		self.meshCanvas = tk.Canvas(self.page1)
@@ -276,6 +252,171 @@ class GeoMesh:
 		self.matplotlibWidget.pack(side="left", fill="both", expand=1)
 
 		self.meshCanvas.place(relx=0.02,rely=0.02,relwidth=1.00-0.04,relheight=0.5,anchor="nw")
+
+	def populatePage2(self):
+		def prevFunc():
+			self.page2.hide()
+			self.simulator.page1.show()
+		def nextFunc():
+			self.page2.hide()
+			self.simulator.page1.show()
+	
+		self.page2 = Page(self.root, width=600, height=500, prevFunc=prevFunc, nextFunc=nextFunc)
+		self.page2.show()
+
+		def meshPlacement():
+			self.meshCanvas = tk.Canvas(self.page2)
+
+			self.meshFigure = matplotlib.figure.Figure()
+			self.meshPlot = self.meshFigure.add_subplot()
+			self.meshPlot.set_position([0.125,0.1,0.75,0.85])
+
+			self.meshFigure.patch.set_facecolor((240/255,240/255,237/255))
+			self.meshPlot.patch.set_facecolor((240/255,240/255,237/255))
+
+			self.matplotlibMeshCanvas = FigureCanvasTkAgg(self.meshFigure, self.meshCanvas)
+			self.matplotlibWidget = self.matplotlibMeshCanvas.get_tk_widget()
+			self.matplotlibWidget.pack(side="left", fill="both", expand=1)
+
+			self.meshCanvas.place(relx=0.02,rely=0.02,relwidth=1.00-0.04,relheight=0.65,anchor="nw")
+		def vertexSelection():
+			self.coordinates = []
+			self.boundaryNames = []
+			def nextVertexFunc():
+				if xEntry.get()=="" or yEntry.get()=="":
+					messagebox.showerror("Error", "The coordinate values may not be empty")
+					raise Exception("The coordinate values may not be empty")
+				if self.boundaryNames and boundaryEntry.get()=="":
+					messagebox.showerror("Error", "The boundary name field may not be empty")
+					raise Exception("The boundary name field may not be empty")
+				try:
+					x, y = float(xEntry.get()), float(yEntry.get())
+				except:
+					messagebox.showerror("Error", "Invalid input")
+					raise Exception("Invalid input")
+
+				self.meshPlot.scatter(x,y, color="k", marker=".")
+				if self.coordinates:
+					self.meshPlot.plot((self.coordinates[-1][0], x),(self.coordinates[-1][1], y),color="k")
+
+				self.matplotlibMeshCanvas.draw()
+
+				if self.coordinates and x == self.coordinates[0][0] and y == self.coordinates[0][1]:
+					meshParameters()
+
+				self.coordinates.append((x,y))
+				self.boundaryNames.append( boundaryEntry.get() )
+
+				xEntry.delete(0, tk.END)
+				yEntry.delete(0, tk.END)
+
+				boundaryEntry.configure(state="normal")
+				prevVertexButton.configure(state="normal")		
+			def prevVertexFunc():
+				self.coordinates.pop()
+				self.boundaryNames.pop()
+				xEntry.delete(0, tk.END)
+				yEntry.delete(0, tk.END)
+				boundaryEntry.delete(0, tk.END)
+				
+				if self.coordinates:
+					xEntry.insert(0, str(self.coordinates[-1][0]))
+					yEntry.insert(0, str(self.coordinates[-1][1]))
+					boundaryEntry.insert(0, self.boundaryNames[-1])
+
+					self.meshPlot.clear()
+					self.meshPlot.scatter(*zip(*self.coordinates), color="k", marker=".")
+					self.meshPlot.plot(*zip(*self.coordinates), color="k")
+					self.matplotlibMeshCanvas.draw()
+
+			self.vertexFrame = tk.LabelFrame(self.page2)
+			self.vertexFrame.place(relx=0.02,rely=0.67,relwidth=1.00-0.04,relheight=0.21,anchor="nw")
+
+			centerFrame = tk.Frame(self.vertexFrame)
+			centerFrame.pack()
+
+			tk.Label(centerFrame, text="X").grid(column=0, row=0, sticky="w", padx=10, pady=5)
+			xEntry = tk.Entry(centerFrame)
+			xEntry.bind('<Return>', lambda e:nextVertexFunc())
+			xEntry.grid(column=1, row=0)
+
+			tk.Label(centerFrame, text="Y").grid(column=0, row=1, sticky="w", padx=10, pady=5)
+			yEntry = tk.Entry(centerFrame)
+			yEntry.bind('<Return>', lambda e:nextVertexFunc())
+			yEntry.grid(column=1, row=1)
+
+			tk.Label(centerFrame, text="Boundary Name").grid(column=0, row=2, sticky="w", padx=10, pady=5)
+			boundaryEntry = tk.Entry(centerFrame, state="disabled")
+			boundaryEntry.bind('<Return>', lambda e:nextVertexFunc())
+			boundaryEntry.grid(column=1, row=2)
+
+			prevVertexButton = tk.Button(centerFrame, text="  <  ", command=prevVertexFunc, state="disabled")
+			prevVertexButton.bind('<Return>', lambda e:prevVertexFunc())
+			prevVertexButton.grid(column=2, row=2, pady=5)
+
+			nextVertexButton = tk.Button(centerFrame, text="  >  ", command=nextVertexFunc)
+			nextVertexButton.bind('<Return>', lambda e:nextVertexFunc())
+			nextVertexButton.grid(column=3, row=2, pady=5)
+
+		def meshParameters():
+			self.vertexFrame.place_forget()
+			
+			def previewFunc():
+				self.generateMesh(self.coordinates, self.boundaryNames)
+				self.drawMesh(self.meshPlot, self.matplotlibMeshCanvas, self.tempPath)
+
+			self.meshParametersFrame = tk.LabelFrame(self.page2)
+			self.meshParametersFrame.place(relx=0.02,rely=0.67,relwidth=1.00-0.04,relheight=0.21,anchor="nw")
+
+			centerFrame = tk.Frame(self.meshParametersFrame)
+			centerFrame.pack()
+
+			tk.Label(centerFrame, text="dx").grid(column=0, row=0, sticky="w", padx=10, pady=5)
+			dxEntry = tk.Entry(centerFrame)
+			dxEntry.bind('<Return>', lambda e:previewFunc())
+			dxEntry.grid(column=1, row=0)
+
+			tk.Label(centerFrame, text="dy").grid(column=0, row=1, sticky="w", padx=10, pady=5)
+			dyEntry = tk.Entry(centerFrame)
+			dyEntry.bind('<Return>', lambda e:previewFunc())
+			dyEntry.grid(column=1, row=1)
+
+			previewButton = tk.Button(centerFrame, text="Preview", command=previewFunc)
+			previewButton.bind('<Return>', lambda e:previewFunc())
+			previewButton.grid(column=2, row=1)
+
+		meshPlacement()
+		vertexSelection()
+
+	def popupGeometrySelection(self):
+		geoSelectionWin = tk.Toplevel()
+		geoSelectionWin.geometry("{}x{}".format(300,80))
+		geoSelectionWin.title("Select Mesh Option")
+
+		geoSelectionFrame = tk.Frame(geoSelectionWin)
+		geoSelectionFrame.pack()
+
+		def rectangleCommand():
+			geoSelectionWin.destroy()
+			self.simulator.page1.hide()
+			self.geometry = "rectangle"
+			self.populatePage1()
+		def polarCommand():
+			geoSelectionWin.destroy()
+			self.simulator.page1.hide()
+			self.geometry = "polar"
+			self.populatePage1()
+
+		tk.Button(geoSelectionFrame, width=10, height=3, text="Rectangle", command=rectangleCommand).grid(column=0, row=0, padx=5, pady=5)
+		tk.Button(geoSelectionFrame, width=10, height=3, text="Polar", command=polarCommand).grid(column=1, row=0, padx=5, pady=5)
+
+	def preMeshPopupHelp(self):
+		helpWin = tk.Toplevel(self.root, height=500, width=600)
+
+		img = ImageTk.PhotoImage( Image.open( "{}_settings.png".format(self.geometry) ).resize((450, 350), Image.ANTIALIAS) )
+		panel = tk.Label(helpWin, image=img)
+		panel.image = img
+		panel.pack()
 
 	def setSimulator(self, simulator):
 		self.simulator = simulator
@@ -367,6 +508,9 @@ class GeoMesh:
 		with open(outputPath, "w") as f:
 			f.write(text)
 
+	def generateMesh(self, vertices, boundaryNames):
+		pass
+
 	@staticmethod
 	def drawMesh(ax, canvas, path):
 		ax.clear()
@@ -392,6 +536,7 @@ class Simulator:
 		self.meshFileName = ""
 		self.simulated = False
 		self.drawn = False
+		self.popups = []
 
 		self.populatePage1()
 		self.page1.show()
@@ -893,12 +1038,16 @@ class Simulator:
 			self.app.post.init()
 
 	def askFile(self):
+		[ popup.destroy() for popup in self.popups ]
+		self.popups = []
+
 		if self.meshFileName:
 			self.hideBCFig()
 			self.hideBCMesh()
 		askMeshWin = tk.Toplevel()
 		askMeshWin.geometry("{}x{}".format(500,100))
 		askMeshWin.title("Select Mesh Option")
+		self.popups.append(askMeshWin)
 
 		askMeshFrame = tk.Frame(askMeshWin)
 		askMeshFrame.pack()
@@ -911,12 +1060,11 @@ class Simulator:
 		def preGeoCommand():
 			self.app.geoMesh.setSimulator(self)
 			askMeshWin.destroy()
-			self.page1.hide()
 			self.app.geoMesh.initPre()
 		def contourCommand():
 			self.app.geoMesh.setSimulator(self)
 			askMeshWin.destroy()
-			self.page1.hide()
+			self.app.geoMesh.initContour()
 
 		tk.Button(askMeshFrame, height=4, text="Select Mesh File", command=selectFileCommand).grid(column=0, row=0, padx=5, pady=5)
 		tk.Button(askMeshFrame, height=4, text="Create mesh from\npredetermined geometry", command=preGeoCommand).grid(column=1, row=0, padx=5, pady=5)

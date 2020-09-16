@@ -15,34 +15,21 @@ def belongsToPolygon(x, y, X, Y):
 	oddNodes=False
 
 	for i in range(numberOfCorners):
-		a = (Y[i-1]-Y[i]) * X[i]+(y-Y[i])*(X[i-1]-X[i])
-		b = x * (Y[i-1]-Y[i])
-		# if a == b doesn't work because of aproximations
-		if abs(a-b) < 1e-10:
+		# horizontal
+		if abs(Y[i]-Y[i-1]) < 1e-10 and abs(Y[i-1]-y) < 1e-10 and min(X[i],X[i-1]) <= x <= max(X[i],X[i-1]):
 			return 2
-		elif (Y[i]< y and Y[i-1]>=y or Y[i-1]< y and Y[i]>=y) and (X[i]<=x or X[i-1]<=x):
+		# vertical
+		if abs(X[i]-X[i-1]) < 1e-10 and abs(X[i-1]-x) < 1e-10 and min(Y[i],Y[i-1]) <= y <= max(Y[i],Y[i-1]):
+			return 2
+		# diagonal
+		if abs(Y[i-1]-Y[i]) > 1e-10 and abs(X[i-1]-X[i]) > 1e-10 and abs( X[i]+(y-Y[i])*(X[i-1]-X[i])/(Y[i-1]-Y[i]) - x ) < 1e-10:
+			return 2
+		
+		if (Y[i]< y and Y[i-1]>=y or Y[i-1]< y and Y[i]>=y) and (X[i]<=x or X[i-1]<=x):
 			oddNodes = ( oddNodes != bool( X[i]+(y-Y[i])/(Y[i-1]-Y[i])*(X[i-1]-X[i]) < x ) )
 	return oddNodes
 
 def generateMesh(X,Y,dx,dy,boundaryNames,outputPath):
-	"""
-	nx						- Number of divisions in x
-	ny						- Numver of divisions in y
-	gridNodes				- List of nodes coordinates in the initial grid (which is max(X)-min(X) x max(Y)-min(Y) and has nx*ny divisions)
-	gridSquares				- List of the grid squares connectivities
-	gridNodesInMesh			- List of which nodes are inside the mesh region
-	meshNodes				- List of nodes coordinates in the mesh
-	gridToMeshDict				- Dictionary of conversion between vertices indices in gridNodes to indices in meshNodes
-	squaresInMesh			- List of squares indices which are totally inside the mesh region
-	squaresCut				- List of squares indices which are partialy inside the mesh region
-	squaresCutIntersection	- List of nodes which are in the mesh region of the squares which are partialy inside the mesh region
-	squareNodesIn			- List of nodes of a square which are inside the mesh region or on the contour
-	squareNodes 			- List of nodes of a square
-	squareIntersections		- List of the coordinates of the squareIntersections between a gridSquare and a mesh boundary (clockwise)
-	xi						- x coordinate of the intersection
-	yi						- y coordinate of the intersection
-	poly				- List of polygons connectivities
-	"""
 	# Creata the Grid
 	nx = int( (max(X)-min(X)) / dx ) + 1
 	ny = int( (max(Y)-min(Y)) / dy ) + 1
@@ -60,6 +47,7 @@ def generateMesh(X,Y,dx,dy,boundaryNames,outputPath):
 	squaresCutIntersection = []
 	for idx, square in enumerate(gridSquares):
 		squareNodesIn = [ node for node in square if gridNodesInMesh[node] ]
+		squareNodesInside = [ node for node in square if gridNodesInMesh[node] == 1 ]
 		if len(squareNodesIn) == 4:
 			squaresInMesh.append(idx)
 		elif len(squareNodesIn) > 1:
@@ -75,8 +63,8 @@ def generateMesh(X,Y,dx,dy,boundaryNames,outputPath):
 
 		squareIntersections = []
 		for i in range(4):
-			n2 = gridNodes[ squareNodes[i] ]
-			n1 = gridNodes[ squareNodes[i-1] ]
+			n2 = gridNodes[ squareNodes[(i+1)%4] ]
+			n1 = gridNodes[ squareNodes[i] ]
 			x1, y1 = n1[0], n1[1]
 			x2, y2 = n2[0], n2[1]
 			for j in range(len(X)):
@@ -115,7 +103,14 @@ def generateMesh(X,Y,dx,dy,boundaryNames,outputPath):
 
 				if squareNodeCount >= len(squareNodesInMesh) and intersectionCount >= len(squareIntersections):
 					break
+			
+			valid = True
+			for i in range(len(poly)):
+				if not belongsToPolygon( 0.5*meshNodes[ poly[i] ][0] + 0.5*meshNodes[ poly[i-1] ][0], 0.5*meshNodes[ poly[i] ][1] + 0.5*meshNodes[ poly[i-1] ][1], X, Y ):
+					valid = False
+			if valid:
 				mesh2DElements.append(poly)
+
 		elif False and len(squareNodesInMesh)+len(squareIntersections) == 5:
 			midpoint = ( (squareIntersections[0][0]+squareIntersections[1][0])/2, (squareIntersections[0][1]+squareIntersections[1][1])/2 )
 			meshNodes.append(midpoint)
@@ -139,7 +134,6 @@ def generateMesh(X,Y,dx,dy,boundaryNames,outputPath):
 					mesh2DElements.append(poly)
 					squareNodeCount -= 1
 					totalCount -= 1
-
 
 	# Mesh Boundaries
 	boundaries = []
@@ -174,14 +168,18 @@ def generateMesh(X,Y,dx,dy,boundaryNames,outputPath):
 		f.write(text)
 
 if __name__ == "__main__":
+	# X = [0,2,3]
+	# Y = [0,1,0]
+	X = [0,1.9,3]
+	Y = [0,0.9,0]
 	# X = [0,2,2,0]
 	# Y = [0,0,2,2]
-	X = [0,2,3]
-	Y = [0,1,0]
-	# X = [0,1.9,3]
-	# Y = [0,0.9,0]
-	namez = ["A", "B", "C"]
-	dx = 0.2
-	dy = 0.2
+	# X = [0,1,1,0.8,0.8,0]
+	# Y = [0,0,1,1,0.2,0.2]
+	namez = ["A","B","C"]
+	# namez = ["A","B","C","D"]	
+	# namez = ["A", "B","C","D","E","F"]
+	dx = 0.05
+	dy = 0.05
 
 	generateMesh(X,Y,dx,dy,namez,"a.msh")

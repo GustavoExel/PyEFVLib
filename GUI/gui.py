@@ -310,6 +310,8 @@ class GeoMesh:
 				xEntry.delete(0, tk.END)
 				yEntry.delete(0, tk.END)
 
+				xEntry.focus_set()
+
 				boundaryEntry.configure(state="normal")
 				prevVertexButton.configure(state="normal")		
 			def prevVertexFunc():
@@ -327,6 +329,7 @@ class GeoMesh:
 					self.meshPlot.clear()
 					self.meshPlot.scatter(*zip(*self.coordinates), color="k", marker=".")
 					self.meshPlot.plot(*zip(*self.coordinates), color="k")
+					self.meshPlot.patch.set_facecolor((240/255,240/255,237/255))
 					self.matplotlibMeshCanvas.draw()
 
 			self.vertexFrame = tk.LabelFrame(self.page2)
@@ -362,7 +365,7 @@ class GeoMesh:
 			self.vertexFrame.place_forget()
 			
 			def previewFunc():
-				self.generateMesh(self.coordinates, self.boundaryNames)
+				self.writePolygon(self.coordinates, self.boundaryNames)
 				self.drawMesh(self.meshPlot, self.matplotlibMeshCanvas, self.tempPath)
 
 			self.meshParametersFrame = tk.LabelFrame(self.page2)
@@ -372,14 +375,14 @@ class GeoMesh:
 			centerFrame.pack()
 
 			tk.Label(centerFrame, text="dx").grid(column=0, row=0, sticky="w", padx=10, pady=5)
-			dxEntry = tk.Entry(centerFrame)
-			dxEntry.bind('<Return>', lambda e:previewFunc())
-			dxEntry.grid(column=1, row=0)
+			self.dxEntry = tk.Entry(centerFrame)
+			self.dxEntry.bind('<Return>', lambda e:previewFunc())
+			self.dxEntry.grid(column=1, row=0)
 
 			tk.Label(centerFrame, text="dy").grid(column=0, row=1, sticky="w", padx=10, pady=5)
-			dyEntry = tk.Entry(centerFrame)
-			dyEntry.bind('<Return>', lambda e:previewFunc())
-			dyEntry.grid(column=1, row=1)
+			self.dyEntry = tk.Entry(centerFrame)
+			self.dyEntry.bind('<Return>', lambda e:previewFunc())
+			self.dyEntry.grid(column=1, row=1)
 
 			previewButton = tk.Button(centerFrame, text="Preview", command=previewFunc)
 			previewButton.bind('<Return>', lambda e:previewFunc())
@@ -508,8 +511,19 @@ class GeoMesh:
 		with open(outputPath, "w") as f:
 			f.write(text)
 
-	def generateMesh(self, vertices, boundaryNames):
-		pass
+	def writePolygon(self, vertices, boundaryNames):
+		X, Y = zip(*self.coordinates)
+		X, Y = X[:-1], Y[:-1]
+		dx = float( self.dxEntry.get() )
+		dy = float( self.dyEntry.get() )
+		print("X =", X)
+		print("Y =", Y)
+		print("dx =", dx)
+		print("dy =", dy)
+		print("self.boundaryNames[1:] =", self.boundaryNames[1:])
+		print("self.tempPath =", self.tempPath)
+		from MSHWriter import generateMesh
+		generateMesh(X,Y,dx,dy,self.boundaryNames[1:],self.tempPath)
 
 	@staticmethod
 	def drawMesh(ax, canvas, path):

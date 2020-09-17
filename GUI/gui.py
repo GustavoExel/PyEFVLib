@@ -1,4 +1,4 @@
-import sys,os,io
+import sys,os,io,shutil
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver, NeumannBoundaryCondition, DirichletBoundaryCondition, BoundaryCondition
 from apps.heat_transfer import heatTransfer
@@ -173,8 +173,6 @@ class GeoMesh:
 			self.page1.hide()
 			self.simulator.page1.show()
 		def nextFunc():
-			# self.outputPath = os.path.join(os.path.dirname(__file__),os.path.pardir,"meshes",self.geometry+".msh")
-
 			previewMesh()
 			self.page1.hide()
 			self.simulator.page1.show()
@@ -257,14 +255,43 @@ class GeoMesh:
 
 	def populatePage2(self):
 		def prevFunc():
-			self.page2.hide()
-			self.simulator.page1.show()
+			if self.submenu == 0:
+				self.page2.hide()
+				self.simulator.page1.show()
+			elif self.submenu == 1:
+				self.submenu = 0
+				paramsHide()
+				vertexSelShow()
+				self.coordinates += [ self.coordinates[0] ]
+				self.vsmFuncs[0]()
 		def nextFunc():
-			self.page2.hide()
-			self.simulator.page1.show()
-	
+			if self.submenu == 0:
+				messagebox.showerror("Error", "You must close the contour before continuing")
+			elif self.submenu == 1:
+				self.writePolygon()
+				self.drawMesh(self.meshPlot, self.matplotlibMeshCanvas, self.tempPath)
+
+				messagebox.showinfo("", "Ó, NÃO PODE ESQUECER DE CORRIGIR A GERAÇÃO DA MESH PRA QUADRADOS DISCONTÍNUOS\nVIDE X=[0.0,1.0,0.8,0.6,0.6,0.0],Y=[0.0,0.0,1.0,0.2,1.0,1.0]")
+				self.page2.hide()
+				self.simulator.page1.show()
+				self.simulator.readFile(self.tempPath)
+
 		self.page2 = Page(self.root, width=600, height=500, prevFunc=prevFunc, nextFunc=nextFunc)
 		self.page2.show()
+
+		def vertexSelShow():
+			self.vertexFrame.place(relx=0.02,rely=0.67,relwidth=1.00-0.04,relheight=0.21,anchor="nw")
+		def vertexSelHide():
+			self.vertexFrame.place_forget()
+		def paramsShow():
+			self.dxEntry.focus_set()
+			self.saveAsButton.place(relx=0.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="w")
+			self.meshParametersFrame.place(relx=0.02,rely=0.67,relwidth=1.00-0.04,relheight=0.21,anchor="nw")
+			print(self.coordinates)
+			print(self.boundaryNames)
+		def paramsHide():
+			self.saveAsButton.place_forget()
+			self.meshParametersFrame.place_forget()
 
 		def meshPlacement():
 			self.meshCanvas = tk.Canvas(self.page2)
@@ -284,11 +311,43 @@ class GeoMesh:
 		def vertexSelection():
 			self.coordinates = []
 			self.boundaryNames = []
+			def prevVertexFunc():
+				xEntry.delete(0, tk.END)
+				yEntry.delete(0, tk.END)
+				boundaryEntry.delete(0, tk.END)
+
+				xEntry.focus_set()
+				
+				if self.coordinates:
+					xEntry.insert(0, str(self.coordinates[-1][0]))
+					yEntry.insert(0, str(self.coordinates[-1][1]))
+				if self.boundaryNames:	
+					boundaryEntry.insert(0, self.boundaryNames[-1])
+
+				if self.coordinates: self.coordinates.pop()
+				if self.boundaryNames:
+					self.boundaryNames.pop()
+				else:
+					boundaryEntry.configure(state="disabled")
+					prevVertexButton.configure(state="disabled")
+
+				self.meshPlot.clear()
+				if self.coordinates:
+					self.meshPlot.scatter(*zip(*self.coordinates), color="k", marker=".")
+					self.meshPlot.plot(*zip(*self.coordinates), color="k")
+				self.meshPlot.patch.set_facecolor((240/255,240/255,237/255))
+				self.matplotlibMeshCanvas.draw()
+
+				print("----------")
+				print(self.coordinates)
+				print(self.boundaryNames)
+
 			def nextVertexFunc():
+				# Bad input handling
 				if xEntry.get()=="" or yEntry.get()=="":
 					messagebox.showerror("Error", "The coordinate values may not be empty")
 					raise Exception("The coordinate values may not be empty")
-				if self.boundaryNames and boundaryEntry.get()=="":
+				if self.coordinates and boundaryEntry.get()=="":
 					messagebox.showerror("Error", "The boundary name field may not be empty")
 					raise Exception("The boundary name field may not be empty")
 				try:
@@ -296,44 +355,40 @@ class GeoMesh:
 				except:
 					messagebox.showerror("Error", "Invalid input")
 					raise Exception("Invalid input")
-
+				# Plotting on the canvas
 				self.meshPlot.scatter(x,y, color="k", marker=".")
 				if self.coordinates:
 					self.meshPlot.plot((self.coordinates[-1][0], x),(self.coordinates[-1][1], y),color="k")
 
 				self.matplotlibMeshCanvas.draw()
 
-				if self.coordinates and x == self.coordinates[0][0] and y == self.coordinates[0][1]:
-					meshParameters()
-
+				# Saving input data
 				self.coordinates.append((x,y))
 				if boundaryEntry.get():
 					self.boundaryNames.append( boundaryEntry.get() )
 
+				# Checking whether loop has closed
+				if len(self.coordinates) > 1 and x == self.coordinates[0][0] and y == self.coordinates[0][1]:
+					self.submenu = 1
+					self.coordinates.pop()
+					vertexSelHide()
+					paramsShow()
+
+				# Reconfiguring frame
 				xEntry.delete(0, tk.END)
 				yEntry.delete(0, tk.END)
 
 				xEntry.focus_set()
 
 				boundaryEntry.configure(state="normal")
-				prevVertexButton.configure(state="normal")		
-			def prevVertexFunc():
-				self.coordinates.pop()
-				self.boundaryNames.pop()
-				xEntry.delete(0, tk.END)
-				yEntry.delete(0, tk.END)
-				boundaryEntry.delete(0, tk.END)
-				
-				if self.coordinates:
-					xEntry.insert(0, str(self.coordinates[-1][0]))
-					yEntry.insert(0, str(self.coordinates[-1][1]))
-					boundaryEntry.insert(0, self.boundaryNames[-1])
+				prevVertexButton.configure(state="normal")
 
-					self.meshPlot.clear()
-					self.meshPlot.scatter(*zip(*self.coordinates), color="k", marker=".")
-					self.meshPlot.plot(*zip(*self.coordinates), color="k")
-					self.meshPlot.patch.set_facecolor((240/255,240/255,237/255))
-					self.matplotlibMeshCanvas.draw()
+				print("----------")
+				print(self.coordinates)
+				print(self.boundaryNames)
+
+
+			self.vsmFuncs = [prevVertexFunc,nextVertexFunc]
 
 			self.vertexFrame = tk.LabelFrame(self.page2)
 			self.vertexFrame.place(relx=0.02,rely=0.67,relwidth=1.00-0.04,relheight=0.21,anchor="nw")
@@ -364,14 +419,12 @@ class GeoMesh:
 			nextVertexButton.bind('<Return>', lambda e:nextVertexFunc())
 			nextVertexButton.grid(column=3, row=2, pady=5)
 		def meshParameters():
-			self.vertexFrame.place_forget()
-			
 			def previewFunc():
-				self.writePolygon(self.coordinates, self.boundaryNames)
+				self.writePolygon()
 				self.drawMesh(self.meshPlot, self.matplotlibMeshCanvas, self.tempPath)
 
 			self.meshParametersFrame = tk.LabelFrame(self.page2)
-			self.meshParametersFrame.place(relx=0.02,rely=0.67,relwidth=1.00-0.04,relheight=0.21,anchor="nw")
+			# self.meshParametersFrame.place(relx=0.02,rely=0.67,relwidth=1.00-0.04,relheight=0.21,anchor="nw")
 
 			centerFrame = tk.Frame(self.meshParametersFrame)
 			centerFrame.pack()
@@ -390,10 +443,12 @@ class GeoMesh:
 			previewButton.bind('<Return>', lambda e:previewFunc())
 			previewButton.grid(column=2, row=1)
 
-			self.dxEntry.focus_set()
+			self.saveAsButton = tk.Button(self.page2.footerFrame, text="Save Mesh As", command=self.saveMeshAs)
 
+		self.submenu = 0
 		meshPlacement()
 		vertexSelection()
+		meshParameters()
 
 	def popupGeometrySelection(self):
 		geoSelectionWin = tk.Toplevel()
@@ -515,9 +570,8 @@ class GeoMesh:
 		with open(outputPath, "w") as f:
 			f.write(text)
 
-	def writePolygon(self, vertices, boundaryNames):
+	def writePolygon(self):
 		X, Y = zip(*self.coordinates)
-		X, Y = X[:-1], Y[:-1]
 		dx = float( self.dxEntry.get() )
 		dy = float( self.dyEntry.get() )
 		outputPath = self.tempPath
@@ -684,6 +738,15 @@ class GeoMesh:
 
 		generateMesh(X,Y,dx,dy,self.boundaryNames,outputPath)
 
+	def saveMeshAs(self):
+		# Another library was imported because even using os,
+		# platform would need to be imported in order to detect
+		# whether the os is Unix or Windows
+
+		initialdir = os.path.join( os.path.dirname(__file__), os.path.pardir, "meshes" )
+		filePath = tk.filedialog.asksaveasfilename(initialdir=initialdir, defaultextension=".msh", filetypes = (("MSH file", "*.msh"), ("All files", "*")))
+		shutil.copyfile(self.tempPath, filePath)
+
 	@staticmethod
 	def drawMesh(ax, canvas, path):
 		ax.clear()
@@ -697,6 +760,7 @@ class GeoMesh:
 		plt.setp(ax.xaxis.get_ticklabels(), visible=False) 
 		plt.setp(ax.yaxis.get_ticklabels(), visible=False) 
 
+		ax.patch.set_facecolor((240/255,240/255,237/255))
 		canvas.draw()
 
 class Simulator:
@@ -715,7 +779,21 @@ class Simulator:
 		self.page1.show()
 
 	def populatePage1(self):
-		self.page1 = Page(self.root, height=500, width=600, prevFunc=self.page1Prev, nextFunc=self.page1Next)
+		def page1Prev():
+			if self.meshFileName:
+				self.hideBCFig()
+				self.hideBCMesh()
+			self.page1.destroy()
+			self.app.init()	
+		def page1Next():
+			self.checkFile()
+			self.page1.hide()
+			self.hideBCFig()
+			self.hideBCMesh()
+			self.page2.show()
+		
+
+		self.page1 = Page(self.root, height=500, width=600, prevFunc=page1Prev, nextFunc=page1Next)
 
 		self.openFrame = tk.Frame(self.page1)
 		self.openFrame.place(relx=0.02, rely=0.02, relheight=0.20-0.02, relwidth=1.00-0.04, anchor="nw")
@@ -752,7 +830,35 @@ class Simulator:
 		self.showMeshCheckbox.place(relx=0.0, rely=0.75, anchor="w")
 
 	def populatePage2(self):
-		self.page2 = Page(self.root, height=500, width=600, prevFunc=self.page2Prev, nextFunc=self.page2Next)
+		def page2Prev():
+			self.page2.hide()
+			self.page1.show()
+		def page2Next():
+			simulate = True
+			if self.simulated:
+				if "no" == messagebox.askquestion("Warning", "A simulation has already been calculated. Do you want to calculate another one?"):
+					simulate = False
+					self.page2.hide()
+					if self.app.post.returnToSimulator:
+						pass
+					else:
+						self.app.post.consolePage.show()
+
+					return
+
+			if simulate:
+				self.checkPage1Data()
+				self.checkPage2Data()
+				self.saveAs()
+				self.runSimulation()
+				self.simulated = True
+
+				self.page2.hide()
+				self.app.post.setResultsPath(self.resultsPath)
+				self.app.post.setSimulator(self)
+				self.app.post.init()
+
+		self.page2 = Page(self.root, height=500, width=600, prevFunc=page2Prev, nextFunc=page2Next)
 		# Property Frame
 
 		self.propertyEntries = dict()
@@ -1165,50 +1271,6 @@ class Simulator:
 
 	def hideBCMesh(self):
 		self.meshDrawCanvas.pack_forget()
-
-	def page1Prev(self):
-		if self.meshFileName:
-			self.hideBCFig()
-			self.hideBCMesh()
-		self.page1.destroy()
-		self.app.init()
-		# self.app.mainMenu.init()
-	
-	def page1Next(self):
-		self.checkFile()
-		self.page1.hide()
-		self.hideBCFig()
-		self.hideBCMesh()
-		self.page2.show()
-	
-	def page2Prev(self):
-		self.page2.hide()
-		self.page1.show()
-	
-	def page2Next(self):
-		simulate = True
-		if self.simulated:
-			if "no" == messagebox.askquestion("Warning", "A simulation has already been calculated. Do you want to calculate another one?"):
-				simulate = False
-				self.page2.hide()
-				if self.app.post.returnToSimulator:
-					pass
-				else:
-					self.app.post.consolePage.show()
-
-				return
-
-		if simulate:
-			self.checkPage1Data()
-			self.checkPage2Data()
-			self.saveAs()
-			self.runSimulation()
-			self.simulated = True
-
-			self.page2.hide()
-			self.app.post.setResultsPath(self.resultsPath)
-			self.app.post.setSimulator(self)
-			self.app.post.init()
 
 	def askFile(self):
 		[ popup.destroy() for popup in self.popups ]

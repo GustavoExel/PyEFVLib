@@ -196,21 +196,21 @@ class GeoMesh:
 
 			self.writers[self.geometry]( *values, self.tempPath )
 
-			self.drawMesh(self.meshPlot, self.matplotlibMeshCanvas, self.tempPath)
+			self.drawMesh(self.meshAx, self.matplotlibMeshCanvas, self.tempPath)
 
 		def meshPlacement():
 			# Mesh
 			self.meshCanvas = tk.Canvas(self.page1)
 
 			self.meshFigure = matplotlib.figure.Figure()
-			self.meshPlot = self.meshFigure.add_subplot()
-			self.meshPlot.set_position([0.2,0.05,0.6,0.95])
+			self.meshAx = self.meshFigure.add_subplot()
+			self.meshAx.set_position([0.2,0.05,0.6,0.95])
 
-			plt.setp(self.meshPlot.xaxis.get_ticklabels(), visible=False) 
-			plt.setp(self.meshPlot.yaxis.get_ticklabels(), visible=False) 
+			plt.setp(self.meshAx.xaxis.get_ticklabels(), visible=False) 
+			plt.setp(self.meshAx.yaxis.get_ticklabels(), visible=False) 
 
 			self.meshFigure.patch.set_facecolor((240/255,240/255,237/255))
-			self.meshPlot.patch.set_facecolor((240/255,240/255,237/255))
+			self.meshAx.patch.set_facecolor((240/255,240/255,237/255))
 
 			self.matplotlibMeshCanvas = FigureCanvasTkAgg(self.meshFigure, self.meshCanvas)
 			self.matplotlibWidget = self.matplotlibMeshCanvas.get_tk_widget()
@@ -250,6 +250,9 @@ class GeoMesh:
 			helpButton.bind('<Return>', lambda e:previewMesh())
 			helpButton.grid(column=3, row=0, padx=10, pady=5)
 
+			self.saveAsButton1 = tk.Button(self.page1.footerFrame, text="Save Mesh As", command=self.saveMeshAs)
+			self.saveAsButton1.place(relx=0.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="w")
+
 		meshPlacement()
 		geometrySettings()
 
@@ -269,7 +272,7 @@ class GeoMesh:
 				messagebox.showerror("Error", "You must close the contour before continuing")
 			elif self.submenu == 1:
 				self.writePolygon()
-				self.drawMesh(self.meshPlot, self.matplotlibMeshCanvas, self.tempPath)
+				self.drawMesh(self.meshAx, self.matplotlibMeshCanvas, self.tempPath)
 
 				messagebox.showinfo("", "Ó, NÃO PODE ESQUECER DE CORRIGIR A GERAÇÃO DA MESH PRA QUADRADOS DISCONTÍNUOS\nVIDE X=[0.0,1.0,0.8,0.6,0.6,0.0],Y=[0.0,0.0,1.0,0.2,1.0,1.0]")
 				self.page2.hide()
@@ -285,23 +288,21 @@ class GeoMesh:
 			self.vertexFrame.place_forget()
 		def paramsShow():
 			self.dxEntry.focus_set()
-			self.saveAsButton.place(relx=0.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="w")
+			self.saveAsButton2.place(relx=0.0, rely=0.50, relheight=0.75, relwidth=0.20, anchor="w")
 			self.meshParametersFrame.place(relx=0.02,rely=0.67,relwidth=1.00-0.04,relheight=0.21,anchor="nw")
-			print(self.coordinates)
-			print(self.boundaryNames)
 		def paramsHide():
-			self.saveAsButton.place_forget()
+			self.saveAsButton2.place_forget()
 			self.meshParametersFrame.place_forget()
 
 		def meshPlacement():
 			self.meshCanvas = tk.Canvas(self.page2)
 
 			self.meshFigure = matplotlib.figure.Figure()
-			self.meshPlot = self.meshFigure.add_subplot()
-			self.meshPlot.set_position([0.125,0.1,0.75,0.85])
+			self.meshAx = self.meshFigure.add_subplot()
+			self.meshAx.set_position([0.125,0.1,0.75,0.85])
 
 			self.meshFigure.patch.set_facecolor((240/255,240/255,237/255))
-			self.meshPlot.patch.set_facecolor((240/255,240/255,237/255))
+			self.meshAx.patch.set_facecolor((240/255,240/255,237/255))
 
 			self.matplotlibMeshCanvas = FigureCanvasTkAgg(self.meshFigure, self.meshCanvas)
 			self.matplotlibWidget = self.matplotlibMeshCanvas.get_tk_widget()
@@ -311,6 +312,14 @@ class GeoMesh:
 		def vertexSelection():
 			self.coordinates = []
 			self.boundaryNames = []
+			def draw(clear=True):
+				if clear:
+					self.meshAx.clear()
+				if self.coordinates:
+					self.meshAx.scatter(*zip(*self.coordinates), color="k", marker=".")
+					self.meshAx.plot(*zip(*self.coordinates), color="k")
+				self.meshAx.patch.set_facecolor((240/255,240/255,237/255))
+				self.matplotlibMeshCanvas.draw()
 			def prevVertexFunc():
 				xEntry.delete(0, tk.END)
 				yEntry.delete(0, tk.END)
@@ -331,17 +340,12 @@ class GeoMesh:
 					boundaryEntry.configure(state="disabled")
 					prevVertexButton.configure(state="disabled")
 
-				self.meshPlot.clear()
+				self.meshAx.clear()
 				if self.coordinates:
-					self.meshPlot.scatter(*zip(*self.coordinates), color="k", marker=".")
-					self.meshPlot.plot(*zip(*self.coordinates), color="k")
-				self.meshPlot.patch.set_facecolor((240/255,240/255,237/255))
+					self.meshAx.scatter(*zip(*self.coordinates), color="k", marker=".")
+					self.meshAx.plot(*zip(*self.coordinates), color="k")
+				self.meshAx.patch.set_facecolor((240/255,240/255,237/255))
 				self.matplotlibMeshCanvas.draw()
-
-				print("----------")
-				print(self.coordinates)
-				print(self.boundaryNames)
-
 			def nextVertexFunc():
 				# Bad input handling
 				if xEntry.get()=="" or yEntry.get()=="":
@@ -355,17 +359,14 @@ class GeoMesh:
 				except:
 					messagebox.showerror("Error", "Invalid input")
 					raise Exception("Invalid input")
-				# Plotting on the canvas
-				self.meshPlot.scatter(x,y, color="k", marker=".")
-				if self.coordinates:
-					self.meshPlot.plot((self.coordinates[-1][0], x),(self.coordinates[-1][1], y),color="k")
-
-				self.matplotlibMeshCanvas.draw()
 
 				# Saving input data
 				self.coordinates.append((x,y))
 				if boundaryEntry.get():
 					self.boundaryNames.append( boundaryEntry.get() )
+
+				# Plotting on the canvas
+				draw()
 
 				# Checking whether loop has closed
 				if len(self.coordinates) > 1 and x == self.coordinates[0][0] and y == self.coordinates[0][1]:
@@ -377,16 +378,9 @@ class GeoMesh:
 				# Reconfiguring frame
 				xEntry.delete(0, tk.END)
 				yEntry.delete(0, tk.END)
-
 				xEntry.focus_set()
-
 				boundaryEntry.configure(state="normal")
 				prevVertexButton.configure(state="normal")
-
-				print("----------")
-				print(self.coordinates)
-				print(self.boundaryNames)
-
 
 			self.vsmFuncs = [prevVertexFunc,nextVertexFunc]
 
@@ -418,10 +412,42 @@ class GeoMesh:
 			nextVertexButton = tk.Button(centerFrame, text="  >  ", command=nextVertexFunc)
 			nextVertexButton.bind('<Return>', lambda e:nextVertexFunc())
 			nextVertexButton.grid(column=3, row=2, pady=5)
+
+			def click(event):
+				if self.submenu == 0 and event.button == 1:
+					xc = round(event.xdata, 1)
+					yc = round(event.ydata, 1)
+
+					xEntry.delete(0, tk.END); xEntry.insert(0, str(xc))
+					yEntry.delete(0, tk.END); yEntry.insert(0, str(yc))
+
+					self.meshAx.clear()
+					self.meshAx.scatter((xc,),(yc,),color="r",)
+					draw(clear=False)
+			def scroll(event):
+				base_scale = 2
+
+				cur_xlim = self.meshAx.get_xlim()
+				cur_ylim = self.meshAx.get_ylim()
+				cur_xrange = (cur_xlim[1] - cur_xlim[0])*.5
+				cur_yrange = (cur_ylim[1] - cur_ylim[0])*.5
+				# xpos = cur_xlim[0] + cur_xrange
+				# ypos = cur_ylim[0] + cur_yrange
+				xpos = event.xdata
+				ypos = event.ydata
+
+				scale_factor = base_scale if event.button=="up" else 1/base_scale if event.button=="down" else 1
+
+				self.meshAx.set_xlim([xpos - cur_xrange*scale_factor, xpos + cur_xrange*scale_factor])
+				self.meshAx.set_ylim([ypos - cur_yrange*scale_factor, ypos + cur_yrange*scale_factor])
+				self.matplotlibMeshCanvas.draw()
+
+			self.meshFigure.canvas.mpl_connect('button_press_event', click)
+			self.meshFigure.canvas.mpl_connect('scroll_event', scroll)
 		def meshParameters():
 			def previewFunc():
 				self.writePolygon()
-				self.drawMesh(self.meshPlot, self.matplotlibMeshCanvas, self.tempPath)
+				self.drawMesh(self.meshAx, self.matplotlibMeshCanvas, self.tempPath)
 
 			self.meshParametersFrame = tk.LabelFrame(self.page2)
 			# self.meshParametersFrame.place(relx=0.02,rely=0.67,relwidth=1.00-0.04,relheight=0.21,anchor="nw")
@@ -443,7 +469,7 @@ class GeoMesh:
 			previewButton.bind('<Return>', lambda e:previewFunc())
 			previewButton.grid(column=2, row=1)
 
-			self.saveAsButton = tk.Button(self.page2.footerFrame, text="Save Mesh As", command=self.saveMeshAs)
+			self.saveAsButton2 = tk.Button(self.page2.footerFrame, text="Save Mesh As", command=self.saveMeshAs)
 
 		self.submenu = 0
 		meshPlacement()
@@ -743,9 +769,13 @@ class GeoMesh:
 		# platform would need to be imported in order to detect
 		# whether the os is Unix or Windows
 
-		initialdir = os.path.join( os.path.dirname(__file__), os.path.pardir, "meshes" )
-		filePath = tk.filedialog.asksaveasfilename(initialdir=initialdir, defaultextension=".msh", filetypes = (("MSH file", "*.msh"), ("All files", "*")))
-		shutil.copyfile(self.tempPath, filePath)
+		if os.path.isfile(self.tempPath):
+			initialdir = os.path.join( os.path.dirname(__file__), os.path.pardir, "meshes" )
+			filePath = tk.filedialog.asksaveasfilename(initialdir=initialdir, defaultextension=".msh", filetypes = (("MSH file", "*.msh"), ("All files", "*")))
+			if filePath:
+				shutil.copyfile(self.tempPath, filePath)
+		else:
+			messagebox.showerror("Error", "Mesh has not been generated")
 
 	@staticmethod
 	def drawMesh(ax, canvas, path):

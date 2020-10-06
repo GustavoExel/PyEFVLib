@@ -6,7 +6,7 @@ class InnerFace:
 		self.handle = handle
 		self.local = local
 		self.element = element
-		self.area = 0.0
+		self.area = Point(0,0,0)
 		self.evalCentroid()
 		self.calculateGlobalDerivatives()
 

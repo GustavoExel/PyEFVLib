@@ -63,7 +63,8 @@ class Quadrilateral:
 	def getInnerFaceAreaVector(local, elementCentroid, elementVertices):
 		vertex1 = elementVertices[Quadrilateral.innerFaceNeighborVertices[local][0]]
 		vertex2 = elementVertices[Quadrilateral.innerFaceNeighborVertices[local][1]]
-		return elementCentroid - (vertex1 + vertex2)/2.0 
+		areaVectorCoords = ( elementCentroid - (vertex1 + vertex2)/2.0 ).getCoordinates()
+		return Point(areaVectorCoords[1], -areaVectorCoords[0], 0.0)
 
 class Tetrahedron:
 	dimension						   = 3

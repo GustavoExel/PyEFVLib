@@ -1,12 +1,12 @@
 {
     "Body":
     {
-        "Density": 8960.0,
+        "Density": 1.0,
 
-        "HeatCapacity": 376.812,
+        "HeatCapacity": 1.0,
 
-        "Conductivity": 22,
+        "Conductivity": 1.0,
 
-        "HeatGeneration": 1000.0
+        "HeatGeneration": 0.0
     }
 }

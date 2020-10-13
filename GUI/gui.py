@@ -629,6 +629,7 @@ class GeoMesh:
 			# Check which grid nodes are inside the polygon
 			gridNodesInMesh = [ int(belongsToPolygon(*node, X, Y)) for node in gridNodes ]
 			meshNodes = [node for node, isIn in zip(gridNodes,gridNodesInMesh) if isIn]
+			meshNodes = [(round(node[0], 8), round(node[1], 8)) for node in meshNodes]
 			gridToMeshDict = { idx:sum( [bool(b) for b in gridNodesInMesh[:idx]] ) for idx, (node, isIn) in enumerate( zip(gridNodes,gridNodesInMesh) ) if isIn }
 
 			# Check which grid squares belong to the polygon, and the ones that pass through its boundaries
@@ -749,10 +750,6 @@ class GeoMesh:
 
 					mesh2DElements += [poly1, poly2]
 
-
-
-
-
 			# Create boundaries elements
 			boundaries = []
 			for idx, name in enumerate(boundaryNames):
@@ -763,7 +760,8 @@ class GeoMesh:
 
 			# Set the elements list in the MSH format
 			elements = []
-			for bIdx, boundary in enumerate(boundaries):
+			for boundary, bName in zip(boundaries, boundaryNames):
+				bIdx = [bName for idx, bName in enumerate(boundaryNames) if idx==boundaryNames.index(bName)].index(bName)
 				elements += [[len(elements)+i+1, *(1, 2), *(bIdx+2, bIdx+2), *( boundary[i]+1, boundary[i+1]+1 )] for i in range(len(boundary)-1) ]
 			elements += [[len(elements)+i+1, *(len(element)-1, 2), *(1,1), *[nIdx+1 for nIdx in element]] for i, element in enumerate(mesh2DElements) ]
 

@@ -27,7 +27,7 @@ def stressEquilibrium(
 	# stressEquilibriumBoundaryConditionsPrinter(problemData.boundaryConditions)
 
 	savers = {"csv": CsvSaver, "cgns": CgnsSaver}
-	saver = savers[extension](grid, outputPath, libraryPath)
+	saver = savers[extension](grid, outputPath, libraryPath, fileName=fileName)
 
 	currentTime = 0.0
 	numberOfVertices = grid.vertices.size

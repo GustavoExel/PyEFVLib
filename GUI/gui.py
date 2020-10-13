@@ -274,7 +274,6 @@ class GeoMesh:
 				self.writePolygon()
 				self.drawMesh(self.meshAx, self.matplotlibMeshCanvas, self.tempPath)
 
-				messagebox.showinfo("", "Ó, NÃO PODE ESQUECER DE CORRIGIR A GERAÇÃO DA MESH PRA QUADRADOS DISCONTÍNUOS\nVIDE X=[0.0,1.0,0.8,0.6,0.6,0.0],Y=[0.0,0.0,1.0,0.2,1.0,1.0]")
 				self.page2.hide()
 				self.simulator.page1.show()
 				self.simulator.readFile(self.tempPath)
@@ -606,11 +605,15 @@ class GeoMesh:
 			numberOfCorners = len(X)
 			oddNodes=False
 			for i in range(numberOfCorners):
-				if abs(Y[i]-Y[i-1]) < 1e-10 and abs(Y[i-1]-y) < 1e-10 and min(X[i],X[i-1]) <= x <= max(X[i],X[i-1]):
+				verticalLine = abs(Y[i]-Y[i-1]) < 1e-10
+				horizontalLine = abs(X[i]-X[i-1]) < 1e-10
+				inBetweenX = min(X[i],X[i-1]) <= x <= max(X[i],X[i-1])
+				inBetweenY = min(Y[i],Y[i-1]) <= y <= max(Y[i],Y[i-1])
+				if verticalLine and abs(Y[i-1]-y) < 1e-10 and inBetweenX:
 					return 2
-				if abs(X[i]-X[i-1]) < 1e-10 and abs(X[i-1]-x) < 1e-10 and min(Y[i],Y[i-1]) <= y <= max(Y[i],Y[i-1]):
+				if horizontalLine and abs(X[i-1]-x) < 1e-10 and inBetweenY:
 					return 2
-				if abs(Y[i-1]-Y[i]) > 1e-10 and abs(X[i-1]-X[i]) > 1e-10 and abs( X[i]+(y-Y[i])*(X[i-1]-X[i])/(Y[i-1]-Y[i]) - x ) < 1e-10:
+				if not verticalLine and not horizontalLine and inBetweenX and inBetweenY and abs( X[i]+(y-Y[i])*(X[i-1]-X[i])/(Y[i-1]-Y[i]) - x ) < 1e-10:
 					return 2
 				
 				if (Y[i]< y and Y[i-1]>=y or Y[i-1]< y and Y[i]>=y) and (X[i]<=x or X[i-1]<=x):
@@ -643,30 +646,37 @@ class GeoMesh:
 
 			# Mesh element connectivities
 			mesh2DElements = [[ gridToMeshDict[gridNodeIdx] for gridNodeIdx in gridSquares[squareIdx] ] for squareIdx in squaresInMesh]
+			originalOne = mesh2DElements.copy()
 
 			# Create 2D elements near the boundary
 			for squareIdx, squareNodesInMesh in zip( squaresCut, squaresCutIntersection ):
 				squareNodes = gridSquares[squareIdx]
 
-				# Compute intersections between the square and the polygon
 				squareIntersections = []
+				squareIntersectionsLocalIndex = []
+
+				# Compute intersections between the square and the polygon
 				for i in range(4):
+					# Coordinates of square nodes
 					n1, n2 = gridNodes[ squareNodes[i] ], gridNodes[ squareNodes[(i+1)%4] ]
 					x1, y1, x2, y2 = n1[0], n1[1], n2[0], n2[1]
 					for j in range(len(X)):
+						# Coordinates of polygon edge
 						nA, nB = ( X[j], Y[j] ), ( X[(j+1)%len(X)], Y[(j+1)%len(X)] )
 						xA, yA, xB, yB = nA[0], nA[1], nB[0], nB[1]
 
 						denominator = (x2-x1)*(yB-yA)-(xB-xA)*(y2-y1)
-						if denominator != 0:
+						if denominator != 0.0:
 							xi = ((x2*y1-x1*y2)*(xB-xA)-(xB*yA-xA*yB)*(x2-x1))/denominator
 							yi = ((x2*y1-x1*y2)*(yB-yA)-(xB*yA-xA*yB)*(y2-y1))/denominator
 
-							if min(x1,x2) < xi < max(x1,x2) or min(y1,y2) < yi < max(y1,y2):
+							if ( min(x1,x2) < xi < max(x1,x2) or min(y1,y2) < yi < max(y1,y2) ) and ( min(xA,xB) <= xi <= max(xA,xB) or min(yA,yB) <= yi <= max(yA,yB) ) :
 								if not [1 for sn in gridSquares[squareIdx] if abs(gridNodes[sn][0]-xi)<1e-10 and abs(gridNodes[sn][1]-yi)<1e-10]:
-									squareIntersections.append((xi,yi))
+									# Check if intersection has already been counted
+									if not [n for n in squareIntersections if abs(n[0]-xi)<1e-10 and abs(n[1]-yi)<1e-10]:
+										squareIntersections.append((xi,yi))
+										squareIntersectionsLocalIndex.append(i)
 
-				# Create the triangles and irregular quadrilaterals
 				if 3 <= len(squareNodesInMesh)+len(squareIntersections) <= 4:
 					poly = []
 					totalCount = squareNodeCount = intersectionCount = 0
@@ -674,7 +684,8 @@ class GeoMesh:
 						if squareNodeCount < len(squareNodesInMesh) and gridSquares[squareIdx][totalCount] == squareNodesInMesh[squareNodeCount]:
 							poly.append( gridToMeshDict[ squareNodesInMesh[squareNodeCount] ] )
 							squareNodeCount += 1
-						elif intersectionCount < len(squareIntersections):
+
+						if intersectionCount < len(squareIntersections) and totalCount == squareIntersectionsLocalIndex[intersectionCount]:
 							xi, yi = squareIntersections[intersectionCount]
 							nIdx = [ i for i,(xn,yn) in enumerate(meshNodes) if abs(xn-xi)<1e-10 and abs(yn-yi)<1e-10 ]
 							if nIdx:
@@ -683,9 +694,11 @@ class GeoMesh:
 								meshNodes.append( (xi,yi) )
 								poly.append( len(meshNodes)-1 )
 							intersectionCount += 1
-						totalCount += 1
+
 						if squareNodeCount >= len(squareNodesInMesh) and intersectionCount >= len(squareIntersections):
 							break
+						totalCount += 1
+
 					
 					valid = True
 					for i in range(len(poly)):
@@ -694,9 +707,15 @@ class GeoMesh:
 					if valid:
 						mesh2DElements.append(poly)
 
-				# Create the quadrilaterals which are split pentagons
+
 				elif len(squareNodesInMesh)+len(squareIntersections) == 5:
-					midpoint = ( (squareIntersections[0][0]+squareIntersections[1][0])/2, (squareIntersections[0][1]+squareIntersections[1][1])/2 )
+					# Check if there is a boundary vertex inside element.
+					squareX, squareY = zip(*[gridNodes[n] for n in squareNodes])
+					midpoints = [(x,y) for x,y in zip(X,Y) if min(squareX) < x < max(squareX) and min(squareY) < y < max(squareY)]
+					if midpoints:
+						midpoint = midpoints[0]
+					else:
+						midpoint = ( (squareIntersections[0][0]+squareIntersections[1][0])/2, (squareIntersections[0][1]+squareIntersections[1][1])/2 )
 					meshNodes.append(midpoint)
 					midpointIdx = len(meshNodes)-1
 
@@ -730,11 +749,16 @@ class GeoMesh:
 
 					mesh2DElements += [poly1, poly2]
 
+
+
+
+
 			# Create boundaries elements
 			boundaries = []
 			for idx, name in enumerate(boundaryNames):
 				xA, yA, xB, yB = X[idx], Y[idx], X[(idx+1)%len(X)], Y[(idx+1)%len(X)]
-				bNodes = sorted([ idx for idx, node in enumerate(meshNodes) if belongsToPolygon(*node, (xA,xB), (yA,yB)) ])
+				bNodes = [ idx for idx, node in enumerate(meshNodes) if belongsToPolygon(*node, (xA,xB), (yA,yB)) ]
+				bNodes = sorted(bNodes, key=lambda i:meshNodes[i][0])
 				boundaries.append(bNodes)
 
 			# Set the elements list in the MSH format

@@ -90,10 +90,12 @@ class BoundaryBuilder:
 		# localFacetVertices : facet's vertices local indices at the element
 		# elemFacetIndex	 : facet's local index of the element
 		for boundaryElement, boundaryElementVertices in zip(self.boundariesIndexes, self.boundariesIndexesVertices):
+			# If both facet nodes belong to boundaryElementVertices, it's its element
 			if set(facetConnectivity).issubset(boundaryElementVertices):
 				localFacetVertices = [boundaryElementVertices.index(globalHandle) for globalHandle in facetConnectivity]
 				
 				for elemFacetIndex in range(boundaryElement.shape.numberOfFacets):
+					# Check which facet of the element contains the boundary
 					if set(localFacetVertices) == set(boundaryElement.shape.facetVerticesIndices[elemFacetIndex]):
 						facet = Facet(boundaryElement, elemFacetIndex, self.facetHandle)
 						
@@ -102,6 +104,8 @@ class BoundaryBuilder:
 						
 						self.facetHandle += 1
 						return facet
+				raise Exception("Unknown error")
+		raise Exception("Boundary belongs to no element")
 
 	def computeFacetAreaVector(self, vertices):
 		if vertices.size == 2:

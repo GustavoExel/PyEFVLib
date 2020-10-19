@@ -67,6 +67,9 @@ class BoundaryBuilder:
 			# The facet recieves its vertices and its element.
 			facet = self.buildFacet(facetConnectivity)
 
+			if not facet:
+				continue
+
 			facet.handleOfFirstOuterFace = self.handleOfFirstOuterFace
 			facet.area = self.computeFacetAreaVector(facet.vertices)
 			# The outer face gets an area, its centroid, and a vertex, and the facet gets its outer faces
@@ -104,8 +107,8 @@ class BoundaryBuilder:
 						
 						self.facetHandle += 1
 						return facet
-				raise Exception("Unknown error")
-		raise Exception("Boundary belongs to no element")
+		# 		raise Exception("Unknown error")
+		# raise Exception("Boundary belongs to no element")
 
 	def computeFacetAreaVector(self, vertices):
 		if vertices.size == 2:

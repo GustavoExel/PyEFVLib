@@ -1,6 +1,6 @@
 import sys,os,io,shutil
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
-from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver, NeumannBoundaryCondition, DirichletBoundaryCondition, BoundaryCondition
+from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver, NeumannBoundaryCondition, DirichletBoundaryCondition, BoundaryCondition
 from apps.heat_transfer import heatTransfer
 from apps.stress_equilibrium import stressEquilibrium
 
@@ -33,7 +33,7 @@ class PyEFVLibGUI:
 		self.ttkStyle = ttk.Style()
 		self.ttkStyle.theme_use("winnative")
 		self.root.title("PyEFVLib GUI")
-		self.root.iconbitmap("icon.ico")
+		self.root.iconbitmap(os.path.join( os.path.dirname(__file__), "icon.ico" ))
 		self.root.bind("<Key>", lambda key: self.root.destroy() if key.char=="\x17" else 0) # Close window if Ctrl+W is pressed
 
 		self.HEIGHT, self.WIDTH = (500, 600)

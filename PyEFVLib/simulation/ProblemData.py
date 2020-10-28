@@ -111,7 +111,7 @@ class ProblemData(PropertyData, NumericalSettings, BoundaryConditions):
 		Also, for Windows Users, Script.json maintains the "/" separation syntax, and the class handles it;
 		"""
 		DIR = os.path.join(self.libraryPath, self.simulatorName)
-		caseName = self.scriptPath.split("workspace")[1][1:].replace("/Script.json", "")
+		caseName = self.scriptPath.split("workspace")[1][1:].replace("/Script.json", "").replace("\\Script.json", "").replace("Script.json", "")
 		variables = {"DIR" : DIR, "LIB" : self.libraryPath, "CASE": caseName}
 		for key in self.paths.keys():
 			

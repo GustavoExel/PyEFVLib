@@ -25,6 +25,7 @@ def show_fluxes(fileName):
 	fig, ax = plt.subplots()
 	fig.canvas.set_window_title(fileName)
 	ax.quiver(X,Y,U,V,C)
+	# ax.scatter(X1,X2,marker=".",color="k")
 	plt.show()
 	fig.savefig(fileName.replace("csv", "png").replace("results", "images"))
 

@@ -47,7 +47,7 @@ def heatTransfer(
 	converged = False
 
 	def print_purple(text, end="\n"):
-		print(f"\n\t\033[1;35m{text}\033[0m", end=end)
+		print(f"\n\t{text}", end=end)
 	def add(i, j, val):
 		coords.append((i,j))
 		matrixVals.append(val)
@@ -126,7 +126,8 @@ def heatTransfer(
 			matrix = sparse.coo_matrix( (matrixVals, zip(*coords)) )
 			matrix = sparse.csc_matrix( matrix )
 			inverseMatrix = sparse.linalg.inv( matrix )
-		temperatureField = inverseMatrix * independent
+		# temperatureField = inverseMatrix * independent
+		temperatureField = np.linalg.solve(matrix.toarray(), independent)
 
 		#-------------------------PRINT ITERATION DATA------------------------------
 		if iteration > 0 and verbosity:
@@ -191,10 +192,10 @@ if __name__ == "__main__":
 
 	if not "-s" in sys.argv:
 		for key,path in zip( ["input", "output", "grids"] , [os.path.join(problemData.libraryPath,"workspace",model) , problemData.paths["Output"], problemData.paths["Grid"]] ):
-			print("\t\033[1;35m{}\033[0m\n\t\t{}\n".format(key, path))
-		print("\t\033[1;35msolid\033[0m")
+			print("\t{}\n\t\t{}\n".format(key, path))
+		print("\tsolid")
 		for region in grid.regions:
-			print("\t\t\033[36m{}\033[0m".format(region.name))
+			print("\t\t{}".format(region.name))
 			for _property in problemData.propertyData[region.handle].keys():
 				print("\t\t\t{}   : {}".format(_property, problemData.propertyData[region.handle][_property]))
 			print("")

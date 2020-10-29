@@ -1,0 +1,22 @@
+{
+    "Outer":
+    {
+        "Density": 1.0,
+
+        "HeatCapacity": 1,
+
+        "Conductivity": 1,
+
+        "HeatGeneration": 0.0
+    },
+	"Inner":
+    {
+        "Density": 1.0,
+
+        "HeatCapacity": 1,
+
+        "Conductivity": 1,
+
+        "HeatGeneration": 0.0
+    }
+}

@@ -14,7 +14,7 @@ class Element:
 		self.tellShape()
 		self.buildInnerFaces()
 		self.buildSubelement()
-		
+
 	def tellShape(self):
 		for shape in self.grid.getShapes():
 			if shape._is(self):
@@ -40,7 +40,7 @@ class Element:
 			shapeFunctionDerivatives = self.shape.subelementShapeFunctionDerivatives[local]
 			volume = self.shape.subelementTransformedVolumes[local] * np.linalg.det(self.getTransposedJacobian(shapeFunctionDerivatives))
 
-			self.volume += volume 
+			self.volume += volume
 			self.vertices[local].volume += volume
 			self.subelementVolumes.append(volume)
 

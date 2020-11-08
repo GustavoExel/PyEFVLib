@@ -19,7 +19,7 @@ class Grid:
 		self.buildElements()
 		self.buildRegions()
 		self.buildBoundaries()
-		
+
 	def buildVertices(self):
 		handle = 0
 		self.vertices = np.array([])
@@ -51,3 +51,14 @@ class Grid:
 
 	def getShapes(self):
 		return [Triangle, Quadrilateral, Tetrahedron, Hexahedron, Prism, Pyramid]
+
+	def buildStencil(self):
+		nVertices = len(self.vertices)
+		self.stencil = [[] for i in range(nVertices)]
+		for element in self.elements:
+			localHandle = 0
+			for v1 in element.vertices:
+				for v2 in element.vertices[localHandle:]:
+					if not v2.handle in self.stencil[v1.handle]:		self.stencil[v1.handle].append(v2.handle)
+					if not v1.handle in self.stencil[v2.handle]:		self.stencil[v2.handle].append(v1.handle)
+				localHandle += 1

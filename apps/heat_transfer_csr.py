@@ -1,9 +1,10 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver
+from PyEFVLib.simulation import LinearSystem as ls
 import numpy as np
 from scipy import sparse
-import scipy.sparse.linalg
+from scipy.sparse.linalg import spsolve
 import time
 
 def heatTransfer(
@@ -52,6 +53,10 @@ def heatTransfer(
 		coords.append((i,j))
 		matrixVals.append(val)
 
+
+	ls_csr = ls.LinearSystemCSR(grid.stencil, 1)
+	ls_csr.initialize()
+
 	#-------------------------------------------------------------------------------
 	#-------------------------SIMULATION MAIN LOOP----------------------------------
 	#-------------------------------------------------------------------------------
@@ -61,16 +66,16 @@ def heatTransfer(
 		if iteration > 1 and not transient:
 			break
 		#-------------------------ADD TO LINEAR SYSTEM------------------------------
-		independent = np.zeros(grid.vertices.size)
+		# independent = np.zeros(grid.vertices.size)
+		ls_csr.restartRHS()
 
 		# Generation Term
 		for region in grid.regions:
 			heatGeneration = propertyData[region.handle]["HeatGeneration"]
 			for element in region.elements:
-				local = 0
-				for vertex in element.vertices:
-					independent[vertex.handle] += element.subelementVolumes[local] * heatGeneration
-					local += 1
+				for local, vertex in enumerate(element.vertices):
+					# independent[vertex.handle] += element.subelementVolumes[local] * heatGeneration
+					ls_csr.addValueToRHS(vertex.handle, element.subelementVolumes[local] * heatGeneration)
 
 		# Diffusion Term
 		if iteration == 0:
@@ -85,8 +90,10 @@ def heatTransfer(
 						i=0
 						for vertex in element.vertices:
 							coefficient = -1.0 * diffusiveFlux[i]
-							add(backwardVertexHandle, vertex.handle, coefficient)
-							add(forwardVertexHandle, vertex.handle, -coefficient)
+							ls_csr.addValueToMatrix(backwardVertexHandle, vertex.handle, coefficient)
+							ls_csr.addValueToMatrix(forwardVertexHandle, vertex.handle, -coefficient)
+							# add(backwardVertexHandle, vertex.handle, coefficient)
+							# add(forwardVertexHandle, vertex.handle, -coefficient)
 							i+=1
 
 		# Transient Term
@@ -99,36 +106,42 @@ def heatTransfer(
 				for element in region.elements:
 					local = 0
 					for vertex in element.vertices:
-						independent[vertex.handle] += element.subelementVolumes[local] * accumulation * prevTemperatureField[vertex.handle]
+						# independent[vertex.handle] += element.subelementVolumes[local] * accumulation * prevTemperatureField[vertex.handle]
+						ls_csr.addValueToRHS(vertex.handle, element.subelementVolumes[local] * accumulation * prevTemperatureField[vertex.handle])
 						if iteration == 0:
-							add(vertex.handle, vertex.handle, element.subelementVolumes[local] * accumulation)
+							# add(vertex.handle, vertex.handle, element.subelementVolumes[local] * accumulation)
+							ls_csr.addValueToMatrix(vertex.handle, vertex.handle, element.subelementVolumes[local] * accumulation)
 						local += 1
 
 		# Neumann Boundary Condition
 		for bCondition in neumannBoundaries["temperature"]:
 			for facet in bCondition.boundary.facets:
 				for outerFace in facet.outerFaces:
-					independent[outerFace.vertex.handle] -= bCondition.getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
+					# independent[outerFace.vertex.handle] -= bCondition.getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
+					ls_csr.addValueToRHS(outerFace.vertex.handle, -bCondition.getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates()))
 
 		# Dirichlet Boundary Condition
 		for bCondition in dirichletBoundaries["temperature"]:
 			for vertex in bCondition.boundary.vertices:
-				independent[vertex.handle] = bCondition.getValue(vertex.handle)
+				# independent[vertex.handle] = bCondition.getValue(vertex.handle)
+				ls_csr.addValueToRHS(vertex.handle, bCondition.getValue(vertex.handle))
 		if iteration == 0:
 			print('Dirichlet')
 			for bCondition in dirichletBoundaries["temperature"]:
 				for vertex in bCondition.boundary.vertices:
-					matrixVals = [val for coord, val in zip(coords, matrixVals) if coord[0] != vertex.handle]
-					coords 	   = [coord for coord in coords if coord[0] != vertex.handle]
-					add(vertex.handle, vertex.handle, 1.0)
+					# matrixVals = [val for coord, val in zip(coords, matrixVals) if coord[0] != vertex.handle]
+					# coords 	   = [coord for coord in coords if coord[0] != vertex.handle]
+					# add(vertex.handle, vertex.handle, 1.0)
+					ls_csr.matZeroRow(vertex.handle, 1.0)
 
 		#-------------------------SOLVE LINEAR SYSTEM-------------------------------
-		if iteration == 0:
-			matrix = sparse.coo_matrix( (matrixVals, zip(*coords)) )
-			matrix = sparse.csc_matrix( matrix )
-			inverseMatrix = sparse.linalg.inv( matrix )
-		# temperatureField = inverseMatrix * independent
-		temperatureField = np.linalg.solve(matrix.toarray(), independent)
+		# if iteration == 0:
+		# 	matrix = sparse.coo_matrix( (matrixVals, zip(*coords)) )
+		# 	matrix = sparse.csc_matrix( matrix )
+		# 	inverseMatrix = sparse.linalg.inv( matrix )
+		# # temperatureField = inverseMatrix * independent
+		# temperatureField = np.linalg.solve(matrix.toarray(), independent)
+		temperatureField = spsolve(ls_csr.matrix, ls_csr.rhs)
 
 		#-------------------------PRINT ITERATION DATA------------------------------
 		if iteration > 0 and verbosity:
@@ -138,8 +151,6 @@ def heatTransfer(
 		currentTime += timeStep
 
 		#-------------------------SAVE RESULTS--------------------------------------
-		# saver.timeSteps	= np.append(saver.timeSteps,  currentTime)
-		# saver.fields  = np.vstack([saver.fields, temperatureField])
 		saver.save("temperature", temperatureField, currentTime)
 
 		#-------------------------CHECK CONVERGENCE---------------------------------
@@ -188,6 +199,7 @@ if __name__ == "__main__":
 
 	reader = MSHReader(problemData.paths["Grid"])
 	grid = Grid(reader.getData())
+	grid.buildStencil()
 	problemData.setGrid(grid)
 	problemData.read()
 

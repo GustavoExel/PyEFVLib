@@ -27,7 +27,7 @@ for i, v_stencil in enumerate(stencil):
 			for dof_j in range(nDOF):
 				ls_csr.addValueToMatrix(i + dof_i*nVertices, j + dof_j*nVertices, -3)
 
-
+ls_csr.matZeroRow(nDOF*nVertices-1, 1)
 
 M = ls_csr.matrix.todense()
 

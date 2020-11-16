@@ -1,0 +1,15 @@
+<Xdmf Version="3.0">
+	<Domain>
+		<Grid Name="Grid">
+			<Geometry GeometryType="XY">
+				<DataItem DataType="Float" Dimensions="112 2" Format="HDF" Precision="8">Subdomains_facets.h5:/data0</DataItem>
+			</Geometry>
+			<Topology NodesPerElement="2" NumberOfElements="293" TopologyType="Polyline">
+				<DataItem DataType="Int" Dimensions="293 2" Format="HDF" Precision="8">Subdomains_facets.h5:/data1</DataItem>
+			</Topology>
+			<Attribute AttributeType="Scalar" Center="Cell" Name="boundaries">
+				<DataItem DataType="UInt" Dimensions="293" Format="HDF" Precision="8">Subdomains_facets.h5:/data2</DataItem>
+			</Attribute>
+		</Grid>
+	</Domain>
+</Xdmf>

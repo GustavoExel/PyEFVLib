@@ -1,39 +1,34 @@
 # PyEFVLib
-Library for implementing the Element-based Finite Volumes Method. The input mesh is a .msh file, and the output is a .cgns file. 
 
-## Prerequisites
+This package intends to support the solution of PDEs using the Element-based Finite Volume Method (EbFVM). The input mesh may be \*.msh or \*.xdmf files, and the output may be \*.csv, \*.cgns or \*.xdmf files.
 
-This project is writen in Python 3
-You may install numpy, scipy, pandas and matplotlib
+## Dependencies & Installation
 
+- [Python 3](https://www.python.org/downloads/) (3.8.2);
+- [matplotlib](https://matplotlib.org/) (3.3.2);
+- [meshio](https://pypi.org/project/meshio/) (4.0.15);
+- [numpy](https://numpy.org/) (1.17.4);
+- [pandas](https://pandas.pydata.org/)(1.1.3);
+- [petsc4py](https://pypi.org/project/petsc4py/) (3.12.0);
+- [scipy](https://www.scipy.org/) (1.5.3);
+- [xmltodict](https://pypi.org/project/xmltodict/) (0.12.0).
+
+Also, for CGNS writing, C++ is used, and two libraries are required: [CGNS](https://cgns.github.io) and [Boost](https://www.boost.org).
+<!-- After installing them, configure their install directories in PyEFVLib > simulation > CGNS > CMakeLists.txt, and compile using
 ```bash
-pip install numpy
-pip install scipy
-pip install pandas
-pip install matplotlib
-```
+./install.sh
+``` -->
 
-Also, for CGNS writing C++ is used, and two libraries are required: [CGNS](https://cgns.github.io) and [Boost](https://www.boost.org).
-After installing them, configure their install directories in PyEFVLib > simulation > CGNS > CMakeLists.txt, and compile using
+<!-- You may install PyEFVLib and its dependencies (with exception to CGNS and Boost) by running the command:
+
 ```bash
 ./install.sh
 ```
 
-## Usage
+## Uninstallation
 
-```python
-from PyEFVLib import MSHReader, Grid, Point
-import os, numpy as np
+You may remove this package by running:
 
-path = os.path.join(*[os.path.dirname(__file__), os.path.pardir, "meshes", "Square.msh"])
-
-reader = MSHReader(path)
-grid   = Grid(reader.getData())
-
-totalVolume = 0.0
-for element in grid.elements:
-	for vertex in element:
-		totalVolume += vertex.volume
-
-print(totalVolume)
-```
+```bash
+./uninstall.sh
+``` -->

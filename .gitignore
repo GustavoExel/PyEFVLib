@@ -1,6 +1,12 @@
-/__pycache__
-*/__pycache__
-PyEFVLib/geometry/__pycache__/
-PyEFVLib/simulation/__pycache__/
-/PyEFVLib/simulation/CGNS/build/*
-/PyEFVLib/simulation/*.txt
+# Compiled files
+*.pyc
+
+# Sublime files
+*.sublime-workspace
+
+# Other files
+*.ignore
+
+# Folders
+__pycache__/
+build/

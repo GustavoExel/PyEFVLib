@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ZoneList>
+	<Zone1 type="fluid" name="Body"></Zone1>
+	<Zone2 type="wall" name="North"></Zone2>
+	<Zone3 type="wall" name="South"></Zone3>
+	<Zone4 type="wall" name="West"></Zone4>
+	<Zone5 type="wall" name="East"></Zone5>
+</ZoneList>

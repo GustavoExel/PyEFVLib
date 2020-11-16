@@ -1,0 +1,15 @@
+<Xdmf Version="3.0">
+	<Domain>
+		<Grid Name="Grid">
+			<Geometry GeometryType="XYZ">
+				<DataItem DataType="Float" Dimensions="109 3" Format="HDF" Precision="8">Square_facets.h5:/data0</DataItem>
+			</Geometry>
+			<Topology NodesPerElement="2" NumberOfElements="32" TopologyType="Polyline">
+				<DataItem DataType="Int" Dimensions="32 2" Format="HDF" Precision="4">Square_facets.h5:/data1</DataItem>
+			</Topology>
+			<Attribute AttributeType="Scalar" Center="Cell" Name="gmsh:physical">
+				<DataItem DataType="Int" Dimensions="32" Format="HDF" Precision="4">Square_facets.h5:/data2</DataItem>
+			</Attribute>
+		</Grid>
+	</Domain>
+</Xdmf>

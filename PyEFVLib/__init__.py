@@ -7,6 +7,7 @@ from PyEFVLib.geometry.Shape import *
 from PyEFVLib.geometry.Region import *
 from PyEFVLib.geometry.Facet import *
 from PyEFVLib.geometry.MSHReader import *
+from PyEFVLib.geometry.XDMFReader import *
 from PyEFVLib.geometry.Boundary import *
 from PyEFVLib.geometry.Element import *
 from PyEFVLib.geometry.Grid import *

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ZoneList>
+	<Zone3 type="wall" name="NW"></Zone3>
+	<Zone4 type="wall" name="NE"></Zone4>
+	<Zone5 type="wall" name="W"></Zone5>
+	<Zone6 type="wall" name="E"></Zone6>
+	<Zone7 type="wall" name="SW"></Zone7>
+	<Zone8 type="wall" name="SE"></Zone8>
+	<Zone9 type="wall" name="M"></Zone9>
+	<Zone1 type="fluid" name="Body1"></Zone1>
+	<Zone2 type="fluid" name="Body2"></Zone2>
+</ZoneList>

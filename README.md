@@ -1,6 +1,6 @@
 # PyEFVLib
 
-This package intends to support the solution of PDEs using the Element-based Finite Volume Method (EbFVM). The input mesh may be \*.msh or \*.xdmf files, and the output may be \*.csv, \*.cgns or \*.xdmf files.
+This package intends to support the solution of PDEs using the Element-based Finite Volume Method (EbFVM). The input mesh may be \*.msh or \*.xdmf files, and the output may be \*.csv or \*.cgns.
 
 ## Dependencies & Installation
 
@@ -19,16 +19,21 @@ Also, for CGNS writing, C++ is used, and two libraries are required: [CGNS](http
 ./install.sh
 ``` -->
 
-<!-- You may install PyEFVLib and its dependencies (with exception to CGNS and Boost) by running the command:
+## Usage
 
-```bash
-./install.sh
+```python
+from PyEFVLib import MSHReader, Grid, Point
+import os, numpy as np
+
+path = os.path.join(*[os.path.dirname(__file__), os.path.pardir, "meshes", "Square.msh"])
+
+reader = MSHReader(path)
+grid   = Grid(reader.getData())
+
+totalVolume = 0.0
+for element in grid.elements:
+	for vertex in element:
+		totalVolume += vertex.volume
+
+print(totalVolume)
 ```
-
-## Uninstallation
-
-You may remove this package by running:
-
-```bash
-./uninstall.sh
-``` -->

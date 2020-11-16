@@ -2,8 +2,10 @@ import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
 from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver, CgnsSaver
+from PyEFVLib.simulation import LinearSystem as ls
 import numpy as np
 from scipy import sparse
+from scipy.sparse.linalg import spsolve
 import scipy.sparse.linalg
 
 #-------------------------SETTINGS----------------------------------------------
@@ -33,11 +35,8 @@ def stressEquilibrium(
 	numberOfVertices = grid.vertices.size
 	displacements = np.repeat(0.0, 2*numberOfVertices)
 
-	coords,matrixVals = [], []
 	#---------------------------HELPER FUNCTIONS------------------------------------
-	def add(i, j, val):
-		coords.append((i,j))
-		matrixVals.append(val)
+
 
 	def getConstitutiveMatrix(region):
 		shearModulus = propertyData[region.handle]["ShearModulus"]
@@ -63,7 +62,8 @@ def stressEquilibrium(
 		return outerFace.facet.element.getGlobalDerivatives(localDerivatives)
 
 	#-------------------------ADD TO LINEAR SYSTEM------------------------------
-	independent = np.zeros(2*numberOfVertices)
+	ls_csr = ls.LinearSystemCSR(grid.stencil, 2)
+	ls_csr.initialize()
 
 	U = lambda handle: handle + numberOfVertices * 0
 	V = lambda handle: handle + numberOfVertices * 1
@@ -73,10 +73,8 @@ def stressEquilibrium(
 		density = propertyData[region.handle]["Density"]
 		gravity = propertyData[region.handle]["Gravity"]
 		for element in region.elements:
-			local = 0
-			for vertex in element.vertices:
-				independent[V(vertex.handle)] += - density * gravity * element.subelementVolumes[local]
-				local += 1
+			for local, vertex in enumerate(element.vertices):
+				ls_csr.addValueToRHS(V(vertex.handle), - density * gravity * element.subelementVolumes[local])
 
 	# Stress Term
 	for region in grid.regions:
@@ -90,16 +88,14 @@ def stressEquilibrium(
 				backwardVertexHandle = element.vertices[element.shape.innerFaceNeighborVertices[innerFace.local][0]].handle
 				forwardVertexHandle = element.vertices[element.shape.innerFaceNeighborVertices[innerFace.local][1]].handle
 
-				local=0
-				for vertex in element.vertices:
+				for local, vertex in enumerate(element.vertices):
 					for neighborVertex in [backwardVertexHandle, forwardVertexHandle]:
-						add( U(neighborVertex), U(vertex.handle), matrixCoefficient[0][0][local] )
-						add( U(neighborVertex), V(vertex.handle), matrixCoefficient[0][1][local] )
-						add( V(neighborVertex), U(vertex.handle), matrixCoefficient[1][0][local] )
-						add( V(neighborVertex), V(vertex.handle), matrixCoefficient[1][1][local] )
+						ls_csr.addValueToMatrix(U(neighborVertex), U(vertex.handle), matrixCoefficient[0][0][local])
+						ls_csr.addValueToMatrix(U(neighborVertex), V(vertex.handle), matrixCoefficient[0][1][local])
+						ls_csr.addValueToMatrix(V(neighborVertex), U(vertex.handle), matrixCoefficient[1][0][local])
+						ls_csr.addValueToMatrix(V(neighborVertex), V(vertex.handle), matrixCoefficient[1][1][local])
 
 						matrixCoefficient *= -1
-					local+=1
 
 	# Boundary Conditions
 	for bc in boundaryConditions:
@@ -111,34 +107,28 @@ def stressEquilibrium(
 		if uBoundaryType == "NEUMANN":
 			for facet in boundary.facets:
 				for outerFace in facet.outerFaces:
-					independent[U(outerFace.vertex.handle)] -= bc["u"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
+					ls_csr.addValueToRHS(U(outerFace.vertex.handle), - bc["u"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates()))
 
 		if vBoundaryType == "NEUMANN":
 			for facet in boundary.facets:
 				for outerFace in facet.outerFaces:
-					independent[V(outerFace.vertex.handle)] -= bc["v"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
+					ls_csr.addValueToRHS(V(outerFace.vertex.handle), - bc["v"].getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates()))
 
 		if uBoundaryType == "DIRICHLET":
 			for vertex in boundary.vertices:
-				independent[vertex.handle] = bc["u"].getValue(vertex.handle)
-				matrixVals = [val for coord, val in zip(coords, matrixVals) if coord[0] != vertex.handle]
-				coords 	   = [coord for coord in coords if coord[0] != vertex.handle]
-				add(vertex.handle, vertex.handle, 1.0)
+				ls_csr.setValueToRHS(U(vertex.handle), bc["u"].getValue(vertex.handle))
+				ls_csr.matZeroRow(U(vertex.handle), 1.0)
 
 
 		if vBoundaryType == "DIRICHLET":
 			for vertex in boundary.vertices:
-				independent[vertex.handle+numberOfVertices] = bc["v"].getValue(vertex.handle)
-				matrixVals = [val for coord, val in zip(coords, matrixVals) if coord[0] != vertex.handle+numberOfVertices]
-				coords 	   = [coord for coord in coords if coord[0] != vertex.handle+numberOfVertices]
-				add(vertex.handle+numberOfVertices, vertex.handle+numberOfVertices, 1.0)
+				ls_csr.setValueToRHS(V(vertex.handle), bc["v"].getValue(vertex.handle))
+				ls_csr.matZeroRow(V(vertex.handle), 1.0)
 
 
 
 	#-------------------------SOLVE LINEAR SYSTEM-------------------------------
-	matrix = sparse.coo_matrix( (matrixVals, zip(*coords)) )
-	matrix = sparse.csc_matrix( matrix )
-	displacements = scipy.sparse.linalg.spsolve(matrix, independent)
+	displacements = spsolve(ls_csr.matrix, ls_csr.rhs)
 
 	#-------------------------SAVE RESULTS--------------------------------------
 	saver.save('u', displacements[:numberOfVertices], currentTime)
@@ -157,6 +147,7 @@ if __name__ == "__main__":
 
 	reader = MSHReader(problemData.paths["Grid"])
 	grid = Grid(reader.getData())
+	grid.buildStencil()
 	problemData.setGrid(grid)
 	problemData.read()
 
@@ -202,5 +193,5 @@ if __name__ == "__main__":
 		plt.legend()
 		plt.title(name)
 
-	# show_1d(displacements[grid.vertices.size:], "Deslocamento em y")
-	# plt.show()
+	show_1d(displacements[grid.vertices.size:], "Deslocamento em y")
+	plt.show()

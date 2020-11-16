@@ -1,7 +1,7 @@
 class GridData:
 	def __init__(self, path):
 		self.path = path
-		
+
 	def setDimension(self, gridDimension):
 		self.dimension = gridDimension
 

@@ -14,3 +14,4 @@ from PyEFVLib.simulation.BoundaryConditions import *
 from PyEFVLib.simulation.CgnsSaver import *
 from PyEFVLib.simulation.CsvSaver import *
 from PyEFVLib.simulation.ProblemData import *
+from PyEFVLib.simulation.LinearSystem import *

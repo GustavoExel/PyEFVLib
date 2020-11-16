@@ -15,7 +15,7 @@ class MSHReader:
 		with open(self.path, 'r') as f:
 			fileLines = f.read().split('$')
 		self.fileData = [ [ line.split() for line in fileLines[i].split('\n')[1:-1] ] for i in range(1,8,2) ]
-		
+
 	def checkFileVersion(self):
 		fileVersion = float(self.fileData[0][0][0])
 		if fileVersion < 2.0 or fileVersion > 2.2:
@@ -30,10 +30,10 @@ class MSHReader:
 		# This fileDatas store raw information from file, only converting from string
 		# DIMENSION, INDEX, NAME => REGIONS / BOUNDARIES
 		self.sectionsFileData = [ ( int(dimension), int(index) , name[1:-1] ) for dimension, index, name in self.fileData[1][1:] ]
-		
+
 		# X,Y,Z COORDINATES
 		self.verticesFileData = [ (float(x), float(y), float(z)) for idx,x,y,z in self.fileData[2][1:] ]
-		
+
 		# SHAPE CODE, SECTION INDEX, [[ VERTICES INDEXES ]]
 		self.connectivitiesFileData = [ ( ''.join([c1,c2]), int(p_id), [ int(v)-1 for v in nodes ] ) for idx, c1, c2, p_id, e_id, *nodes in self.fileData[3][1:] ]
 
@@ -53,14 +53,14 @@ class MSHReader:
 		for [dimension, index, name], sectionElements in zip( self.sectionsFileData, self.sectionElements ):
 			if dimension == maxDimension:
 				indexOfFirstConnectivity = len(elementsConnectivities)
-				
+
 				elementsConnectivities += sectionElements
 				regionNames.append(name)
 				regionsElementsIndexes.append( list(range(indexOfFirstConnectivity, indexOfFirstConnectivity+len(sectionElements))) )
 
 			else:
 				indexOfFirstConnectivity = len(boundariesConnectivities)
-				
+
 				boundariesConnectivities += sectionElements
 				boundaryNames.append(name)
 				boundariesIndexes.append( list(range(indexOfFirstConnectivity, indexOfFirstConnectivity+len(sectionElements))) )

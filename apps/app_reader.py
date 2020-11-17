@@ -19,10 +19,10 @@ from PyEFVLib import XDMFReader
 # Tests mesh generated with Gmsh and converted to XDMF with Meshio
 directory = [os.path.dirname(__file__), os.path.pardir, "meshes/xdmf"]
 directory = os.path.join(*directory)
-filename = "dualRegion.xdmf"
-boundariesFilename = "dualRegion_facets.xdmf"
-subdomainsFilename = "dualRegion_physical_region.xdmf"
-zoneList = "dualRegion_zone_list.xml"
+filename = "Square.xdmf"
+boundariesFilename = "Square_facets.xdmf"
+subdomainsFilename = "Square_physical_region.xdmf"
+zoneList = "Square_zone_list.xml"
 reader = XDMFReader(directory=directory, filename=filename, boundariesFilename=boundariesFilename, subdomainsFilename=subdomainsFilename)
 reader.readZoneList(zoneList)
 reader.setFacetData('gmsh:physical')

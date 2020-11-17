@@ -17,10 +17,10 @@ if __name__ == "__main__":
 	# Tests stencil from mesh generated with Gmsh and converted to XDMF with Meshio
 	directory = [os.path.dirname(__file__), os.path.pardir, "meshes/xdmf"]
 	directory = os.path.join(*directory)
-	filename = "dualRegion.xdmf"
-	boundariesFilename = "dualRegion_facets.xdmf"
-	subdomainsFilename = "dualRegion_physical_region.xdmf"
-	zoneList = "dualRegion_zone_list.xml"
+	filename = "3x3 tri.xdmf"
+	boundariesFilename = "3x3 tri_facets.xdmf"
+	subdomainsFilename = "3x3 tri_physical_region.xdmf"
+	zoneList = "3x3 tri_zone_list.xml"
 	print('{}/{}'.format(directory, filename))
 	reader = XDMFReader(directory=directory, filename=filename, boundariesFilename=boundariesFilename, subdomainsFilename=subdomainsFilename)
 	reader.readZoneList(zoneList)

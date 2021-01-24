@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ZoneList>
+	<Zone9 type="fluid" name="MATRIX"></Zone9>
+	<Zone10 type="fluid" name="MATRIX1"></Zone10>
+	<Zone11 type="interior" name="int_MATRIX"></Zone11>
+	<Zone12 type="interior" name="int_MATRIX1"></Zone12>
+	<Zone13 type="wall" name="RIGHT"></Zone13>
+	<Zone14 type="wall" name="WALL_MATRIX1"></Zone14>
+	<Zone15 type="wall" name="LEFT"></Zone15>
+	<Zone16 type="wall" name="TOP"></Zone16>
+	<Zone17 type="wall" name="BOTTOM"></Zone17>
+</ZoneList>

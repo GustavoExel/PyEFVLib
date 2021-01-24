@@ -1,0 +1,9 @@
+{
+    "truss":
+    {
+    	"Density": 2700,
+        "PoissonsRatio": 0.33,
+        "ShearModulus": 26.0e+09,
+        "Gravity": -9.81
+    }
+}

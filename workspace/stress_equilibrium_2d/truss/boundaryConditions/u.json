@@ -1,0 +1,83 @@
+{
+    "InitialValue": 0.0,
+    "top_a": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "top_b": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "top_c": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "top_d": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "top_A": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "top_B": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "top_C": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "top_D": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "bottom_a": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "bottom_b": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "bottom_c": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "bottom_d": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "bottom_A": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "bottom_B": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "bottom_C": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    },
+    "bottom_D": {
+        "condition": "NEUMANN",
+        "type": "CONSTANT",
+        "value": 0.0
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "Output" : "${LIB}/results/${CASE}",
+
+    "Boundary" : "${DIR}/boundaryConditions/",
+
+    "Property" : "${DIR}/properties.json",
+
+    "Numerical" : "${DIR}/NumericalSettings.json",
+
+    "Grid" : "${LIB}/meshes/msh/3D/Box.msh"
+}

@@ -16,3 +16,6 @@ class Vertex(Point):
 
 	def getInnerFaces(self):
 		return [ innerFace for element in self.elements for innerFace in element.innerFaces if self in innerFace.getNeighborVertices() ]
+
+	def getSubElementVolume(self, element):
+		return element.subelementVolumes[ self.getLocal(element) ]

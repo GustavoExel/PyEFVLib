@@ -13,7 +13,7 @@ class CsvSaver(Saver):
 		The first line is reserved to the titles of the columns, as shown above.
 		The second line, below the fields is reserved to the TimeStep data
 		"""
-		# indexes = np.arange( 1, self.grid.vertices.size + 1 )
+		# indexes = np.arange( 1, self.grid.numberOfVertices + 1 )
 		X,Y,Z = zip(*[v.getCoordinates() for v in self.grid.vertices])
 		X,Y,Z = np.array(X), np.array(Y), np.array(Z) 
 		labels = ["X", "Y", "Z"]

@@ -33,7 +33,7 @@ def stressEquilibrium(
 	saver = savers[extension](grid, outputPath, libraryPath, fileName=fileName)
 
 	currentTime = 0.0
-	numberOfVertices = grid.vertices.size
+	numberOfVertices = grid.numberOfVertices
 	displacements = np.repeat(0.0, grid.dimension*numberOfVertices)
 
 	#---------------------------HELPER FUNCTIONS------------------------------------
@@ -282,4 +282,4 @@ if __name__ == "__main__":
 		plt.title(name)
 		plt.show()
 	if "-g" in sys.argv:
-		show_1d(displacements[grid.vertices.size:], "Deslocamento em y")
+		show_1d(displacements[grid.numberOfVertices:], "Deslocamento em y")

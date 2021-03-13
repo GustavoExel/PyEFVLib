@@ -178,8 +178,8 @@ class StressEquilibriumSolver(PyEFVLib.Solver):
 		if self.dimension == 3:
 			self.saver.save('w', self.displacements[2*self.numberOfVertices:3*self.numberOfVertices], self.currentTime)
 
-def stressEquilibrium(workspaceDirectory,solve=True,outputFileName="Results",extension="csv",gravity=False,verbosity=False):
-	solver = StressEquilibriumSolver(workspaceDirectory,outputFileName=outputFileName,extension=extension,gravity=gravity,verbosity=verbosity)
+def stressEquilibrium(workspaceDirectory,solve=True,extension="csv",gravity=False,verbosity=False):
+	solver = StressEquilibriumSolver(workspaceDirectory,extension=extension,gravity=gravity,verbosity=verbosity)
 	if solve:
 		solver.solve()
 	return solver
@@ -196,7 +196,7 @@ if __name__ == "__main__":
 		    	"Density":		 1800.0,
 		        "PoissonsRatio": 0.4,
 		        "ShearModulus":	 6.0e+06,
-		        "Gravity": 		-9.81
+		        "Gravity": 		0.0,
 		    },
 		}),
 		boundaryConditions = PyEFVLib.BoundaryConditions({
@@ -212,7 +212,7 @@ if __name__ == "__main__":
 			    "West":  { "condition": PyEFVLib.Neumann,   "type": PyEFVLib.Constant, "value": 0.0 },
 			    "East":  { "condition": PyEFVLib.Neumann,   "type": PyEFVLib.Constant, "value": 0.0 },
 			    "South": { "condition": PyEFVLib.Dirichlet, "type": PyEFVLib.Constant, "value": 0.0 },
-			    "North": { "condition": PyEFVLib.Neumann,   "type": PyEFVLib.Constant, "value": -490.0 }
+			    "North": { "condition": PyEFVLib.Neumann,   "type": PyEFVLib.Constant, "value": -1e4 }
 			}
 		}),
 	)

@@ -13,6 +13,7 @@ class Element:
 		
 		self.innerFaces = np.array([])
 		self.outerFaces = np.array([])
+		self.faces      = np.array([])
 
 		self.tellShape()
 		self.buildInnerFaces()
@@ -32,6 +33,7 @@ class Element:
 			innerFace.setArea( self.shape.getInnerFaceAreaVector(i, centroid, self.vertices) )
 
 			self.innerFaces = np.append(self.innerFaces, innerFace)
+			self.faces = np.append(self.faces, innerFace)
 
 		self.grid.innerFaceCounter += self.shape.numberOfInnerFaces
 
@@ -51,9 +53,10 @@ class Element:
 
 	def setOuterFace(self, outerFace):
 		self.outerFaces = np.append( self.outerFaces, outerFace )
+		self.faces = np.append( self.faces, outerFace )
 
 	def getTransposedJacobian(self, shapeFunctionDerivatives):	# shapeFunctionDerivatives must be already a numpy array
-		vertices = np.array([[vertex.getCoordinates()[k] for k in range(self.shape.dimension)] for vertex in self.vertices])
+		vertices = np.array([vertex.getCoordinates()[:self.shape.dimension] for vertex in self.vertices])
 		return np.matmul(np.transpose(shapeFunctionDerivatives), vertices)
 
 	def getGlobalDerivatives(self, derivatives):

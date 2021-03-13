@@ -42,7 +42,7 @@ def heatTransfer(
 	savers = {"cgns": CgnsSaver, "csv": CsvSaver, "vtu": VtuSaver, "vtm": VtmSaver}
 	saver = savers[extension](grid, outputPath, libraryPath, fileName=fileName)
 
-	temperatureField = np.repeat(0.0, grid.vertices.size)
+	temperatureField = np.repeat(0.0, grid.numberOfVertices)
 	prevTemperatureField = initialValues["temperature"].copy()
 
 	difference = 0.0
@@ -224,7 +224,7 @@ if __name__ == "__main__":
 		propertyData = problemData.propertyData,
 
 		# initialValues = problemData.initialValues,
-		initialValues = { "temperature": np.repeat( problemData.initialValues["temperature"], grid.vertices.size ) },
+		initialValues = { "temperature": np.repeat( problemData.initialValues["temperature"], grid.numberOfVertices ) },
 		neumannBoundaries = problemData.neumannBoundaries,
 		dirichletBoundaries = problemData.dirichletBoundaries,
 

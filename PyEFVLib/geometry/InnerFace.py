@@ -28,3 +28,13 @@ class InnerFace:
 		backwardVertex = self.element.vertices[ self.element.shape.innerFaceNeighborVertices[self.local][0] ]
 		forwardVertex = self.element.vertices[ self.element.shape.innerFaceNeighborVertices[self.local][1] ]
 		return backwardVertex, forwardVertex
+
+	def getShapeFunctions(self):
+		return self.element.shape.innerFaceShapeFunctionValues[self.local]
+
+	def getNeighborVerticesLocals(self):
+		return self.element.shape.innerFaceNeighborVertices[self.local][:2]
+
+	def getNeighborVerticesHandles(self):
+		backwardLocal, forwardLocal = self.getNeighborVerticesLocals()
+		return self.element.vertices[backwardLocal].handle, self.element.vertices[forwardLocal].handle

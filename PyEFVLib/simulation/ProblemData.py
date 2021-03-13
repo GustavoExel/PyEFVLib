@@ -3,7 +3,7 @@ from PyEFVLib.simulation.BoundaryConditions import DirichletBoundaryCondition, N
 import json, os, numpy as np
 
 class NumericalSettings:
-	def __init__(self, timeStep, finalTime=None, tolerance=None, maxNumberOfIterations=1000):
+	def __init__(self, timeStep, finalTime=np.inf, tolerance=None, maxNumberOfIterations=1000):
 		self.timeStep = timeStep
 		self.finalTime = finalTime
 		self.tolerance = tolerance
@@ -68,52 +68,30 @@ class BoundaryConditions:
 			if not boundaryName in list(self.boundaryConditionsDict.values())[0].keys():
 				raise Exception(f"Error, must specify {boundaryName} condition.")
 
-		self.dirichletBoundaries = dict()
-		self.neumannBoundaries   = dict()
-		self.boundaryConditions  = dict()
-		self.initialValues		 = dict()
-
-		# bcHandle = 0
-		# for variable in variables:
-		# 	self.neumannBoundaries[variable] = list()
-		# 	self.dirichletBoundaries[variable] = list()
-		# 	self.boundaryConditions[variable] = list()
-		# 	self.initialValues[variable] = np.repeat( self.boundaryConditionsDict[variable]["InitialValue"], self.problemData.grid.vertices.size )
-
-		# 	for boundary in self.problemData.grid.boundaries:
-		# 		if self.boundaryConditionsDict[variable][boundary.name]["condition"] == PyEFVLib.Neumann:
-		# 			bcValue = self.boundaryConditionsDict[variable][boundary.name]["value"]
-		# 			bc = NeumannBoundaryCondition(self.problemData.grid, boundary, bcValue, bcHandle)
-		# 			self.neumannBoundaries[variable].append(bc)
-		# 			self.boundaryConditions[variable].append(bc)
-					
-		# 		elif self.boundaryConditionsDict[variable][boundary.name]["condition"] == PyEFVLib.Dirichlet:
-		# 			bcValue = self.boundaryConditionsDict[variable][boundary.name]["value"]
-		# 			bc = DirichletBoundaryCondition(self.problemData.grid, boundary, bcValue, bcHandle)
-		# 			self.dirichletBoundaries[variable].append(bc)
-		# 			self.boundaryConditions[variable].append(bc)
-					
-		# 		else:
-		# 			raise Exception("Invalid boundary condition!")
-		# 		bcHandle += 1
-
 		self.neumannBoundaries   = { variable : [] for variable in variables }
 		self.dirichletBoundaries = { variable : [] for variable in variables }
 		self.boundaryConditions  = [ dict() for boundary in self.problemData.grid.boundaries ]
-		self.initialValues		 = { variable : np.repeat( self.boundaryConditionsDict[variable]["InitialValue"], self.problemData.grid.vertices.size ) for variable in variables }
-		
+		self.initialValues		 = { variable : np.repeat( self.boundaryConditionsDict[variable]["InitialValue"], self.problemData.grid.numberOfVertices ) for variable in variables }
+
 		bcHandle = 0
 		for idx, boundary in enumerate(self.problemData.grid.boundaries):
 			for variable in variables:
+				if self.boundaryConditionsDict[variable][boundary.name]["type"] == PyEFVLib.Constant:
+					expression = False
+				elif self.boundaryConditionsDict[variable][boundary.name]["type"] == PyEFVLib.Variable:
+					expression = True
+				else:
+					raise Exception(f"Invalid Boundary Condition Type {self.boundaryConditionsDict[variable][boundary.name]['type']}")
+
 				if self.boundaryConditionsDict[variable][boundary.name]["condition"] == PyEFVLib.Neumann:
 					bcValue = self.boundaryConditionsDict[variable][boundary.name]["value"]
-					bc = NeumannBoundaryCondition(self.problemData.grid, boundary, bcValue, bcHandle)
+					bc = NeumannBoundaryCondition(self.problemData.grid, boundary, bcValue, bcHandle, expression=expression)
 					self.neumannBoundaries[variable].append(bc)
 					self.boundaryConditions[idx][variable] = bc
 					
 				elif self.boundaryConditionsDict[variable][boundary.name]["condition"] == PyEFVLib.Dirichlet:
 					bcValue = self.boundaryConditionsDict[variable][boundary.name]["value"]
-					bc = DirichletBoundaryCondition(self.problemData.grid, boundary, bcValue, bcHandle)
+					bc = DirichletBoundaryCondition(self.problemData.grid, boundary, bcValue, bcHandle, expression=expression)
 					self.dirichletBoundaries[variable].append(bc)
 					self.boundaryConditions[idx][variable] = bc
 					
@@ -155,50 +133,3 @@ class ProblemData:
 
 	def createGrid(self):
 		self.grid = PyEFVLib.read(self.meshFilePath)
-
-if __name__ == "__main__":
-	problemData =ProblemData(
-		meshFilePath  = "{MESHES}/msh/2D/Square.msh",		# required
-		outputFilePath = "{RESULTS}/Results.xdmf",	# optional
-
-		numericalSettings = NumericalSettings(
-			timeStep = 1e-02,							# required
-			finalTime = None,							# optional
-			tolerance = 1e-06,							# optional
-			maxNumberOfIterations = 1000, 				# optional, but with default
-		),
-
-		propertyData = PropertyData({
-			"Body" : {
-				"HeatCapacity"	: 1.0,
-				"Conductivity"	: 1.0,
-				"Density"		: 1.0,
-			},
-		}),
-
-		boundaryConditions = BoundaryConditions({
-			"temperature": {
-				"InitialValue": 0.0,
-				"West": {
-					"condition" : PyEFVLib.Neumann,
-					"type"		: "Constant", # The ideal use is PyEFVLib.Constant
-					"value"		: 100.0
-				},
-			    "East": {
-			        "condition"	: PyEFVLib.Dirichlet,
-			        "type"		: "Constant", # The ideal use is PyEFVLib.Constant
-			        "value"		: 0.0
-			    },
-			    "South": {
-			        "condition"	: PyEFVLib.Neumann,
-			        "type"		: "Constant", # The ideal use is PyEFVLib.Constant
-			        "value"		: 0.0
-			    },
-			    "North": {
-			        "condition"	: PyEFVLib.Neumann,
-			        "type"		: "Constant", # The ideal use is PyEFVLib.Constant
-			        "value"		: 0.0
-			    },
-			},
-		}),
-	)

@@ -17,3 +17,14 @@ class OuterFace:
 
 	def computeAreaVector(self):
 		self.area = self.facet.area / self.facet.vertices.size
+
+	def computeGlobalDerivatives(self):
+		if self.facet.element.region.grid.dimension == 2:
+			localDerivatives = self.facet.element.shape.vertexShapeFunctionDerivatives[ self.vertex.getLocal(self.facet.element) ]
+			self.globalDerivatives = self.facet.element.getGlobalDerivatives(localDerivatives)
+		else:
+			pass
+			# raise Exception("Need to implement 3D vertexShapeFunctionDerivatives")
+
+	def getShapeFunctions(self):
+		return self.facet.element.shape.outerFaceShapeFunctionValues[self.facet.elementLocalIndex][self.local]

@@ -1,9 +1,0 @@
-{
-    "Body":
-    {
-    	"Density": 1800.0,
-        "PoissonsRatio": 0.4,
-        "ShearModulus": 6.0e+06,
-        "Gravity": -9.81
-    }
-}

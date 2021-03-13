@@ -13,7 +13,7 @@ class HeatTransferSolver(Solver):
 		Solver.__init__(self, workspaceDirectory, **kwargs)
 
 	def init(self):
-		self.temperatureField = np.repeat(0.0, self.grid.vertices.size)
+		self.temperatureField = np.repeat(0.0, self.grid.numberOfVertices)
 		self.prevTemperatureField = self.problemData.initialValues["temperature"]
 		
 		self.saver.save("temperature", self.prevTemperatureField, self.currentTime)
@@ -45,8 +45,7 @@ class HeatTransferSolver(Solver):
 				for element in region.elements:
 					for innerFace in element.innerFaces:
 						diffusiveFlux = conductivity * np.matmul( np.transpose(innerFace.globalDerivatives) , innerFace.area.getCoordinates()[:self.dimension] )
-						backwardVertexHandle = element.vertices[element.shape.innerFaceNeighborVertices[innerFace.local][0]].handle
-						forwardVertexHandle = element.vertices[element.shape.innerFaceNeighborVertices[innerFace.local][1]].handle
+						backwardVertexHandle, forwardVertexHandle = innerFace.getNeighborVerticesHandles()
 
 						i=0
 						for vertex in element.vertices:
@@ -78,7 +77,7 @@ class HeatTransferSolver(Solver):
 
 		def invertMatrix():
 			# Invert Matrix
-			self.matrix = sparse.csc_matrix( (self.matrixVals, zip(*self.coords)), shape=(self.grid.vertices.size, self.grid.vertices.size) )
+			self.matrix = sparse.csc_matrix( (self.matrixVals, zip(*self.coords)), shape=(self.grid.numberOfVertices, self.grid.numberOfVertices) )
 			self.inverseMatrix = sparse.linalg.inv( self.matrix )
 
 		diffusionTerm()
@@ -88,7 +87,7 @@ class HeatTransferSolver(Solver):
 		invertMatrix()
 
 	def addToIndependentVector(self):
-		self.independent = np.zeros(self.grid.vertices.size)
+		self.independent = np.zeros(self.grid.numberOfVertices)
 
 		def generationTerm():
 			# Generation Term
@@ -153,7 +152,7 @@ class HeatTransferSolver(Solver):
 			return
 
 def heatTransfer(problemData, solve=True, extension="csv", saverType="default", transient=True, verbosity=True):
-	solver = HeatTransferSolver(problemData, outputFileName="Results", extension=extension, saverType=saverType, transient=transient, verbosity=verbosity)
+	solver = HeatTransferSolver(problemData, extension=extension, saverType=saverType, transient=transient, verbosity=verbosity)
 	if solve:
 		solver.solve()
 	return solver
@@ -178,10 +177,10 @@ if __name__ == "__main__":
 		boundaryConditions = PyEFVLib.BoundaryConditions({
 			"temperature": {
 				"InitialValue": 0.0,
-				"West":	 { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Constant,"value" : 20.0 },
-				"East":	 { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Constant,"value" : 50.0 },
-				"South": { "condition" : PyEFVLib.Neumann,   "type" : PyEFVLib.Constant,"value" : 0.0 },
-				"North": { "condition" : PyEFVLib.Neumann,   "type" : PyEFVLib.Constant,"value" : 0.0 },
+				"West":	 { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Constant,"value" : 0.0 },
+				"East":	 { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Constant,"value" : 0.0 },
+				"South": { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Constant,"value" : 0.0 },
+				"North": { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Variable,"value" : "sin(pi*x)" },
 			},
 		}),
 	)

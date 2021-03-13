@@ -8,7 +8,7 @@ import time
 
 
 class Solver:
-	def __init__(self, problemData, extension="csv", saverType="default", transient=True, verbosity=False, **kwargs):
+	def __init__(self, problemData, extension="csv", saverType="default", transient=True, verbosity=False):
 		self.problemData = problemData
 		self.extension = extension
 		self.transient = transient
@@ -37,7 +37,7 @@ class Solver:
 		else:
 			self.saver = MeshioSaver(self.grid, self.outputPath, self.problemData.libraryPath, extension=self.extension, fileName="Results")
 
-		self.numberOfVertices = self.grid.vertices.size
+		self.numberOfVertices = self.grid.numberOfVertices
 		self.dimension = self.grid.dimension
 		self.currentTime = 0.0
 		self.timeStep = self.problemData.timeStep

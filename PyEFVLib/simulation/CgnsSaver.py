@@ -45,7 +45,7 @@ class CgnsSaver(Saver):
 	def export(self):
 		with open(os.path.join(self.binPath, "data.txt"), "w") as f:
 			t = self.outputPath +"\n"
-			t += str(self.grid.vertices.size) + " " + str(self.grid.elements.size) + " 0\n"
+			t += str(self.grid.numberOfVertices) + " " + str(self.grid.elements.size) + " 0\n"
 			f.write(t)
 
 		with open(os.path.join(self.binPath, "coords.txt"), "w") as f:

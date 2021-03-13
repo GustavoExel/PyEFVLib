@@ -67,6 +67,7 @@ class Boundary:
 				
 				outerFace.computeCentroid()
 				outerFace.computeAreaVector()
+				outerFace.computeGlobalDerivatives()
 
 				facet.element.setOuterFace( outerFace )
 

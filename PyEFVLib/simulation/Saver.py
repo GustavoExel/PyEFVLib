@@ -17,7 +17,7 @@ class Saver:
 		if not self.timeSteps.size or self.timeSteps[-1] != currentTime:
 			self.timeSteps = np.append( self.timeSteps, currentTime )
 		if not fieldName in self.fields.keys():
-			self.fields[fieldName] = np.zeros((0, self.grid.vertices.size))
+			self.fields[fieldName] = np.zeros((0, self.grid.numberOfVertices))
 
 		self.fields[fieldName] = np.vstack([self.fields[fieldName], fieldValues])
 

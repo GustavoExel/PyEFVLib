@@ -23,7 +23,7 @@ class VtuSaver(Saver):
 		# Write file
 		with open(self.outputPath, "w") as file:
 			file.write("<?xml version=\"1.0\"?>\n<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n\t<UnstructuredGrid>\n")
-			file.write(f"\t\t<Piece NumberOfPoints=\"{ self.grid.vertices.size }\" NumberOfCells=\"{ self.grid.elements.size }\">\n\t\t\t<Points>\n")
+			file.write(f"\t\t<Piece NumberOfPoints=\"{ self.grid.numberOfVertices }\" NumberOfCells=\"{ self.grid.elements.size }\">\n\t\t\t<Points>\n")
 			file.write("\t\t\t\t<DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n")
 			file.write( "".join( [ f"\t\t\t\t\t{c:.8f}\n" for vertex in self.grid.vertices for c in vertex.getCoordinates() ] ) )
 			file.write("\t\t\t\t</DataArray>\n\t\t\t</Points>\n\t\t\t<Cells>\n")

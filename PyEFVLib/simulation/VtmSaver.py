@@ -30,7 +30,7 @@ class VtmSaver(Saver):
 			with open(os.path.join(self.outputPath, "timedata", f"results_{idx}.vtu"), "w") as vtuFile:	
 				vtuFile.write( '<VTKFile type="UnstructuredGrid" version="1.0" byte_order="LittleEndian" header_type="UInt64">\n\t<UnstructuredGrid>\n\t\t<FieldData>\n' )
 				vtuFile.write( f'\t\t\t<DataArray type="Float64" Name="TimeValue" NumberOfTuples="1" format="ascii"> {timeStep} </DataArray>\n\t\t</FieldData>\n' )
-				vtuFile.write( f'\t\t<Piece NumberOfPoints="{self.grid.vertices.size}" NumberOfCells="{self.grid.elements.size}">\n\t\t\t<PointData>\n' )
+				vtuFile.write( f'\t\t<Piece NumberOfPoints="{self.grid.numberOfVertices}" NumberOfCells="{self.grid.elements.size}">\n\t\t\t<PointData>\n' )
 				for fieldName in self.fields.keys():
 					vtuFile.write( f'\t\t\t\t<DataArray type="Float64" Name="{fieldName}" format="ascii">\n' )
 					vtuFile.write("\t\t\t\t\t" + "".join([ f"{d:.15f} " for d in self.fields[fieldName][i] ]) + "\n")

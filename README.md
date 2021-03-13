@@ -13,12 +13,22 @@ This package intends to support the solution of PDEs using the Element-based Fin
 - [scipy](https://www.scipy.org/) (1.5.3);
 - [xmltodict](https://pypi.org/project/xmltodict/) (0.12.0).
 
+Also, for CGNS writing, C++ is used, and two libraries are required: [CGNS](https://cgns.github.io) and [Boost](https://www.boost.org).
+<!-- After installing them, configure their install directories in PyEFVLib > simulation > CGNS > CMakeLists.txt, and compile using
+```bash
+./install.sh
+``` -->
+
 ## Usage
 
 ```python
-import PyEFVLib
+from PyEFVLib import MSHReader, Grid, Point
+import os, numpy as np
 
-grid = PyEFVLib.read("meshes/msh/2D/Square.msh")
+path = os.path.join(*[os.path.dirname(__file__), os.path.pardir, "meshes", "Square.msh"])
+
+reader = MSHReader(path)
+grid   = Grid(reader.getData())
 
 totalVolume = 0.0
 for element in grid.elements:
@@ -26,55 +36,4 @@ for element in grid.elements:
 		totalVolume += vertex.volume
 
 print(totalVolume)
-```
-
-## Latest changes
-- ProblemData doesn't read from workspace anymore, instead you can inform the settings like so
-```python
-import PyEFVLib
-
-problemData = PyEFVLib.ProblemData(
-	meshFilePath = "{MESHES}/msh/2D/Square.msh",
-	outputFilePath = "{RESULTS}/heat_transfer_2d/linear",
-	numericalSettings = PyEFVLib.NumericalSettings( timeStep = 1e-02, tolerance = 1e-06, maxNumberOfIterations = 300 ),
-	propertyData = PyEFVLib.PropertyData({
-		"Body" : {
-			"HeatCapacity"	: 1.0,
-			"Conductivity"	: 1.0,
-			"Density"		: 1.0,
-			"HeatGeneration": 0.0,
-		},
-	}),
-	boundaryConditions = PyEFVLib.BoundaryConditions({
-		"temperature": {
-			"InitialValue": 0.0,
-			"West":	 { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Constant,"value" : 20.0 },
-			"East":	 { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Constant,"value" : 50.0 },
-			"South": { "condition" : PyEFVLib.Neumann,   "type" : PyEFVLib.Constant,"value" : 0.0 },
-			"North": { "condition" : PyEFVLib.Neumann,   "type" : PyEFVLib.Constant,"value" : 0.0 },
-		},
-	}),
-)
-```
-
-- Getting the region property now must be done using the get method
-```python
-# Before
-problemData.propertyData[region.handle]["PropertyName"]
-# Now
-problemData.propertyData.get(region.handle, "PropertyName")
-```
-
-- Creating a grid object now is made easier with problemData
-```python
-# Before
-problemData = ProblemData(model)
-reader = MSHReader(problemData.meshFilePath)
-grid = Grid(reader.getData())
-problemData.setGrid(grid)
-problemData.read()
-
-# Now
-problemData = PyEFVLib.ProblemData(meshFilePath, outputFilePath, numericalSettings, propertyData, boundaryConditions)
-grid = problemData.grid
 ```

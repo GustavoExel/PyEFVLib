@@ -28,6 +28,7 @@ class Grid:
 			vertex = Vertex(coord, handle)
 			self.vertices = np.append(self.vertices, vertex)
 			handle += 1
+		self.numberOfVertices = self.vertices.size
 
 	def buildElements(self):
 		self.innerFaceCounter = 0

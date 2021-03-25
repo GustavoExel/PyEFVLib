@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
 	problemData = PyEFVLib.ProblemData(
 		meshFilePath = "{MESHES}/msh/2D/Square.msh",
-		outputFilePath = "{RESULTS}/heat_transfer_2d/linear",
+		outputFilePath = "{RESULTS}/heat_transfer_2d",
 		numericalSettings = PyEFVLib.NumericalSettings( timeStep = 1e-02, finalTime = None, tolerance = 1e-06, maxNumberOfIterations = 300 ),
 		propertyData = PyEFVLib.PropertyData({
 			"Body" : {

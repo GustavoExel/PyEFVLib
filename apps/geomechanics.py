@@ -10,7 +10,8 @@ def geomechanics(problemData):
 	numberOfVertices = grid.numberOfVertices
 	dimension 		 = grid.dimension
 
-	saver = PyEFVLib.MeshioSaver(grid, problemData.outputFilePath, problemData.libraryPath, extension='xdmf')
+	csvSaver = PyEFVLib.CsvSaver(grid, problemData.outputFilePath, problemData.libraryPath)
+	meshioSaver = PyEFVLib.MeshioSaver(grid, problemData.outputFilePath, problemData.libraryPath, extension='xdmf')
 
 	uField    = np.repeat(0.0, dimension*numberOfVertices)
 	oldUField = np.concatenate((problemData.initialValues['u_x'], problemData.initialValues['u_y'], problemData.initialValues['u_z'])) if dimension==3 else np.concatenate((problemData.initialValues['u_x'], problemData.initialValues['u_y']))
@@ -30,7 +31,7 @@ def geomechanics(problemData):
 	rhos       = propertyData.get(0, 'rhos')
 	rhof       = propertyData.get(0, 'rhof')
 
-	g = np.array([0.0, 0.0, 0.0])[:dimension]
+	g = np.array([0.0, -9.81, 0.0])[:dimension]
 	lame = 2*G*nu/(1-2*nu)
 	Ce = np.array([[2*G+lame, lame, 0], [lame, 2*G+lame, 0], [0, 0, G]]) if dimension==2 else np.array([[2*G+lame, lame, lame, 0, 0, 0], [lame, 2*G+lame, lame, 0, 0, 0], [lame, lame, 2*G+lame, 0, 0, 0], [0, 0, 0, G, 0, 0], [0, 0, 0, 0, G, 0], [0, 0, 0, 0, 0, G]])
 	rho = phi * rhof + (1-phi) * rhos
@@ -149,7 +150,7 @@ def geomechanics(problemData):
 		# rho * g
 		for vertex in grid.vertices:
 			for coord in range(dimension):
-				independent[vertex.handle+coord*numberOfVertices] += vertex.volume * rho * g[coord]
+				independent[vertex.handle+coord*numberOfVertices] -= vertex.volume * rho * g[coord]
 
 		# S * (1/timeStep) * p_old
 		for vertex in grid.vertices:
@@ -246,11 +247,18 @@ def geomechanics(problemData):
 		currentTime += timeStep
 		iteration += 1
 
-		saver.save('u_x', uField[0*numberOfVertices:1*numberOfVertices], currentTime)
-		saver.save('u_y', uField[1*numberOfVertices:2*numberOfVertices], currentTime)
+		csvSaver.save('u_x', uField[0*numberOfVertices:1*numberOfVertices], currentTime)
+		csvSaver.save('u_y', uField[1*numberOfVertices:2*numberOfVertices], currentTime)
 		if dimension == 3:
-			saver.save('u_z', uField[2*numberOfVertices:3*numberOfVertices], currentTime)
-		saver.save('p', pField, currentTime)
+			csvSaver.save('u_z', uField[2*numberOfVertices:3*numberOfVertices], currentTime)
+		csvSaver.save('p', pField, currentTime)
+
+		meshioSaver.save('u_x', uField[0*numberOfVertices:1*numberOfVertices], currentTime)
+		meshioSaver.save('u_y', uField[1*numberOfVertices:2*numberOfVertices], currentTime)
+		if dimension == 3:
+			meshioSaver.save('u_z', uField[2*numberOfVertices:3*numberOfVertices], currentTime)
+		meshioSaver.save('p', pField, currentTime)
+
 
 		print('{:>9}	{:>14.2e}	{:>14.2e}	{:>14.2e}'.format(iteration, currentTime, timeStep, difference))
 		converged = ( difference <= tolerance ) or ( currentTime >= problemData.finalTime ) or ( iteration >= problemData.maxNumberOfIterations )
@@ -258,13 +266,14 @@ def geomechanics(problemData):
 		if iteration >= problemData.maxNumberOfIterations:
 			break
 
-	saver.finalize()
+	csvSaver.finalize()
+	meshioSaver.finalize()
 
 def main():
 	problemData = PyEFVLib.ProblemData(
-		meshFilePath = "{MESHES}/msh/2D/Square.msh",
-		outputFilePath = "{RESULTS}/geomechanics/linear",
-		numericalSettings = PyEFVLib.NumericalSettings( timeStep = 10, tolerance = 0.0001, maxNumberOfIterations = 70 ),
+		meshFilePath = "{MESHES}/msh/2D/column_tri.msh",
+		outputFilePath = "{RESULTS}/geomechanics",
+		numericalSettings = PyEFVLib.NumericalSettings( timeStep = 100, tolerance = 10, maxNumberOfIterations = 600 ),
 		propertyData = PyEFVLib.PropertyData({
 			'Body':
 			{
@@ -292,14 +301,14 @@ def main():
 				'West': { 'condition' : PyEFVLib.Neumann, 'type' : PyEFVLib.Constant, 'value' : 0.0 },
 				'East': { 'condition' : PyEFVLib.Neumann, 'type' : PyEFVLib.Constant, 'value' : 0.0 },
 				'South': { 'condition' : PyEFVLib.Dirichlet, 'type' : PyEFVLib.Constant, 'value' : 0.0 },
-				'North': { 'condition' : PyEFVLib.Neumann, 'type' : PyEFVLib.Constant, 'value' : 100000.0 },
+				'North': { 'condition' : PyEFVLib.Neumann, 'type' : PyEFVLib.Constant, 'value' : 1e5 },
 			},
 			'p': {
 				'InitialValue': 0.0,
 				'West': { 'condition' : PyEFVLib.Neumann, 'type' : PyEFVLib.Constant, 'value' : 0.0 },
 				'East': { 'condition' : PyEFVLib.Neumann, 'type' : PyEFVLib.Constant, 'value' : 0.0 },
 				'South': { 'condition' : PyEFVLib.Neumann, 'type' : PyEFVLib.Constant, 'value' : 0.0 },
-				'North': { 'condition' : PyEFVLib.Neumann, 'type' : PyEFVLib.Constant, 'value' : 0.0 },
+				'North': { 'condition' : PyEFVLib.Dirichlet, 'type' : PyEFVLib.Constant, 'value' : 0.0 },
 			},
 		}),
 	)

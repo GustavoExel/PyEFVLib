@@ -190,7 +190,7 @@ if __name__ == "__main__":
 
 	problemData = PyEFVLib.ProblemData(
 		meshFilePath = "{MESHES}/msh/2D/Fine.msh",
-		outputFilePath = "{RESULTS}/stress_equilibrium/linear",
+		outputFilePath = "{RESULTS}/stress_equilibrium",
 		propertyData = PyEFVLib.PropertyData({
 		    "Body": {
 		    	"Density":		 1800.0,

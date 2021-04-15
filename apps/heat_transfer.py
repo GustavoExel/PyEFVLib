@@ -151,7 +151,7 @@ class HeatTransferSolver(Solver):
 			self.converged = True
 			return
 
-def heatTransfer(problemData, solve=True, extension="csv", saverType="default", transient=True, verbosity=True):
+def heatTransfer(problemData, solve=True, extension="xdmf", saverType="default", transient=True, verbosity=True):
 	solver = HeatTransferSolver(problemData, extension=extension, saverType=saverType, transient=transient, verbosity=verbosity)
 	if solve:
 		solver.solve()

@@ -3,7 +3,7 @@ from PyEFVLib.simulation.BoundaryConditions import DirichletBoundaryCondition, N
 import json, os, numpy as np
 
 class NumericalSettings:
-	def __init__(self, timeStep, finalTime=np.inf, tolerance=None, maxNumberOfIterations=1000):
+	def __init__(self, timeStep, finalTime=np.inf, tolerance=1e-4, maxNumberOfIterations=1000):
 		self.timeStep = timeStep
 		self.finalTime = finalTime
 		self.tolerance = tolerance

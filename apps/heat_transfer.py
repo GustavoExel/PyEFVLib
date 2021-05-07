@@ -165,24 +165,40 @@ if __name__ == "__main__":
 	problemData = PyEFVLib.ProblemData(
 		meshFilePath = "{MESHES}/msh/2D/Square.msh",
 		outputFilePath = "{RESULTS}/heat_transfer_2d",
-		numericalSettings = PyEFVLib.NumericalSettings( timeStep = 1e-02, finalTime = None, tolerance = 1e-06, maxNumberOfIterations = 300 ),
+		numericalSettings = PyEFVLib.NumericalSettings( timeStep = 1e-02, finalTime = None, tolerance = 1e-06, maxNumberOfIterations = 50 ),
 		propertyData = PyEFVLib.PropertyData({
 			"Body" : {
 				"HeatCapacity"	: 1.0,
 				"Conductivity"	: 1.0,
 				"Density"		: 1.0,
-				"HeatGeneration": 0.0,
+				"HeatGeneration": 100.0,
 			},
 		}),
 		boundaryConditions = PyEFVLib.BoundaryConditions({
 			"temperature": {
 				"InitialValue": 0.0,
-				"West":	 { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Constant,"value" : 0.0 },
-				"East":	 { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Constant,"value" : 0.0 },
-				"South": { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Constant,"value" : 0.0 },
-				"North": { "condition" : PyEFVLib.Dirichlet, "type" : PyEFVLib.Variable,"value" : "sin(pi*x)" },
+				"West":	 { "condition" : PyEFVLib.Neumann, "type" : PyEFVLib.Constant,"value" : 0.0 },
+				"East":	 { "condition" : PyEFVLib.Neumann, "type" : PyEFVLib.Constant,"value" : 0.0 },
+				"South": { "condition" : PyEFVLib.Neumann, "type" : PyEFVLib.Constant,"value" : 0.0 },
+				"North": { "condition" : PyEFVLib.Neumann, "type" : PyEFVLib.Constant,"value" : 0.0 },
 			},
 		}),
 	)
 
-	heatTransfer(problemData, extension=extension, saverType=saverType, transient=not "-p" in sys.argv, verbosity="-v" in sys.argv)
+	s = heatTransfer(problemData, extension=extension, saverType=saverType, transient=not "-p" in sys.argv, verbosity="-v" in sys.argv)
+
+	X,Y = zip(*[(v.x,v.y) for v in s.grid.vertices])
+	T = s.temperatureField
+
+	import matplotlib.pyplot as plt
+
+	_T = [sum(TL)/len(TL) for TL in s.saver.fields["temperature"]]
+	t = s.timeStep * np.arange(1,1+len(s.saver.fields["temperature"])) - s.timeStep
+	Ta = [tt*100 for tt in t]
+
+	fig,ax=plt.subplots()
+	ax.plot(t,Ta, color='k')
+	ax.scatter(t,_T, marker='.', color='r')
+	ax.set_ylabel("Temperature (K)")
+	ax.set_xlabel("Time (s)")
+	plt.show()

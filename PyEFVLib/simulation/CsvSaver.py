@@ -6,7 +6,7 @@ class CsvSaver(Saver):
 	def __init__(self, grid, outputPath, basePath, fileName="Results", **kwargs): 
 		Saver.__init__(self, grid, outputPath, basePath, 'csv', fileName)
 
-	def finalize(self):
+	def finalize(self,i0=1):
 		"""
 		This saves the results organized in columns, being the columns respectively:
 		Index, X, Y, Z, TimeStep1 - Field1, TimeStep1 - Field2, ... , TimeStep2 - Field1, TimeStep2 - Field2, ...
@@ -20,7 +20,7 @@ class CsvSaver(Saver):
 		timeData = ["", "", ""]
 
 		fieldData = np.array([ self.fields[fieldName][tsIdx] for tsIdx in range( self.timeSteps.size ) for fieldName in self.fields.keys() ])
-		labels += [ f"TimeStep{tsIdx+1} - {fieldName}" for tsIdx in range( self.timeSteps.size ) for fieldName in self.fields.keys() ]
+		labels += [ f"TimeStep{tsIdx+i0} - {fieldName}" for tsIdx in range( self.timeSteps.size ) for fieldName in self.fields.keys() ]
 		timeData += [ timeStepSize for timeStepSize in self.timeSteps for fieldIdx in range( len(self.fields) ) ]
 
 		data = np.array([X, Y, Z, *fieldData]).T

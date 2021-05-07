@@ -71,7 +71,27 @@ class BoundaryConditions:
 		self.neumannBoundaries   = { variable : [] for variable in variables }
 		self.dirichletBoundaries = { variable : [] for variable in variables }
 		self.boundaryConditions  = [ dict() for boundary in self.problemData.grid.boundaries ]
-		self.initialValues		 = { variable : np.repeat( self.boundaryConditionsDict[variable]["InitialValue"], self.problemData.grid.numberOfVertices ) for variable in variables }
+
+		def getFunction(expr):
+			from numpy import pi, sin, cos, tan, arcsin, arccos, arctan, sinh, cosh, tanh, arcsinh, arccosh, arctanh, sqrt, e , log, exp, inf, mod, floor
+			def function(x,y,z):
+				return eval( expr.replace('x',str(x)).replace('y',str(y)).replace('z',str(z)) )
+			return function
+		
+		self.initialValues = dict()
+		for variable in variables:
+			initialValue = self.boundaryConditionsDict[variable]["InitialValue"]
+			numberOfVertices = self.problemData.grid.numberOfVertices
+			if np.isscalar(initialValue) and not isinstance(initialValue, (str,)):
+				self.initialValues[variable] = np.repeat( initialValue, numberOfVertices )
+			elif isinstance( initialValue, (list, np.ndarray) ):
+				if len(initialValue) == numberOfVertices:
+					self.initialValues[variable] = np.array(initialValue)
+				else:
+					raise Exception(f"Length of \"{variable}\" InitialValue must be equal to the number of vertices ({numberOfVertices})")
+			elif isinstance( initialValue, (str,) ):
+				function = getFunction(initialValue)
+				self.initialValues[variable] = np.array([function(v.x,v.y,v.z) for v in self.problemData.grid.vertices])
 
 		bcHandle = 0
 		for idx, boundary in enumerate(self.problemData.grid.boundaries):

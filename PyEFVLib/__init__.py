@@ -12,7 +12,6 @@ from PyEFVLib.geometry.Boundary import *
 from PyEFVLib.geometry.Element import *
 from PyEFVLib.geometry.Grid import *
 from PyEFVLib.simulation.BoundaryConditions import *
-from PyEFVLib.simulation.CgnsSaver import *
 from PyEFVLib.simulation.CsvSaver import *
 from PyEFVLib.simulation.VtuSaver import *
 from PyEFVLib.simulation.VtmSaver import *

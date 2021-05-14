@@ -1,0 +1,11 @@
+include LICENSE
+recursive-include PyEFVLib *.py
+recursive-include apps *.py
+recursive-include meshes *.geo
+recursive-include meshes *.h5
+recursive-include meshes *.msh
+recursive-include meshes *.py
+recursive-include meshes *.xdmf
+recursive-include meshes *.xml
+recursive-include workspace *.py
+recursive-include workspace *.txt

@@ -1,6 +1,6 @@
-from PyEFVLib.geometry.Facet import Facet
-from PyEFVLib.geometry.Point import Point
-from PyEFVLib.geometry.OuterFace import OuterFace
+from PyEFVLib.Facet import Facet
+from PyEFVLib.Point import Point
+from PyEFVLib.OuterFace import OuterFace
 import numpy as np
 
 class Boundary:

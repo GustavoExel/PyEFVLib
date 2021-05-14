@@ -1,4 +1,4 @@
-from PyEFVLib.geometry.Point import Point
+from PyEFVLib.Point import Point
 import numpy as np
 
 class OuterFace:

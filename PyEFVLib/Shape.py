@@ -1,5 +1,5 @@
 import numpy as np
-from PyEFVLib.geometry.Point import Point
+from PyEFVLib.Point import Point
 
 def areCoplanar(p1,p2,p3,p4):
 	return bool( np.dot( (p2-p1), np.cross((p3-p1), (p4-p1)) ) < 1e-10 )

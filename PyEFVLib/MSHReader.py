@@ -1,4 +1,4 @@
-from PyEFVLib.geometry.GridData import GridData
+from PyEFVLib.GridData import GridData
 
 # Msh format encodes elements in the following manner:
 # i x x p e v1 v2 v3 - i[index], xx[shape code], p[physical index], e[elementary index], vi[vertex]

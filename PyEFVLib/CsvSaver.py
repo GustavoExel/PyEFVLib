@@ -1,6 +1,6 @@
 import numpy as np
 import subprocess, os, sys
-from PyEFVLib.simulation.Saver import Saver
+from PyEFVLib.Saver import Saver
 
 class CsvSaver(Saver):
 	def __init__(self, grid, outputPath, basePath, fileName="Results", **kwargs): 

@@ -1,11 +1,11 @@
 import numpy as np
-from PyEFVLib.geometry.Shape import Triangle, Quadrilateral, Tetrahedron, Hexahedron, Prism, Pyramid
-from PyEFVLib.geometry.Vertex import Vertex
-from PyEFVLib.geometry.Element import Element
-from PyEFVLib.geometry.Region import Region
-from PyEFVLib.geometry.Facet import Facet
-from PyEFVLib.geometry.Boundary import Boundary
-from PyEFVLib.geometry.GridData import GridData
+from PyEFVLib.Shape import Triangle, Quadrilateral, Tetrahedron, Hexahedron, Prism, Pyramid
+from PyEFVLib.Vertex import Vertex
+from PyEFVLib.Element import Element
+from PyEFVLib.Region import Region
+from PyEFVLib.Facet import Facet
+from PyEFVLib.Boundary import Boundary
+from PyEFVLib.GridData import GridData
 
 class Grid:
 	def __init__(self, gridData):

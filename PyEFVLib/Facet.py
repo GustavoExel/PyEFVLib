@@ -1,5 +1,5 @@
-from PyEFVLib.geometry.Point import Point
-from PyEFVLib.geometry.OuterFace import OuterFace
+from PyEFVLib.Point import Point
+from PyEFVLib.OuterFace import OuterFace
 import numpy as np
 
 class Facet:

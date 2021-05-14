@@ -1,4 +1,4 @@
-from PyEFVLib.geometry.GridData import GridData
+from PyEFVLib.GridData import GridData
 import meshio
 import numpy
 import xmltodict

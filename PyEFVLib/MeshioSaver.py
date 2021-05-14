@@ -1,8 +1,8 @@
 import numpy as np
 import subprocess, os, sys
 import meshio
-from PyEFVLib.simulation.Saver import Saver
-from PyEFVLib.geometry.Shape import Triangle, Quadrilateral, Tetrahedron, Hexahedron, Prism, Pyramid
+from PyEFVLib.Saver import Saver
+from PyEFVLib.Shape import Triangle, Quadrilateral, Tetrahedron, Hexahedron, Prism, Pyramid
 
 class MeshioSaver(Saver):
 	# line triangle quad tetra pyramid wedge hexahedron

@@ -1,7 +1,7 @@
 import numpy as np
 import subprocess, os, sys
-from PyEFVLib.geometry.Shape import Triangle, Quadrilateral, Tetrahedron, Hexahedron, Prism, Pyramid
-from PyEFVLib.simulation.Saver import Saver
+from PyEFVLib.Shape import Triangle, Quadrilateral, Tetrahedron, Hexahedron, Prism, Pyramid
+from PyEFVLib.Saver import Saver
 
 class VtuSaver(Saver):
 	def __init__(self, grid, outputPath, basePath, fileName="Results", **kwargs): 

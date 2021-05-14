@@ -1,6 +1,6 @@
 import numpy as np
-from PyEFVLib.geometry.Point import Point
-from PyEFVLib.geometry.InnerFace import InnerFace
+from PyEFVLib.Point import Point
+from PyEFVLib.InnerFace import InnerFace
 
 class Element:
 	def __init__(self, grid, verticesIndexes, handle):

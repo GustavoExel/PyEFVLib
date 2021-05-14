@@ -1,5 +1,5 @@
 import numpy as np
-from PyEFVLib.geometry.Point import Point
+from PyEFVLib.Point import Point
 
 class InnerFace:
 	def __init__(self, element, handle, local):

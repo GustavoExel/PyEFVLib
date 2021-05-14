@@ -1,5 +1,5 @@
 import PyEFVLib
-from PyEFVLib.simulation.BoundaryConditions import DirichletBoundaryCondition, NeumannBoundaryCondition 
+from PyEFVLib.BoundaryConditions import DirichletBoundaryCondition, NeumannBoundaryCondition 
 import json, os, numpy as np
 
 class NumericalSettings:

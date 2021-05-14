@@ -5,10 +5,10 @@ with open("README.md", "r") as f:
 
 setup(
 	name="PyEFVLib",
-	version="1.0.0",
+	version="1.0.5",
 	description="A library that facilitates the implementation of the Element-based Finite Volumes Method (EbFVM) to solve partial differential equations (PDEs)",
-	py_modules=["geometry/Vertex", "geometry/OuterFace", "geometry/GridData", "geometry/InnerFace", "geometry/Point", "geometry/Shape", "geometry/Region", "geometry/Facet", "geometry/MSHReader", "geometry/XDMFReader", "geometry/Boundary", "geometry/Element", "geometry/Grid", "simulation/BoundaryConditions", "simulation/CsvSaver", "simulation/VtuSaver", "simulation/VtmSaver", "simulation/MeshioSaver", "simulation/ProblemData", "simulation/Solver", "simulation/LinearSystem"],
-	package_dir={"": "PyEFVLib"},
+	py_modules=["PyEFVLib/__init__", "PyEFVLib/Vertex", "PyEFVLib/OuterFace", "PyEFVLib/GridData", "PyEFVLib/InnerFace", "PyEFVLib/Point", "PyEFVLib/Shape", "PyEFVLib/Region", "PyEFVLib/Facet", "PyEFVLib/MSHReader", "PyEFVLib/XDMFReader", "PyEFVLib/Boundary", "PyEFVLib/Element", "PyEFVLib/Grid", "PyEFVLib/BoundaryConditions", "PyEFVLib/Saver", "PyEFVLib/CsvSaver", "PyEFVLib/VtuSaver", "PyEFVLib/VtmSaver", "PyEFVLib/MeshioSaver", "PyEFVLib/ProblemData", "PyEFVLib/Solver", "PyEFVLib/LinearSystem"],
+	# package_dir={"": "PyEFVLib"},
 	classifiers=[
 		"Programming Language :: Python :: 3",
 		"Programming Language :: Python :: 3.6",
@@ -24,6 +24,8 @@ setup(
 		"pandas ~= 1.1.2",
 		"scipy ~= 1.5.2",
 		"meshio ~= 4.3.4",
+		"h5py ~= 3.2.1",
+		"xmltodict ~= 0.12.0",
 	],
 	url="https://github.com/GustavoExel/PyEFVLib",
 	author="Gustavo Exel",

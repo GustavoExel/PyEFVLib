@@ -1,3 +1,4 @@
+include *.in
 include LICENSE
 recursive-include PyEFVLib *.py
 recursive-include apps *.py

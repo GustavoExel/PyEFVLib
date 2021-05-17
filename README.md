@@ -464,7 +464,7 @@ and it has the following property:
 
 <br/><br/>
 Now we need to turn our attention to the boundary conditions. Previously we simplified our equation by discretizing it only in the interior of the domain, without making considerations about its boundaries. Note that we can express Control Surface = Control Surface (inside the domain) + Control Surface (where the Neumann boundary condition is applied) + Control Surface (where the Dirichlet boundary condition is applied).
-![eq9](https://latex.codecogs.com/gif.latex?%5Cdpi%7B120%7D%20%5Cbg_white%20%5Clarge%20%5CGamma%20_%7Bi%7D%20%3D%5CGamma%20_%7Bi%7D%20%5Ccup%20%5CGamma%20_%7Bi%2C_%7BNeumann%7D%7D%20%5Ccup%20%5CGamma%20_%7Bi%2C_%7BDirichlet%7D%7D)
+![eq9](https://latex.codecogs.com/png.image?%5Cdpi%7B120%7D%20%5Cbg_white%20%5CGamma%20_%7Bi%7D%20=%5CGamma%20_%7Bi,%5C%20%5Ctext%7Binner%7D%7D%20%5Ccup%20%5CGamma%20_%7Bi,%5C%20%5Ctext%7BNeumann%7D%7D%20%5Ccup%20%5CGamma%20_%7Bi,%5C%20%5Ctext%7BDirichlet%7D%7D)
 
 So in the ![eq10](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Cint%20_%7B%5CGamma%20_%7Bi%7D%7D%28%20k%5Cnabla%20T%29%20%5Ccdotp%20%5Chat%7Bn%7D%20%5C%20d%5CGamma%20_%7Bi%7D%20&plus;%5Cint%20_%7B%5COmega%20_%7Bi%7D%7D%20q%27%27%27%5C%20d%5COmega%20_%7Bi%7D%20%3D%5Cint%20_%7B%5COmega%20_%7Bi%7D%7D%20%5Crho%20c_%7Bp%7D%5Ctfrac%7B%5Cpartial%20T%7D%7B%5Cpartial%20t%7D%20d%5COmega%20_%7Bi%7D) step we could have made the following substitution:
 
@@ -614,7 +614,7 @@ if __name__ == "__main__":
 ---
 ## 6. 3rd-party Softwares
 ### 6.1 - Gmsh
-Notice that in the workflow presented, the mesh is simply imported by passing its path, but it need to be generated. In order to do so, the recommended software is [Gmsh](https://gmsh.info/), which is an open-source mesh generator with built-in CAD tools. The only (and minor) downside of the mesh importing at the moment is that the mesh must be from the 2.2 version of .msh. But that's very simple. Just download the latest version of Gmsh, follow the step-by-step:
+Notice that in the workflow presented, the mesh is simply imported by passing its path, but it need to be generated. In order to do so, the recommended software is [Gmsh](https://gmsh.info/), which is an open-source mesh generator with built-in CAD tools. The only (and minor) downside of the mesh importing at the moment is that the mesh must be from the 2.2 version of .msh. But that's very simple. Just download the latest version of Gmsh, and follow the step-by-step:
 
 1. Open the Help menu
 2. Choose Current Options and Workspace
@@ -626,9 +626,11 @@ Notice that in the workflow presented, the mesh is simply imported by passing it
 
 
 ### 6.2 - Paraview
-After solving the simulation, you'll want to view and analyize the results you generated. One option is to save it as a .csv file (using the CsvSaver) and open it using [pandas](https://pandas.pydata.org/), and you could visualize it using [matplotlib](https://matplotlib.org/). But if you want to view your results, a much better way of doing this is with [Paraview](https://www.paraview.org/).
+After solving the simulation, you'll want to view and analyize the results you generated. One option is to save it as a .csv file (using the `PyEFVLib.CsvSaver` class) and open it using [pandas](https://pandas.pydata.org/), and you could visualize it using [matplotlib](https://matplotlib.org/). But if you want to view your results, a much better way of doing this is with [Paraview](https://www.paraview.org/).
 
 Paraview is an open-source data analysis and visualization application, and by saving the results in formats such as .xdmf (recommended), .vtu, .vtm, you can visualize it using paraview.
+
+![image](https://user-images.githubusercontent.com/57679731/118515907-344ec480-b70c-11eb-90aa-8b3ee6fa090e.png)
 
 ---
 ## 7. 2D vs 3D considerations
@@ -636,8 +638,40 @@ One great advantage of using the EbFVM, is that the difference between 2D and 3D
 
 ---
 ## 8. bellbird
-Although PyEFVLib makes the use of EbFVM quite simple for the user, it is still required for the user to know the numerical method, discretize the equations, and when solving bigger systems of differential equations the coupling of the equation in the linear system can become a little tricky, and can demand more attention to little details, while also requiring a lot more lines of code. For that reason, the [bellbird](https://github.com/GustavoExel/bellbird) library makes it for the user way more simple to solve systems of PDEs. The user informs the equations as string, and the library integrates them, discretizes them, and writes a script very similar to the shown in the tutorial using PyEFVLib.
+Although PyEFVLib makes the use of EbFVM quite simple for the user, it is still required for the user to know the numerical method, how to discretize the equations and the full structure of the library. And when solving bigger systems of differential equations the coupling of the equations in the linear system can become a quite tricky, and can demand more attention to little details, while also requiring a lot more lines of code. For that reason, the [bellbird](https://github.com/GustavoExel/bellbird) library makes it way more simple for the user to solve systems of PDEs. The user informs the equations as string, and the library parses, integrates and discretizes them, and writes a script very similar to one the shown in the tutorial using PyEFVLib.
 
 Then, if the user wants, they can change the code, but with a huge headstart.
 
-At the moment, the library is still under development, but it can already solve some system of equations and offer a basis for anyone who wants to solve their own problem.
+At the moment, the library is still under development, but it can already solve some systems of equations and offer a solid basis for anyone who wants to solve their own problem. Check out the usage for the problem we solved earlier:
+
+```python
+import bellbird
+
+model = bellbird.Model(
+	name = "Heat Transfer",
+	equationsStr = ["k * div( grad(T) ) + q = rho * cp * d/dt(T)"],
+	variables   = ["T"], # temperature [K]
+	properties = {
+		"Body":{
+			"k" : 22.0,	# [W/m.K]	- conductivity
+			"rho" : 8960.0,	# [kg/m³]	- density
+			"cp" : 377.0,	# [J/kg.K]	- specific heat
+			"q" : 5000.0,	# [W/m³]	- heat generation
+		},
+	},
+	boundaryConditions = [
+		bellbird.InitialCondition("T", 0.0),
+		bellbird.BoundaryCondition("T", bellbird.Dirichlet, "West", 300.0),
+		bellbird.BoundaryCondition("T", bellbird.Dirichlet, "East", 400.0),
+		bellbird.BoundaryCondition("T", bellbird.Neumann, "South", 0.0),
+		bellbird.BoundaryCondition("T", bellbird.Neumann, "North", 0.0),
+	],
+	meshPath = "mesh.msh",
+	timeStep = 1000.0,
+	tolerance = 1e-4,
+	maxNumberOfIterations = 500,
+	sparse = False,
+)
+
+model.run()
+```

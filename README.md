@@ -592,9 +592,9 @@ if __name__ == "__main__":
         propertyData = PyEFVLib.PropertyData({
             "Body": {
                 "conductivity"   : 22.0,   # [W/m.K]
-                "density"        : 8960.0, # [kg/m³]
+                "density"        : 8960.0, # [kg/m3]
                 "specificHeat"   : 377.0,  # [J/kg.K]
-                "heatGeneration" : 5000.0, # [W/m³]
+                "heatGeneration" : 5000.0, # [W/m3]
             },
         }),
         boundaryConditions = PyEFVLib.BoundaryConditions({
@@ -654,9 +654,9 @@ model = bellbird.Model(
 	properties = {
 		"Body":{
 			"k" : 22.0,	# [W/m.K]	- conductivity
-			"rho" : 8960.0,	# [kg/m³]	- density
+			"rho" : 8960.0,	# [kg/m3]	- density
 			"cp" : 377.0,	# [J/kg.K]	- specific heat
-			"q" : 5000.0,	# [W/m³]	- heat generation
+			"q" : 5000.0,	# [W/m3]	- heat generation
 		},
 	},
 	boundaryConditions = [

@@ -2,16 +2,16 @@
 PyEFVLib is a Python library that provides tools to support the solution of systems of partial differential equations (PDEs) using the Element-based Finite Volumes Method (EbFVM)
 
 ## Summary
-1. **Instalation**
+1. **Installation**
 2. **Numerical Method**
 3. **PyEFVLib Classes - Geometrical Entities**
-4. **PyEFVLib Classes - Non Geometrical Entities**
+4. **PyEFVLib Classes - Non-Geometrical Entities**
 5. **Tutorial**
 6. **3rd-party Softwares**
 7. **2D vs 3D considerations**
 8. **bellbird**
 
-## 1. Instalation
+## 1. Installation
 Install PyEFVLib using pip, by typing in the command line:
 
 ```bash
@@ -53,11 +53,11 @@ And applying the [divergence theorem](https://en.wikipedia.org/wiki/Divergence_t
 
 
 Previously it was shown that a differential equation in the differential form can be integrated in any control volume, but to achieve a detailed solution along the domain of interest, the finite volume method discretizes the domain in several control volumes forming a mesh. The more refined the mesh, the better the solution to the problem will be.
-> Note: The black bordered triangles shown in the figure are actually elements, the control volumes are outlined by a blue lines.
+> Note: The black bordered triangles shown in the figure are actually the elements, the control volumes are outlined by the blue lines.
 
 ---
 ### 2.4 - Field Approximations
-As it is the nature of PDEs, the equations involve spatial derivatives, but since we are storing a finite number of variables, we need a way to aproximate the field continuously to evaluate the spatial derivatives, and EbFVM does this using the shape functions.
+As it is the nature of PDEs, the equations involve spatial derivatives, but since we are storing a finite number of variables, we need a way to approximate the field continuously to evaluate the spatial derivatives, and the EbFVM does this using the shape functions.
 
 We'll start by evaluating the field within an element of our mesh. It'll be expressed by a linear combination of the property values at the vertices of the element, and the weight of the property at each vertex is given by the shape functions at each point inside the element, as in the figure below: 
 
@@ -164,7 +164,7 @@ The innerFaces are inside the element, but they surround the control volumes. Th
 | element                | the *innerFace* element                                                                      |
 | area                   | the *innerFace* area (*Point* object)                                                    |
 | centroid               | the *innerFace* centroid (*Point* object)                                                    |
-| globalDerivatives      | a numpy.array\[d,m\] containing the gradient operator. Multiply by a m-dimensional array containing the property at the vertices of its element to get the gradient of the property at the *innerFace*                                                          |
+| globalDerivatives      | a numpy.array\[d,m\] containing the gradient operator. Multiply by an m-dimensional array containing the property at the vertices of its element to get the gradient of the property at the *innerFace*                                                          |
 
 | Method                     | Parameters  | Return type        | Description                                                                       |
 | :------------------------- | :---------: | :----------------- | :-------------------------------------------------------------------------------- |
@@ -265,7 +265,7 @@ The two BoundaryConditions classes are
 | :------- | :-------------------- | :---------- | :-------------------------------------------------------------------------------- |
 | getValue | index, time=0.0       | float       | if *expression*==False, returns *value*. Otherwise, will parse the *value* string |
 
-If `expression==True`, the `value` string is an expression that will be parsed using the buit-in method `eval`.
+If `expression==True`, the `value` string is an expression that will be parsed using the built-in method `eval`.
 It may contain the variables `x`, `y` and `z`, which are equal respectively to `grid.vertices[index].x`, `grid.vertices[index].y` and `grid.vertices[index].z`, as well as `t`, which is equal to the argument *time*.
 The following functions/constants can also be used: `pi, sin, cos, tan, arcsin, arccos, arctan, sinh, cosh, tanh, arcsinh, arccosh, arctanh, sqrt, e , log, exp, inf, mod, floor` (which have been imported from the module [numpy](https://numpy.org/)).
 
@@ -273,7 +273,7 @@ The Dirichlet boundary condition means that the unknown variable is being prescr
 
 
 ---
-## 4. PyEFVLib Classes - Non Geometrical Entities
+## 4. PyEFVLib Classes - Non-Geometrical Entities
 
 Besides grid entities generation that facilitates the solution of PDEs, PyEFVLib also offers some I/O classes, some of which are integrated with other I/O libraries such as [meshio](https://github.com/nschloe/meshio).
 
@@ -305,8 +305,8 @@ This way in order to keep everything simple ProblemData only needs 5 arguments t
 | :------------------   | :------- | :------: | -------------------------------------------------------------------- |
 | timeStep              | float    |    -     | step in time to be increased                                          |
 | finalTime             | float  	 |   inf    | when the simulation reaches this time it'll stop                      |
-| tolerance             | float    |   1e-4   | can be a steady state criteria or an iterative tolerance (it is up to who writes the solver and can be used in both ways)   |
-| maxNumberOfIterations | int      |   1000   | when the simulation reach this number of iterations it'll stop        |
+| tolerance             | float    |   1e-4   | can be a steady state criterion or an iterative tolerance (it is up to who writes the solver and can be used in both ways)   |
+| maxNumberOfIterations | int      |   1000   | when the simulation reaches this number of iterations it'll stop        |
 
 - **4.1.2 - PropertyData**
 
@@ -390,7 +390,7 @@ The current savers are:
 
 ---
 ## 5. Tutorial
-In order to demonstrate the library classes we'll sove the heat transfer equation. Let's remember the equations:
+In order to demonstrate the library classes we'll solve the heat transfer equation. Let's remember the equations:
 ![eq7](https://latex.codecogs.com/gif.latex?%5Cdpi%7B120%7D%20%5Cbg_white%20%5Clarge%20%5Cnabla%20%5Ccdotp%20%28%20k%5Cnabla%20T%29%20&plus;q%27%27%27%3D%5Crho%20c_%7Bp%7D%5Ctfrac%7B%5Cpartial%20T%7D%7B%5Cpartial%20t%7D%5C%5C%20%5Cint%20_%7B%5COmega%20_%7Bi%7D%7D%5B%20%5Cnabla%20%5Ccdotp%20%28%20k%5Cnabla%20T%29%20&plus;q%27%27%27%5D%20%5C%20d%5COmega%20_%7Bi%7D%20%3D%5Cint%20_%7B%5COmega%20_%7Bi%7D%7D%20%5Crho%20c_%7Bp%7D%5Ctfrac%7B%5Cpartial%20T%7D%7B%5Cpartial%20t%7D%20d%5COmega%20_%7Bi%7D%5C%5C%20%5Cint%20_%7B%5CGamma%20_%7Bi%7D%7D%28%20k%5Cnabla%20T%29%20%5Ccdotp%20%5Chat%7Bn%7D%20%5C%20d%5CGamma%20_%7Bi%7D%20&plus;%5Cint%20_%7B%5COmega%20_%7Bi%7D%7D%20q%27%27%27%5C%20d%5COmega%20_%7Bi%7D%20%3D%5Cint%20_%7B%5COmega%20_%7Bi%7D%7D%20%5Crho%20c_%7Bp%7D%5Ctfrac%7B%5Cpartial%20T%7D%7B%5Cpartial%20t%7D%20d%5COmega%20_%7Bi%7D%5C%5C%20%5Csum%20_%7Bf%5C%20%5Cin%20%5C%20%5CGamma%20_%7Bi%7D%7D%5Csum%20_%7Bip%5C%20%5Cin%20%5C%20f%7D%28%20k%5Cnabla%20T%29_%7Bip%7D%20%5Ccdotp%20%5Coverrightarrow%7B%5CDelta%20s_%7Bip%7D%7D%20&plus;q%27%27%27%5CDelta%20%5COmega%20_%7Bi%7D%20%3D%5Crho%20c_%7Bp%7D%5Ctfrac%7B%5Cpartial%20T%7D%7B%5Cpartial%20t%7D%20%5CDelta%20%5COmega%20_%7Bi%7D)
 
 ![eq8](https://latex.codecogs.com/gif.latex?%5Cdpi%7B120%7D%20%5Cbg_white%20%5Clarge%20%5Cint%5Climits%20_%7Bt%7D%5E%7Bt&plus;%5CDelta%20t%7D%5Cleft%5B%5Csum%20_%7Bf%5C%20%5Cin%20%5C%20%5CGamma%20_%7Bi%7D%7D%5Csum%20_%7Bip%5C%20%5Cin%20%5C%20f%7D%28%20k%5Cnabla%20T%29_%7Bip%7D%20%5Ccdotp%20%5Coverrightarrow%7B%5CDelta%20s_%7Bip%7D%7D%5Cright%5D%20dt&plus;%5Cint%5Climits%20_%7Bt%7D%5E%7Bt&plus;%5CDelta%20t%7D%20q%27%27%27%5CDelta%20%5COmega%20_%7Bi%7D%20%5C%20dt%3D%5Cint%5Climits%20_%7Bt%7D%5E%7Bt&plus;%5CDelta%20t%7D%20%5Crho%20c_%7Bp%7D%5Ctfrac%7B%5Cpartial%20T%7D%7B%5Cpartial%20t%7D%20%5CDelta%20%5COmega%20_%7Bi%7D%20%5C%20dt%5C%5C%20%5Csum%20_%7Bf%5C%20%5Cin%20%5C%20%5CGamma%20_%7Bi%7D%7D%5Csum%20_%7Bip%5C%20%5Cin%20%5C%20f%7D%28%20k%5Cnabla%20T%29_%7Bip%7D%20%5Ccdotp%20%5Coverrightarrow%7B%5CDelta%20s_%7Bip%7D%7D%20%5C%20%5CDelta%20t&plus;q%27%27%27%5CDelta%20%5COmega%20_%7Bi%7D%20%5CDelta%20t%3D%5Crho%20c_%7Bp%7D%5Cleft%28%20T-T%5E%7Bold%7D%5Cright%29%20%5CDelta%20%5COmega%20_%7Bi%7D%5C%5C%20%5Crho%20c_%7Bp%7D%5Ctfrac%7B1%7D%7B%5CDelta%20t%7D%20T%5CDelta%20%5COmega%20_%7Bi%7D%20-%5Csum%20_%7Bf%5C%20%5Cin%20%5C%20%5CGamma%20_%7Bi%7D%7D%5Csum%20_%7Bip%5C%20%5Cin%20%5C%20f%7D%28%20k%5Cnabla%20T%29_%7Bip%7D%20%5Ccdotp%20%5Coverrightarrow%7B%5CDelta%20s_%7Bip%7D%7D%20%3Dq%27%27%27%5CDelta%20%5COmega%20_%7Bi%7D%20&plus;%5Crho%20c_%7Bp%7D%5Ctfrac%7B1%7D%7B%5CDelta%20t%7D%20T%5E%7Bold%7D%20%5CDelta%20%5COmega%20_%7Bi%7D%5C%5C%20%5Crho%20c_%7Bp%7D%5Ctfrac%7B1%7D%7B%5CDelta%20t%7D%20T%5CDelta%20%5COmega%20_%7Bi%7D%20-%5Csum%20_%7Bf%5C%20%5Cin%20%5C%20%5CGamma%20_%7Bi%7D%7D%5Csum%20_%7Bip%5C%20%5Cin%20%5C%20f%7D%20k%5Coverrightarrow%7B%5CDelta%20s_%7Bip%7D%5E%7BT%7D%7D%5Cmathbf%7BB%7D_%7Bip%7D%5Coverrightarrow%7BT%5E%7Belem%7D%7D%20%3Dq%27%27%27%5CDelta%20%5COmega%20_%7Bi%7D%20&plus;%5Crho%20c_%7Bp%7D%5Ctfrac%7B1%7D%7B%5CDelta%20t%7D%20T%5E%7Bold%7D%20%5CDelta%20%5COmega%20_%7Bi%7D)
@@ -416,7 +416,7 @@ def heatTransfer(problemData):
 
 The first 5 lines where we call some problemData variables are optional, but since they are used very often, it is handy to declare them like that. The saver must be initialized before starting to save the results, so here is a good place to do it. The temperatureField is our unknown to be found, and the oldTemperatureField will be updated after each increment in time, and will be used to evaluate the temporal derivative.
 
-Notice that in our discretized equation the left hand side contains only terms involving the temperature (which are going to be added to the matrix) and the right hand side contains only terms independent of the temperature(and are going to be added to the independent vector). The linear system matrix will have N rows and N columns, where the i-th row corresponds to the equation applied to the i-th control volume (or vertex), and the columns correspond to the temperature in the i-th vertex. So, to implement the matrix of our linear system we'll do the following:
+Notice that in our discretized equation the left-hand side contains only terms involving the temperature (which are going to be added to the matrix) and the right-hand side contains only terms independent of the temperature(and are going to be added to the independent vector). The linear system matrix will have N rows and N columns, where the i-th row corresponds to the equation applied to the i-th control volume (or vertex), and the columns correspond to the temperature in the i-th vertex. So, to implement the matrix of our linear system we'll do the following:
 
 ```python
     ...
@@ -448,15 +448,15 @@ Notice that in our discretized equation the left hand side contains only terms i
 
 ```
 
-Remember that the `region` object contains the elements with the same properties, that's why we start the `assembleMatrix` function looipng over the regions and calling the properties at that region. Then we loop over the elements, since the innerFaces belong inside the elements, and for the vertices loop we need the subElementVolume.
+Remember that the `region` object contains the elements with the same properties, that's why we start the `assembleMatrix` function looping over the regions and calling the properties at that region. Then we loop over the elements, since the innerFaces belong inside the elements, and for the vertices loop we need the subElementVolume.
 
 The ![term1](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Crho%20c_%7Bp%7D%5Ctfrac%7B1%7D%7B%5CDelta%20t%7D%20T%5CDelta%20%5COmega%20_%7Bi%7D) term comes from the i-th equation relating the i-th vertex temperature, that's why we add the term to `matrix[vertex.handle][vertex.handle]`
 
-Also note that from our surface integral over the controle surface, we got the summation over the centroids of the innerFaces (or integration points, denoted in the equations as *ip*). So the loop over the innerFaces of element will add this term to our linear system of equations. The ![Δs_ip](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Coverrightarrow%7B%5CDelta%20s_%7Bip%7D%7D) (or `innerFace.area`) is the area vector of the innerFaces, which has modulus equal to the area of the innerFace and points in the outwards normal direction to the innerFace. So in our summation we add `coefficient` to backwardsVertex because `innerFace.area` is pointing outwards from its control volume, and we subtract it from forwardVertex because `-innerFace.area` is poining outwards from its control volume.
+Also note that from our surface integral over the control surface, we got the summation over the centroids of the innerFaces (or integration points, denoted in the equations as *ip*). So the loop over the innerFaces of the element will add this term to our linear system of equations. The ![Δs_ip](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Coverrightarrow%7B%5CDelta%20s_%7Bip%7D%7D) (or `innerFace.area`) is the area vector of the innerFaces, which modulus is equal to the area of the innerFace and points in the outwards normal direction to the innerFace. So in our summation we add `coefficient` to backwardsVertex because `innerFace.area` is pointing outwards from its control volume, and we subtract it from forwardVertex because `-innerFace.area` is pointing outwards from its control volume.
 
 Since `innerFace.area` is a Point object (and not a numpy.array) we convert it into a 3x1 numpy.array using the `getCoordinates` method, and because `innerFace.globalDerivatives` has `dimension` rows and `element.vertices.size` columns, we slice it into a `dimension`x1 numpy.array (removing the z coordinate if the simulation is 2D).
 
-The ![B_ip](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Cmathbf%7BB%7D_%7Bip%7D) term is called gradient operator and it is stored in `innerFace.globalDerivatives`. It's defined as
+The ![B_ip](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Cmathbf%7BB%7D_%7Bip%7D) term is called gradient operator, and it is stored in `innerFace.globalDerivatives`. It's defined as
 ![B_ip definition](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Cmathbf%7BB%7D_%7Bip%7D%20%3D%5Cbegin%7Bbmatrix%7D%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20x%7D%5Cmathcal%7BN%7D_%7B1%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%20%26%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20x%7D%5Cmathcal%7BN%7D_%7B2%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%20%26%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20x%7D%5Cmathcal%7BN%7D_%7B3%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%5C%5C%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20y%7D%5Cmathcal%7BN%7D_%7B1%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%20%26%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20y%7D%5Cmathcal%7BN%7D_%7B2%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%20%26%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20y%7D%5Cmathcal%7BN%7D_%7B3%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%20%5Cend%7Bbmatrix%7D)
 
 and it has the following property:
@@ -478,7 +478,7 @@ And
 
 ![eq13](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Cint%20_%7B%5CGamma%20_%7Bi%2C%5Ctext%7BNeumann%7D%7D%7D%28%20k%5Cnabla%20T%29%20%5Ccdotp%20%5Chat%7Bn%7D%20%5C%20d%5CGamma%20_%7Bi%7D%20%3D%5Coverrightarrow%7Bq%27%27_%7B_%7B%5Ctext%7BNeumann%7D%7D%7D%7D%20%5Ccdotp%20%5Coverrightarrow%7B%5CDelta%20s_%7Bip%7D%7D)
 
-The dirichlet boundary condition is very simple, if it is applied to the i-th vertex, all the elements on the i-th row of the matrix must be 0, except for the i-th element of the i-th row, which is equal to 1. Meanwhile the i-th element of the independent vector must be the prescribed temperature.
+The Dirichlet boundary condition is very simple, if it is applied to the i-th vertex, all the elements of the i-th row of the matrix must be 0, except for the i-th element of the i-th row, which is equal to 1. Meanwhile, the i-th element of the independent vector must be the prescribed temperature.
 
 ![eq14](https://latex.codecogs.com/gif.latex?%5Cbg_white%20T_%7B1%7D%20%5Ccdotp%200&plus;T_%7B2%7D%20%5Ccdotp%200&plus;...&plus;T_%7Bi%7D%20%5Ccdotp%201&plus;...&plus;T_%7BN%7D%20%5Ccdotp%200%3DT_%7Bi%2C%5Ctext%7Bprescribed%7D%7D)
 
@@ -546,7 +546,7 @@ The accumulation term is added to the independent vector, and it calls the `oldT
 
 Both the Neumann boundary condition and the Dirichlet boundary condition are applied to the facets of the boundaries, which are in a way different from the vertices. However, since the Dirichlet boundary condition prescribes directly the temperature (or whichever property) at the vertices of the boundary, the temperature will be set at those points, that's why it is applied after the Neumann boundary condition, because otherwise the temperature would be mistakenly set.
 
-On the `boundaryCondition.getValue(outerFace.vertex.handle)`, remember that if the boundaryCondition is of the type `PyEFVLib.Constant`, it will return the prescribed boundaryCondition anyways, however if it is of the type `PyEFVLib.Variable`, it can depend of the x,y and z coordinates of the vertex and also of the `currentTime`. So we must pass the handle of the `outerFace.vertex` so it can check the x,y,z coordinates of it.
+On the `boundaryCondition.getValue(outerFace.vertex.handle)`, remember that if the boundaryCondition is of the type `PyEFVLib.Constant`, it will return the prescribed boundaryCondition anyways, however if it is of the type `PyEFVLib.Variable`, it can depend on the x,y and z coordinates of the vertex and also of the `currentTime`. So we must pass the handle of the `outerFace.vertex` so it can check the x,y,z coordinates of it.
 
 <br/><br/>
 Next we start the loop to solve our problem:
@@ -614,7 +614,7 @@ if __name__ == "__main__":
 ---
 ## 6. 3rd-party Softwares
 ### 6.1 - Gmsh
-Notice that in the workflow presented, the mesh is simply imported by passing its path, but it need to be generated. In order to do so, the recommended software is [Gmsh](https://gmsh.info/), which is an open-source mesh generator with built-in CAD tools. The only (and minor) downside of the mesh importing at the moment is that the mesh must be from the 2.2 version of .msh. But that's very simple. Just download the latest version of Gmsh, and follow the step-by-step:
+Notice that in the workflow presented, the mesh is simply imported by passing its path, but it needs to be generated. In order to do so, the recommended software is [Gmsh](https://gmsh.info/), which is an open-source mesh generator with built-in CAD tools. The only (and minor) downside of the mesh importing at the moment is that the mesh must be from the 2.2 version of .msh. But that's very simple. Just download the latest version of Gmsh, and follow the step-by-step:
 
 1. Open the Help menu
 2. Choose Current Options and Workspace
@@ -626,7 +626,7 @@ Notice that in the workflow presented, the mesh is simply imported by passing it
 
 
 ### 6.2 - Paraview
-After solving the simulation, you'll want to view and analyize the results you generated. One option is to save it as a .csv file (using the `PyEFVLib.CsvSaver` class) and open it using [pandas](https://pandas.pydata.org/), and you could visualize it using [matplotlib](https://matplotlib.org/). But if you want to view your results, a much better way of doing this is with [Paraview](https://www.paraview.org/).
+After solving the simulation, you'll want to view and analyze the results you generated. One option is to save it as a .csv file (using the `PyEFVLib.CsvSaver` class) and open it using [pandas](https://pandas.pydata.org/), and you could visualize it using [matplotlib](https://matplotlib.org/). But if you want to view your results, a much better way of doing this is with [Paraview](https://www.paraview.org/).
 
 Paraview is an open-source data analysis and visualization application, and by saving the results in formats such as .xdmf (recommended), .vtu, .vtm, you can visualize it using paraview.
 
@@ -634,7 +634,7 @@ Paraview is an open-source data analysis and visualization application, and by s
 
 ---
 ## 7. 2D vs 3D considerations
-One great advantage of using the EbFVM, is that the difference between 2D and 3D simulations is very little. The major changes are in the field and gradient aproximations using different elements and therefore different shape functions. However PyEFVLib handles it without the user having to pay attention. For example in our heat transfer application show as an example in section 5, the only change one need to make to simulate a 3D domain is simply to change the mesh file path (and generate a 3D mesh), and add the boundary conditions according to the new mesh.
+One great advantage of using the EbFVM, is that the difference between 2D and 3D simulations is very little. The major changes are in the field and gradient approximations using different elements and therefore different shape functions. However, PyEFVLib handles it without the user having to pay attention. For example in our heat transfer application show as an example in section 5, the only change one need to make to simulate a 3D domain is simply to change the mesh file path (and generate a 3D mesh), and add the boundary conditions according to the new mesh.
 
 ---
 ## 8. bellbird

@@ -65,7 +65,7 @@ We'll start by evaluating the field within an element of our mesh. It'll be expr
 
 And as we know the entire field inside the element, we can evaluate its partial derivatives, as shown below: 
 
-![eq4](https://latex.codecogs.com/png.latex?%5Cdpi%7B120%7D%20%5Cbg_white%20%5Clarge%20p%28%20r%29%20%3D%5Csum%20_%7Bk%7D%5Cmathcal%7BN%7D_%7Bk%7D%28%20r%29%20%5Ccdotp%20p_%7Bk%7D%5C%5C%20%5Cfrac%7B%5Cpartial%20p%28%20r%29%7D%7B%5Cpartial%20x_%7Bi%7D%7D%20%3D%5Csum%20_%7Bk%7D%5Cfrac%7B%5Cpartial%20%5Cmathcal%7BN%7D_%7Bk%7D%28%20r%29%7D%7B%5Cpartial%20x_%7Bi%7D%7D%20%5Ccdotp%20p_%7Bk%7D)
+![eq4](https://latex.codecogs.com/png.image?%5Cdpi%7B150%7D%20%5Cbg_white%20p(%5Cvec%7Br%7D)%20=%5Csum%20_%7Bk%7D%5Cmathcal%7BN%7D_%7Bk%7D(%5Cvec%7Br%7D)%20%5Ccdotp%20p_%7Bk%7D%5C%5C%5Cfrac%7B%5Cpartial%20p(%5Cvec%7Br%7D)%7D%7B%5Cpartial%20x_%7Bi%7D%7D%20=%5Csum%20_%7Bk%7D%5Cfrac%7B%5Cpartial%20%5Cmathcal%7BN%7D_%7Bk%7D(%5Cvec%7Br%7D)%7D%7B%5Cpartial%20x_%7Bi%7D%7D%20%5Ccdotp%20p_%7Bk%7D)
 
 ---
 ### 2.5 - Problem Solution

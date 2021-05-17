@@ -65,7 +65,7 @@ We'll start by evaluating the field within an element of our mesh. It'll be expr
 
 And as we know the entire field inside the element, we can evaluate its partial derivatives, as shown below: 
 
-![eq4](https://latex.codecogs.com/png.latex?%5Cdpi%7B120%7D%20%5Cbg_white%20%5Clarge%20p%28%20r%29%20%3D%5Csum%20_%7Bk%7D%5Cmathcal%7BN%7D_%7Bk%7D%28%20r%29%20%5Ccdotp%20p_%7Bk%7D%5C%5C%20%5Cfrac%7B%5Cpartial%20p%28%20r%29%7D%7B%5Cpartial%20x_%7Bi%7D%7D%20%3D%5Csum%20_%7Bk%7D%5Cfrac%7B%5Cpartial%20%5Cmathcal%7BN%7D_%7Bk%7D%28%20r%29%7D%7B%5Cpartial%20x_%7Bi%7D%7D%20%5Ccdotp%20p_%7Bk%7D)
+![eq4](https://latex.codecogs.com/png.image?%5Cdpi%7B150%7D%20%5Cbg_white%20p(%5Cvec%7Br%7D)%20=%5Csum%20_%7Bk%7D%5Cmathcal%7BN%7D_%7Bk%7D(%5Cvec%7Br%7D)%20%5Ccdotp%20p_%7Bk%7D%5C%5C%5Cfrac%7B%5Cpartial%20p(%5Cvec%7Br%7D)%7D%7B%5Cpartial%20x_%7Bi%7D%7D%20=%5Csum%20_%7Bk%7D%5Cfrac%7B%5Cpartial%20%5Cmathcal%7BN%7D_%7Bk%7D(%5Cvec%7Br%7D)%7D%7B%5Cpartial%20x_%7Bi%7D%7D%20%5Ccdotp%20p_%7Bk%7D)
 
 ---
 ### 2.5 - Problem Solution
@@ -592,9 +592,9 @@ if __name__ == "__main__":
         propertyData = PyEFVLib.PropertyData({
             "Body": {
                 "conductivity"   : 22.0,   # [W/m.K]
-                "density"        : 8960.0, # [kg/m³]
+                "density"        : 8960.0, # [kg/m3]
                 "specificHeat"   : 377.0,  # [J/kg.K]
-                "heatGeneration" : 5000.0, # [W/m³]
+                "heatGeneration" : 5000.0, # [W/m3]
             },
         }),
         boundaryConditions = PyEFVLib.BoundaryConditions({
@@ -654,9 +654,9 @@ model = bellbird.Model(
 	properties = {
 		"Body":{
 			"k" : 22.0,	# [W/m.K]	- conductivity
-			"rho" : 8960.0,	# [kg/m³]	- density
+			"rho" : 8960.0,	# [kg/m3]	- density
 			"cp" : 377.0,	# [J/kg.K]	- specific heat
-			"q" : 5000.0,	# [W/m³]	- heat generation
+			"q" : 5000.0,	# [W/m3]	- heat generation
 		},
 	},
 	boundaryConditions = [

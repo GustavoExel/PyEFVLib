@@ -53,11 +53,11 @@ And applying the [divergence theorem](https://en.wikipedia.org/wiki/Divergence_t
 
 
 Previously it was shown that a differential equation in the differential form can be integrated in any control volume, but to achieve a detailed solution along the domain of interest, the finite volume method discretizes the domain in several control volumes forming a mesh. The more refined the mesh, the better the solution to the problem will be.
-> Note: The black bordered triangles shown in the figure are actually elements, the control volumes are outlined by a blue lines.
+> Note: The black bordered triangles shown in the figure are actually the elements, the control volumes are outlined by the blue lines.
 
 ---
 ### 2.4 - Field Approximations
-As it is the nature of PDEs, the equations involve spatial derivatives, but since we are storing a finite number of variables, we need a way to aproximate the field continuously to evaluate the spatial derivatives, and EbFVM does this using the shape functions.
+As it is the nature of PDEs, the equations involve spatial derivatives, but since we are storing a finite number of variables, we need a way to aproximate the field continuously to evaluate the spatial derivatives, and the EbFVM does this using the shape functions.
 
 We'll start by evaluating the field within an element of our mesh. It'll be expressed by a linear combination of the property values at the vertices of the element, and the weight of the property at each vertex is given by the shape functions at each point inside the element, as in the figure below: 
 

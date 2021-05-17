@@ -1,4 +1,4 @@
-# EbFVM
+# PyEFVLib
 PyEFVLib is a Python library that provides tools to support the solution of systems of partial differential equations (PDEs) using the Element-based Finite Volumes Method (EbFVM)
 
 ## Summary

@@ -9,6 +9,9 @@ class Point:
 	def __add__(self, p2):
 		return Point(self.x+p2.x, self.y+p2.y, self.z+p2.z)
 
+	def __radd__(self, p2):
+		return self if p2==0 else Point(self.x+p2.x, self.y+p2.y, self.z+p2.z)
+
 	def __sub__(self, p2):
 		return Point(self.x-p2.x, self.y-p2.y, self.z-p2.z)
 
@@ -26,3 +29,7 @@ class Point:
 
 	def getCoordinates(self):
 		return np.array([self.x, self.y, self.z])
+
+	@property
+	def coordinates(self):
+		return self.getCoordinates()

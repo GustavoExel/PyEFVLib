@@ -65,7 +65,7 @@ def geomechanics(problemData):
 				# (-1) * alpha * grad(p)
 				for face in element.innerFaces:
 					area = face.area.getCoordinates()[:dimension]
-					m = element.vertices.size
+					m = element.numberOfVertices
 					transposedVoigtArea = getTransposedVoigtArea(face)
 					shapeFunctions = face.getShapeFunctions()
 					identityShapeFunctionMatrix = np.array([shapeFunctions, shapeFunctions, shapeFunctions, np.zeros(m), np.zeros(m), np.zeros(m)]) if dimension == 3 else np.array([shapeFunctions, shapeFunctions, np.zeros(m)])
@@ -286,7 +286,7 @@ def geomechanics(problemData):
 
 def main():
 	problemData = PyEFVLib.ProblemData(
-		meshFilePath = "{MESHES}/msh/2D/column6.msh",
+		meshFilePath = "{MESHES}/msh/2D/Square.msh",
 		outputFilePath = "{RESULTS}/geomechanics",
 		numericalSettings = PyEFVLib.NumericalSettings( timeStep = 20, finalTime = 100, maxNumberOfIterations = 600 ),
 		propertyData = PyEFVLib.PropertyData({

@@ -230,7 +230,7 @@ def geomechanics(problemData):
 				# (-1) * alpha * grad(p)
 				for face in element.innerFaces:
 					area = face.area.getCoordinates()[:dimension]
-					m = element.vertices.size
+					m = element.numberOfVertices
 					transposedVoigtArea = getTransposedVoigtArea(face)
 					shapeFunctions = face.getShapeFunctions()
 					identityShapeFunctionMatrix = np.array([shapeFunctions, shapeFunctions, shapeFunctions, np.zeros(m), np.zeros(m), np.zeros(m)]) if dimension == 3 else np.array([shapeFunctions, shapeFunctions, np.zeros(m)])

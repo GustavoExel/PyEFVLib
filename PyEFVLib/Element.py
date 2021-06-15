@@ -27,10 +27,9 @@ class Element:
 		raise Exception("This element has not been registered in Grid yet")
 
 	def buildInnerFaces(self):
-		centroid = Point(*sum([v.getCoordinates() for v in self.vertices])/self.vertices.size)
 		for i in range(self.shape.numberOfInnerFaces):
 			innerFace = InnerFace(self, self.grid.innerFaceCounter, i)
-			innerFace.setArea( self.shape.getInnerFaceAreaVector(i, centroid, self.vertices) )
+			innerFace.setArea( self.shape.getInnerFaceAreaVector(i, self.centroid, self.vertices) )
 
 			self.innerFaces = np.append(self.innerFaces, innerFace)
 			self.faces = np.append(self.faces, innerFace)
@@ -40,7 +39,7 @@ class Element:
 	def buildSubelement(self):
 		self.subelementVolumes = []
 		self.volume = 0.0
-		for local in range(self.vertices.size):
+		for local in range(self.numberOfVertices):
 			shapeFunctionDerivatives = self.shape.subelementShapeFunctionDerivatives[local]
 			volume = self.shape.subelementTransformedVolumes[local] * np.linalg.det(self.getTransposedJacobian(shapeFunctionDerivatives))
 
@@ -54,6 +53,18 @@ class Element:
 	def setOuterFace(self, outerFace):
 		self.outerFaces = np.append( self.outerFaces, outerFace )
 		self.faces = np.append( self.faces, outerFace )
+
+	@property
+	def centroid(self):
+		if hasattr(self, "_centroid"):
+			return self._centroid
+		else:
+			self._centroid = sum( self.vertices ) / self.numberOfVertices
+			return self._centroid
+
+	@property
+	def numberOfVertices(self):
+		return self.vertices.size
 
 	def getTransposedJacobian(self, shapeFunctionDerivatives):	# shapeFunctionDerivatives must be already a numpy array
 		vertices = np.array([vertex.getCoordinates()[:self.shape.dimension] for vertex in self.vertices])

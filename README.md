@@ -103,6 +103,7 @@ And in the case of a linear system of equations
 | handle  	    | the *vertex* index in the *grid*                               |
 | elements      | a list of all *elements* to which *vertex* belongs             |
 | volume  	    | the volume of the control volume at which *vertex* is centered |
+| coordinates  	    | a numpy array with the vertex coordinates |
 
 | Method                  | Parameters            | Return type        | Description                                                                       |
 | :---------------------- | :-------------------- | :----------------- | :-------------------------------------------------------------------------------- |
@@ -111,6 +112,8 @@ And in the case of a linear system of equations
 | getSubElementVolume     | element               | float              | returns the volume of the section of *element* that is inside *vertex* control volume |
 
 > Vertex is a child class of the class Point
+
+> It is possible to do operations like vertex1 + vertex2, a * vertex, ...
 
 ---
 ### 3.3 - Region
@@ -136,13 +139,15 @@ If the domain is homogeneous (has constant properties) one single region will be
 | :--------------------- | :------------------------------------------------------------------------------------------- |
 | handle                 | the *element* index in the *grid*                                                            |
 | region                 | the *region* to which *element* belongs                                                      |
-| vertices               | a list of the *vertices* of *element*                                                      |
-| innerFaces             | a list of the *element*'s *innerFaces*                                                     |
-| outerFaces             | a list of the *element*'s *outerFaces*                                                     |
-| faces                  | a list of the *element*'s *innerFaces* and *outerFaces*                                    |
+| vertices               | a list of the *vertices* of *element*                                                        |
+| innerFaces             | a list of the *element*'s *innerFaces*                                                       |
+| outerFaces             | a list of the *element*'s *outerFaces*                                                       |
+| faces                  | a list of the *element*'s *innerFaces* and *outerFaces*                                      |
 | shape                  | the *element* *Shape*                                                                        |
 | volume                 | the sum of all subElementVolumes (control volume section inside *element*)                   |
 | subElementVolumes      | the list with each *vertex* subElementVolume                                                 |
+| centroid               | the *element* centroid                                                                       |
+| numberOfVertices       | the number of vertices of *element*                                                          |
 
 | Method                  | Parameters               | Return type        | Description                                                                       |
 | :---------------------- | :----------------------- | :----------------- | :-------------------------------------------------------------------------------- |
@@ -454,7 +459,7 @@ The ![term1](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Crho%20c_%7Bp%
 
 Also note that from our surface integral over the control surface, we got the summation over the centroids of the innerFaces (or integration points, denoted in the equations as *ip*). So the loop over the innerFaces of the element will add this term to our linear system of equations. The ![Δs_ip](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Coverrightarrow%7B%5CDelta%20s_%7Bip%7D%7D) (or `innerFace.area`) is the area vector of the innerFaces, which modulus is equal to the area of the innerFace and points in the outwards normal direction to the innerFace. So in our summation we add `coefficient` to backwardsVertex because `innerFace.area` is pointing outwards from its control volume, and we subtract it from forwardVertex because `-innerFace.area` is pointing outwards from its control volume.
 
-Since `innerFace.area` is a Point object (and not a numpy.array) we convert it into a 3x1 numpy.array using the `getCoordinates` method, and because `innerFace.globalDerivatives` has `dimension` rows and `element.vertices.size` columns, we slice it into a `dimension`x1 numpy.array (removing the z coordinate if the simulation is 2D).
+Since `innerFace.area` is a Point object (and not a numpy.array) we convert it into a 3x1 numpy.array using the `getCoordinates` method, and because `innerFace.globalDerivatives` has `dimension` rows and `element.numberOfVertices` columns, we slice it into a `dimension`x1 numpy.array (removing the z coordinate if the simulation is 2D).
 
 The ![B_ip](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Cmathbf%7BB%7D_%7Bip%7D) term is called gradient operator, and it is stored in `innerFace.globalDerivatives`. It's defined as
 ![B_ip definition](https://latex.codecogs.com/gif.latex?%5Cbg_white%20%5Cmathbf%7BB%7D_%7Bip%7D%20%3D%5Cbegin%7Bbmatrix%7D%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20x%7D%5Cmathcal%7BN%7D_%7B1%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%20%26%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20x%7D%5Cmathcal%7BN%7D_%7B2%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%20%26%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20x%7D%5Cmathcal%7BN%7D_%7B3%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%5C%5C%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20y%7D%5Cmathcal%7BN%7D_%7B1%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%20%26%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20y%7D%5Cmathcal%7BN%7D_%7B2%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%20%26%20%5Ctfrac%7B%5Cpartial%20%7D%7B%5Cpartial%20y%7D%5Cmathcal%7BN%7D_%7B3%7D%28%20x_%7Bip%7D%20%2Cy_%7Bip%7D%29%20%5Cend%7Bbmatrix%7D)

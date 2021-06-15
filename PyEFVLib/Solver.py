@@ -30,7 +30,7 @@ class Solver:
 
 		self.propertyData = self.problemData.propertyData
 		self.outputPath = self.problemData.outputFilePath
-		savers = { "cgns": CgnsSaver, "csv": CsvSaver, "vtu": VtuSaver, "vtm": VtmSaver }
+		savers = { "csv": CsvSaver, "vtu": VtuSaver, "vtm": VtmSaver }
 
 		if self.saverType == "default" and self.extension in savers.keys():
 			self.saver = savers[self.extension](self.grid, self.outputPath, self.problemData.libraryPath, fileName="Results")

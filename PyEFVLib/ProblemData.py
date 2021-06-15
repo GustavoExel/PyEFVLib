@@ -129,7 +129,7 @@ class ProblemData:
 	def __init__(self, 
 		meshFilePath,
 		propertyData,
-		boundaryConditions,
+		boundaryConditions=None,
 		numericalSettings=NumericalSettings(0.0),
 		outputFilePath=None,
 	):
@@ -141,12 +141,13 @@ class ProblemData:
 		self.createGrid()
 		numericalSettings.init(self)
 		propertyData.init(self)
-		boundaryConditions.init(self)
+		if boundaryConditions:
+			boundaryConditions.init(self)
 
 	def parsePaths(self):
 		self.libraryPath = os.path.realpath( os.path.join(os.path.dirname(__file__), *(2*[os.path.pardir])) )
-		meshesPath = os.path.realpath( os.path.join(os.path.dirname(__file__), *(2*[os.path.pardir]), "meshes") )
-		resultsPath = os.path.realpath( os.path.join(os.path.dirname(__file__), *(2*[os.path.pardir]), "results") )
+		meshesPath = os.path.realpath( os.path.join(os.path.dirname(__file__), *(1*[os.path.pardir]), "meshes") )
+		resultsPath = os.path.realpath( os.path.join(os.path.dirname(__file__), *(1*[os.path.pardir]), "results") )
 
 		self.meshFilePath = os.path.join(*self.meshFilePath.replace("{MESHES}", meshesPath).split("/"))
 		self.outputFilePath = os.path.join(*self.outputFilePath.replace("{RESULTS}",resultsPath).split("/"))

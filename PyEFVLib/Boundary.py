@@ -9,7 +9,7 @@ class Boundary:
 		self.name = name
 		self.handle = handle
 
-		self.facets = np.array([grid.facets[facetIndex] for facetIndex in facetsIdexes])
+		self.facets = [grid.facets[facetIndex] for facetIndex in facetsIdexes]
 
 		self.setVertices()
 		self.matchElementsToFacets()
@@ -22,7 +22,7 @@ class Boundary:
 			for vertex in facet.vertices:
 				if vertex not in vertices:
 					vertices.append(vertex)
-		self.vertices = np.array(vertices)
+		self.vertices = vertices
 
 	def matchElementsToFacets(self):
 		# Find all elements that share vertices with the boundary facets

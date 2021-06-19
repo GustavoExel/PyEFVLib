@@ -4,7 +4,7 @@ import numpy as np
 
 class Facet:
 	def __init__(self, grid, verticesIndexes, handle):
-		self.vertices = np.array([grid.vertices[vertexIndex] for vertexIndex in verticesIndexes])
+		self.vertices = [grid.vertices[vertexIndex] for vertexIndex in verticesIndexes]
 		self.handle = handle
 
 		self.computeAreaVector()
@@ -20,14 +20,14 @@ class Facet:
 		self.elementLocalIndex = elementLocalIndex
 
 	def computeAreaVector(self):
-		if self.vertices.size == 2:
+		if len(self.vertices) == 2:
 			self.area = Point( self.vertices[0].y-self.vertices[1].y , self.vertices[1].x-self.vertices[0].x, 0.0 ) 
 
-		if self.vertices.size == 3:
+		if len(self.vertices) == 3:
 			v0,v1,v2 = [vertex.getCoordinates() for vertex in self.vertices]
 			self.area = Point( *np.cross(v1-v0,v2-v0)/2 )
 
-		if self.vertices.size == 4:
+		if len(self.vertices) == 4:
 			CM = self.vertices[2] - self.vertices[0]
 			LR = self.vertices[3] - self.vertices[1]
 			x = 0.5 * (CM.y*LR.z - CM.z*LR.y)
@@ -36,10 +36,10 @@ class Facet:
 			self.area = Point(x, y, z)
 
 	def computeCentroid(self):
-		self.centroid = Point(*sum([vertex.getCoordinates() for vertex in self.vertices])/self.vertices.size)
+		self.centroid = Point(*sum([vertex.getCoordinates() for vertex in self.vertices])/len(self.vertices))
 
 	def buildOuterFaces(self):
-		self.outerFaces = np.array([])
+		self.outerFaces = []
 		for vertex in self.vertices:
 			outerFace = OuterFace(vertex, self)
-			self.outerFaces = np.append(self.outerFaces, outerFace)
+			self.outerFaces.append(outerFace)

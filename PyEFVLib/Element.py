@@ -6,14 +6,14 @@ class Element:
 	def __init__(self, grid, verticesIndexes, handle):
 		self.handle = handle
 		self.grid = grid
-		self.vertices = np.array([grid.vertices[vertexIndex] for vertexIndex in verticesIndexes])
+		self.vertices = [grid.vertices[vertexIndex] for vertexIndex in verticesIndexes]
 
 		for vertex in self.vertices:
 			vertex.addElement(self)
 		
-		self.innerFaces = np.array([])
-		self.outerFaces = np.array([])
-		self.faces      = np.array([])
+		self.innerFaces = []
+		self.outerFaces = []
+		self.faces      = []
 
 		self.tellShape()
 		self.buildInnerFaces()
@@ -31,8 +31,8 @@ class Element:
 			innerFace = InnerFace(self, self.grid.innerFaceCounter, i)
 			innerFace.setArea( self.shape.getInnerFaceAreaVector(i, self.centroid, self.vertices) )
 
-			self.innerFaces = np.append(self.innerFaces, innerFace)
-			self.faces = np.append(self.faces, innerFace)
+			self.innerFaces.append(innerFace)
+			self.faces.append(innerFace)
 
 		self.grid.innerFaceCounter += self.shape.numberOfInnerFaces
 
@@ -51,8 +51,8 @@ class Element:
 		self.region = region
 
 	def setOuterFace(self, outerFace):
-		self.outerFaces = np.append( self.outerFaces, outerFace )
-		self.faces = np.append( self.faces, outerFace )
+		self.outerFaces.append(outerFace)
+		self.faces.append(outerFace)
 
 	@property
 	def centroid(self):
@@ -64,7 +64,7 @@ class Element:
 
 	@property
 	def numberOfVertices(self):
-		return self.vertices.size
+		return len(self.vertices)
 
 	def getTransposedJacobian(self, shapeFunctionDerivatives):	# shapeFunctionDerivatives must be already a numpy array
 		vertices = np.array([vertex.getCoordinates()[:self.shape.dimension] for vertex in self.vertices])

@@ -5,11 +5,11 @@ class Vertex(Point):
 	def __init__(self, coordinates, handle):
 		Point.__init__(self, *coordinates)
 		self.handle = handle
-		self.elements = np.array([])
+		self.elements = []
 		self.volume = 0.0
 
 	def addElement(self, element):
-		self.elements = np.append(self.elements, element)
+		self.elements.append(element)
 
 	def getLocal(self, element):
 		return list(element.vertices).index(self)

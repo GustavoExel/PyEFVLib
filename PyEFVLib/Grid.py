@@ -23,45 +23,45 @@ class Grid:
 
 	def buildVertices(self):
 		handle = 0
-		self.vertices = np.array([])
+		self.vertices = []
 		for coord in self.gridData.verticesCoordinates:
 			vertex = Vertex(coord, handle)
-			self.vertices = np.append(self.vertices, vertex)
+			self.vertices.append(vertex)
 			handle += 1
-		self.numberOfVertices = self.vertices.size
+		self.numberOfVertices = len(self.vertices)
 
 	def buildElements(self):
 		self.innerFaceCounter = 0
 		handle = 0
-		self.elements = np.array([])
+		self.elements = []
 		for elementConnectivity in self.gridData.elementsConnectivities:
 			element = Element(self, elementConnectivity, handle)
-			self.elements = np.append(self.elements, element)
+			self.elements.append(element)
 			handle += 1
 	shapes = [Triangle, Quadrilateral, Tetrahedron, Hexahedron, Prism, Pyramid]
 
 	def buildRegions(self):
 		handle = 0
-		self.regions = np.array([])
+		self.regions = []
 		for regionElementsIndexes, regionName in zip(self.gridData.regionsElementsIndexes, self.gridData.regionsNames):
 			region = Region(self, regionElementsIndexes, regionName, handle)
-			self.regions = np.append(self.regions, region)
+			self.regions.append(region)
 			handle += 1
 
 	def buildBoundaries(self):
 		self.outerFaceCounter = 0
 		handle = 0
-		self.facets = np.array([])
+		self.facets = []
 		for facetConnectivity in self.gridData.boundariesConnectivities:
 			facet = Facet(self, facetConnectivity, handle)
-			self.facets = np.append(self.facets, facet)
+			self.facets.append(facet)
 			handle += 1
 
 		handle = 0
-		self.boundaries = np.array([])
+		self.boundaries = []
 		for boundaryFacetsIdexes, boundaryName in zip(self.gridData.boundariesIndexes, self.gridData.boundariesNames):
 			boundary = Boundary(self, boundaryFacetsIdexes, boundaryName, handle)
-			self.boundaries = np.append(self.boundaries, boundary)
+			self.boundaries.append(boundary)
 			handle += 1
 
 	# def buildStencil(self):

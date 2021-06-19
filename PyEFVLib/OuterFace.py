@@ -16,7 +16,7 @@ class OuterFace:
 		self.centroid = Point(*np.dot(shapeFunctionValues, elementVerticesCoords))
 
 	def computeAreaVector(self):
-		self.area = self.facet.area / self.facet.vertices.size
+		self.area = self.facet.area / len(self.facet.vertices)
 
 	def computeGlobalDerivatives(self):
 		if self.facet.element.region.grid.dimension == 2:

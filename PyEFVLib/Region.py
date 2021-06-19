@@ -5,6 +5,6 @@ class Region:
 		self.name = name
 		self.grid = grid
 		self.handle = handle
-		self.elements = np.array([grid.elements[elementIndex] for elementIndex in elementsIndexes])
+		self.elements = [grid.elements[elementIndex] for elementIndex in elementsIndexes]
 		for element in self.elements:
 			element.setRegion(self)

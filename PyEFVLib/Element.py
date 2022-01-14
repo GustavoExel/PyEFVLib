@@ -41,7 +41,7 @@ class Element:
 		self.volume = 0.0
 		for local in range(self.numberOfVertices):
 			shapeFunctionDerivatives = self.shape.subelementShapeFunctionDerivatives[local]
-			volume = self.shape.subelementTransformedVolumes[local] * np.linalg.det(self.getTransposedJacobian(shapeFunctionDerivatives))
+			volume = self.shape.subelementTransformedVolumes[local] * abs(np.linalg.det(self.getTransposedJacobian(shapeFunctionDerivatives)))
 
 			self.volume += volume
 			self.vertices[local].volume += volume

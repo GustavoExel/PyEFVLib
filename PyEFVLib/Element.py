@@ -131,15 +131,17 @@ class Element:
 		self.volume = 0.0
 		for local in range(self.numberOfVertices):
 			shapeFunctionDerivatives = self.shape.subelementShapeFunctionDerivatives[local]
-			suelementVolume = self.shape.subelementTransformedVolumes[local] * np.linalg.det(self.getTransposedJacobian(shapeFunctionDerivatives))
+			subelementVolume = self.shape.subelementTransformedVolumes[local] * np.linalg.det(self.getTransposedJacobian(shapeFunctionDerivatives))
 
-			if suelementVolume < 0.0:
+			if subelementVolume < 0.0:
 				self.grid.correctForNegativeVolume = True
 				self.grid.gridData.elementsConnectivities[self.handle] = self.grid.gridData.elementsConnectivities[self.handle][::-1]
+			if subelementVolume == 0.0:
+				print(f"Null volume detected at the element {self.handle}, subelement {local}")
 
-			self.volume += suelementVolume
-			self.vertices[local].volume += suelementVolume
-			self.subelementVolumes.append(suelementVolume)
+			self.volume += subelementVolume
+			self.vertices[local].volume += subelementVolume
+			self.subelementVolumes.append(subelementVolume)
 
 	def _setRegion(self, region):
 		self.region = region

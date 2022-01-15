@@ -66,6 +66,7 @@ class Grid:
 		if self.correctForNegativeVolume and not self.correctedForNegativeVolume:
 			print("Negative volumes detected. Correcting for them.\nBe sure to fix the mesh in order to avoid inefficiencies during the mesh reading.")
 			self.correctedForNegativeVolume = True
+			self.__buildVertices()
 			self.__buildElements()
 		elif self.correctedForNegativeVolume and self.correctForNegativeVolume:
 			raise Exception("Negative volumes were found and couldn't be fixed.")

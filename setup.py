@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
 	name="PyEFVLib",
-	version="1.0.10",
+	version="1.0.11",
 	description="A library that facilitates the implementation of the Element-based Finite Volumes Method (EbFVM) to solve partial differential equations (PDEs)",
 	py_modules=["PyEFVLib/__init__", "PyEFVLib/Vertex", "PyEFVLib/OuterFace", "PyEFVLib/GridData", "PyEFVLib/InnerFace", "PyEFVLib/Point", "PyEFVLib/Shape", "PyEFVLib/Region", "PyEFVLib/Facet", "PyEFVLib/MSHReader", "PyEFVLib/XDMFReader", "PyEFVLib/Boundary", "PyEFVLib/Element", "PyEFVLib/Grid", "PyEFVLib/BoundaryConditions", "PyEFVLib/Saver", "PyEFVLib/CsvSaver", "PyEFVLib/VtuSaver", "PyEFVLib/VtmSaver", "PyEFVLib/MeshioSaver", "PyEFVLib/ProblemData", "PyEFVLib/Solver", "PyEFVLib/LinearSystem"],
 	# package_dir={"": "PyEFVLib"},

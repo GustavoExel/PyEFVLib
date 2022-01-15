@@ -1,3 +1,10 @@
+"""
+PyEFVLib is a python library that's used to solve conservation equations using the Element-based Finite Volume Method (EbFVM). In continuum mechanics it's common to apply conservation equations originally formulated to closed systems like conservation of mass, momentum (Newton's second law), enery (fist law of thermodynamics), etc. In this context, this library provides tools for solving those kinds of problems very easily, by having tools implemented such as
+- Mesh reading and parsing
+- Creation of geometric entities used in the EbFVM
+- Saving the results
+"""
+
 from PyEFVLib.Vertex import *
 from PyEFVLib.OuterFace import *
 from PyEFVLib.GridData import *

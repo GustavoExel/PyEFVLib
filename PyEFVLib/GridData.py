@@ -1,4 +1,9 @@
 class GridData:
+	"""
+	GridData makes the connection between the reader and Grid, such that we can create the same
+	grid using different readers. It contains connectivity information, vertex coordinates, and 
+	boundary names.
+	"""
 	def __init__(self, path):
 		self.path = path
 

@@ -4,19 +4,35 @@ from PyEFVLib.OuterFace import OuterFace
 import numpy as np
 
 class Boundary:
-	def __init__(self, grid, facetsIdexes, name, handle):
+	"""
+	Contains the boundary objects which stores all the vertices, facets and outer facets.
+	It's important when applying the boundary conditions, for getting the vertices belonging
+	to the boundary, and computing the outer faces areas.
+
+	Attributes
+	----------
+	name	 : str
+		Identifies the boundary in order to apply the boundary conditions.
+	handle	 : int
+		Indexes all boundaries belonging to grid.
+	vertices : list[PyEFVLib.Vertex]
+		A list with the boundary vertices
+	facets	 : list[PyEFVLib.Facet]
+		A list with the boundary facets
+	"""
+	def __init__(self, grid, facetsIdexes: list, name: str, handle: int):
 		self.grid = grid
 		self.name = name
 		self.handle = handle
 
 		self.facets = [grid.facets[facetIndex] for facetIndex in facetsIdexes]
 
-		self.setVertices()
-		self.matchElementsToFacets()
-		self.setFacets()
-		self.setOuterFaces()
+		self.__setVertices()
+		self.__matchElementsToFacets()
+		self.__setFacets()
+		self.__setOuterFaces()
 
-	def setVertices(self):
+	def __setVertices(self):
 		vertices = []
 		for facet in self.facets:
 			for vertex in facet.vertices:
@@ -24,7 +40,7 @@ class Boundary:
 					vertices.append(vertex)
 		self.vertices = vertices
 
-	def matchElementsToFacets(self):
+	def __matchElementsToFacets(self):
 		# Find all elements that share vertices with the boundary facets
 		boundaryElements = []
 		verticesIndexes  = [ vertex.handle for vertex in self.vertices ]
@@ -47,11 +63,11 @@ class Boundary:
 						elementLocalIndex = local
 						break
 
-			facet.setElement(facetElement, elementLocalIndex)
+			facet._setElement(facetElement, elementLocalIndex)
 
-	def setFacets(self):
+	def __setFacets(self):
 		for local, facet in enumerate(self.facets):
-			facet.setBoundary(self, local)
+			facet._setBoundary(self, local)
 
 			# Correct area
 			innerVertex = [vertex for vertex in facet.element.vertices if vertex not in facet.vertices][0]
@@ -59,17 +75,14 @@ class Boundary:
 			if dot < 0:
 				facet.area *= -1
 
-	def setOuterFaces(self):
+	def __setOuterFaces(self):
 		for facet in self.facets:
 			verticesLocalsInElement = list(facet.element.shape.facetVerticesIndexes[facet.elementLocalIndex])
 			for outerFace in facet.outerFaces:
-				outerFace.setLocal( verticesLocalsInElement.index(outerFace.vertex.getLocal(facet.element)) )
-				
-				outerFace.computeCentroid()
-				outerFace.computeAreaVector()
-				outerFace.computeGlobalDerivatives()
+				outerFace.local = verticesLocalsInElement.index(outerFace.vertex.getLocal(facet.element))
+				outerFace._build()
 
-				facet.element.setOuterFace( outerFace )
+				facet.element._setOuterFace( outerFace )
 
 				outerFace.handle = self.grid.outerFaceCounter
 				self.grid.outerFaceCounter += 1

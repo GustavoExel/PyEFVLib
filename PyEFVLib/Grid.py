@@ -8,20 +8,44 @@ from PyEFVLib.Boundary import Boundary
 from PyEFVLib.GridData import GridData
 
 class Grid:
+	"""
+	Grid is the main geometric entity in PyEFVLib, and it contains all the other entities 
+	necessary to solve a problem.
+
+	Example:
+		>>> import PyEFVLib
+		>>> grid = PyEFVLib.read("mesh.msh")
+
+	Attributes
+	----------
+	vertices	: list[PyEFVLib.Vertex]
+	 	A list of the grid's vertices
+	elements	: list[PyEFVLib.Element]
+	 	A list of the grid's elements
+	regions		: list[PyEFVLib.Region]
+	 	A list of the grid's regions
+	boundaries	: list[PyEFVLib.Boundary]
+	 	A list of the grid's boundaries
+	dimension	: int
+	 	the dimension of the mesh (2 or 3)
+	gridData	: PyEFVLib.GridData
+	 	A data structure that holds the information provided by mesh file
+	"""
 	def __init__(self, gridData):
 		if gridData.__class__ != GridData:
 			raise Exception("Grid argument must be of class GridData")
 		self.gridData = gridData
 		self.dimension = gridData.dimension
-		self.build()
+		self.correctedForNegativeVolume = False
+		self.__build()
 
-	def build(self):
-		self.buildVertices()
-		self.buildElements()
-		self.buildRegions()
-		self.buildBoundaries()
+	def __build(self):
+		self.__buildVertices()
+		self.__buildElements()
+		self.__buildRegions()
+		self.__buildBoundaries()
 
-	def buildVertices(self):
+	def __buildVertices(self):
 		handle = 0
 		self.vertices = []
 		for coord in self.gridData.verticesCoordinates:
@@ -30,7 +54,8 @@ class Grid:
 			handle += 1
 		self.numberOfVertices = len(self.vertices)
 
-	def buildElements(self):
+	def __buildElements(self):
+		self.correctForNegativeVolume = False
 		self.innerFaceCounter = 0
 		handle = 0
 		self.elements = []
@@ -38,9 +63,15 @@ class Grid:
 			element = Element(self, elementConnectivity, handle)
 			self.elements.append(element)
 			handle += 1
+		if self.correctForNegativeVolume and not self.correctedForNegativeVolume:
+			print("Negative volumes detected. Correcting for them.\nBe sure to fix the mesh in order to avoid inefficiencies during the mesh reading.")
+			self.correctedForNegativeVolume = True
+			self.__buildElements()
+		elif self.correctedForNegativeVolume and self.correctForNegativeVolume:
+			raise Exception("Negative volumes were found and couldn't be fixed.")
 	shapes = [Triangle, Quadrilateral, Tetrahedron, Hexahedron, Prism, Pyramid]
 
-	def buildRegions(self):
+	def __buildRegions(self):
 		handle = 0
 		self.regions = []
 		for regionElementsIndexes, regionName in zip(self.gridData.regionsElementsIndexes, self.gridData.regionsNames):
@@ -48,7 +79,7 @@ class Grid:
 			self.regions.append(region)
 			handle += 1
 
-	def buildBoundaries(self):
+	def __buildBoundaries(self):
 		self.outerFaceCounter = 0
 		handle = 0
 		self.facets = []
@@ -63,14 +94,3 @@ class Grid:
 			boundary = Boundary(self, boundaryFacetsIdexes, boundaryName, handle)
 			self.boundaries.append(boundary)
 			handle += 1
-
-	# def buildStencil(self):
-	# 	nVertices = len(self.vertices)
-	# 	self.stencil = [[] for i in range(nVertices)]
-	# 	for element in self.elements:
-	# 		localHandle = 0
-	# 		for v1 in element.vertices:
-	# 			for v2 in element.vertices[localHandle:]:
-	# 				if not v2.handle in self.stencil[v1.handle]:		self.stencil[v1.handle].append(v2.handle)
-	# 				if not v1.handle in self.stencil[v2.handle]:		self.stencil[v2.handle].append(v1.handle)
-	# 			localHandle += 1

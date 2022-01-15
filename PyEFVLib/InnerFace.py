@@ -2,40 +2,85 @@ import numpy as np
 from PyEFVLib.Point import Point
 
 class InnerFace:
+	"""
+	The InnerFace is a very important class, because it composes the control surface of
+	each control volume, and all surface intgrals in the conservation equations will be
+	computed in the innerFaces.
+
+	Attributes
+	----------
+	handle				: int
+		the innerFace index in the grid
+	local				: int
+		the innerFace local index in the element
+	element				: int
+		the innerFace element
+	area				: PyEFVLib.Point
+		the innerFace area
+	centroid			: PyEFVLib.Point
+		the innerFace centroid
+	globalDerivatives	: np.darray[d, m]
+		The gradient opeerator evaluated at the centroid of the innerFace.
+	"""
 	def __init__(self, element, handle, local):
 		self.handle = handle
 		self.local = local
 		self.element = element
 
-		self.evaluateCentroid()
-		self.calculateGlobalDerivatives()
+		self.__evaluateCentroid()
+		self.__calculateGlobalDerivatives()
 
-	def evaluateCentroid(self):
+	def __evaluateCentroid(self):
 		shapeFunctionValues = self.element.shape.innerFaceShapeFunctionValues[self.local]
 		coords = np.array([0.0,0.0,0.0])
 		for vertex, weight in zip(self.element.vertices, shapeFunctionValues):
 			coords += weight * vertex.getCoordinates()
 		self.centroid = Point(*coords)
 
-	def setArea(self, area):
-		self.area = area
-
-	def calculateGlobalDerivatives(self):
+	def __calculateGlobalDerivatives(self):
 		derivatives = self.element.shape.innerFaceShapeFunctionDerivatives[self.local]
-		self.globalDerivatives = np.matmul(np.linalg.inv(self.element.getTransposedJacobian(derivatives)) , np.transpose(derivatives))
+		self.globalDerivatives = np.linalg.inv(self.element.getTransposedJacobian(derivatives)) @ derivatives.T
 
 	def getNeighborVertices(self):
+		"""
+		Returns the vertices that are right next to the innerFace. That means that the
+		innerFace belongs to their control surface. The difference between the backward
+		and forward vertex, is that the area vector points away from the backward vertex
+		and towards the forward vertex. When integrating in the control surface the
+		default is to integrate with the area vector pointing away from the center, that's
+		why the sign is flipped for the forward vertex.
+		"""
 		backwardVertex = self.element.vertices[ self.element.shape.innerFaceNeighborVertices[self.local][0] ]
 		forwardVertex = self.element.vertices[ self.element.shape.innerFaceNeighborVertices[self.local][1] ]
 		return backwardVertex, forwardVertex
 
 	def getShapeFunctions(self):
+		"""
+		Returns the shape functions evaluated at the innerFace centroid. The order in which
+		they apper refers to the order of the vertices in the element.vertices list.
+		"""
 		return self.element.shape.innerFaceShapeFunctionValues[self.local]
 
 	def getNeighborVerticesLocals(self):
+		"""
+		Returns the local indices in the element.vertices list of the vertices that are right
+		next to the innerFace. That means that the innerFace belongs to their control surface.
+		The difference between the backward and forward vertex, is that the area vector points
+		away from the backward vertex and towards the forward vertex. When integrating in the
+		control surface the default is to integrate with the area vector pointing away from the
+		center, that's why the sign is flipped for the forward vertex.
+		"""
 		return self.element.shape.innerFaceNeighborVertices[self.local][:2]
 
 	def getNeighborVerticesHandles(self):
+		"""
+		Returns the global indices in the grid.vertices list of the vertices that are right
+		next to the innerFace. That means that the innerFace belongs to their control surface.
+		The difference between the backward and forward vertex, is that the area vector points
+		away from the backward vertex and towards the forward vertex. When integrating in the
+		control surface the default is to integrate with the area vector pointing away from the
+		center, that's why the sign is flipped for the forward vertex.
+		"""
 		backwardLocal, forwardLocal = self.getNeighborVerticesLocals()
 		return self.element.vertices[backwardLocal].handle, self.element.vertices[forwardLocal].handle
 

@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PyEFVLib"
+version = "1.1.0"
+description = "Element-based finite volumes for conservation equations"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Gustavo Exel", email = "gustavoexelgpe@gmail.com"}]
+maintainers = [{name = "ThermoPhase research group"}]
+dependencies = [
+    "numpy>=1.26,<3",
+    "scipy>=1.11,<2",
+    "meshio>=5.3,<6",
+    "h5py>=3.10,<4",
+    "xmltodict>=0.13,<2",
+]
+
+[project.urls]
+Homepage = "https://github.com/ThermoPhase-FCSRG/PyEFVLib"
+Repository = "https://github.com/ThermoPhase-FCSRG/PyEFVLib"
+Issues = "https://github.com/ThermoPhase-FCSRG/PyEFVLib/issues"
+
+[project.optional-dependencies]
+examples = ["matplotlib>=3.8,<4", "pandas>=2.1,<4"]
+test = ["pytest>=8,<10"]
+
+[tool.setuptools.packages.find]
+include = ["PyEFVLib", "PyEFVLib.*"]
+namespaces = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64"]
+
+[tool.pixi.dependencies]
+python = ">=3.11,<3.14"
+numpy = ">=1.26,<3"
+scipy = ">=1.11,<2"
+meshio = ">=5.3,<6"
+h5py = ">=3.10,<4"
+xmltodict = ">=0.13,<2"
+pytest = ">=8,<10"
+python-build = ">=1.2,<2"
+twine = ">=6,<7"
+matplotlib = ">=3.8,<4"
+pandas = ">=2.1,<4"
+
+[tool.pixi.pypi-dependencies]
+PyEFVLib = {path = ".", editable = true}
+
+[tool.pixi.tasks]
+test = "python -m pytest"
+build = "python -m build"
+check-dist = "python -m twine check dist/*"
+compile = "python -m compileall -q PyEFVLib apps meshes/scripts workspace"
+check = {depends-on = ["test", "compile"]}
+
+[tool.pixi.feature.minimum.dependencies]
+python = "3.11.*"
+numpy = "1.26.*"
+scipy = "1.11.*"
+h5py = "3.10.*"
+xmltodict = "0.13.*"
+pytest = "8.*"
+
+[tool.pixi.environments]
+default = {features = []}
+minimum = {features = ["minimum"]}

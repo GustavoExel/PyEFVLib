@@ -1,9 +1,7 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
-from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver, CgnsSaver, VtuSaver
-from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver, CgnsSaver
-from PyEFVLib.simulation import LinearSystem as ls
+from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver, VtuSaver, LinearSystemCSR
 import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import spsolve
@@ -29,7 +27,7 @@ def stressEquilibrium(
 	# from PyEFVLib.boundaryConditionPrinter import stressEquilibriumBoundaryConditionsPrinter
 	# stressEquilibriumBoundaryConditionsPrinter(problemData.boundaryConditions)
 
-	savers = {"cgns": CgnsSaver, "csv": CsvSaver, "vtu": VtuSaver}
+	savers = {"csv": CsvSaver, "vtu": VtuSaver}
 	saver = savers[extension](grid, outputPath, libraryPath, fileName=fileName)
 
 	currentTime = 0.0
@@ -85,7 +83,7 @@ def stressEquilibrium(
 
 	#-------------------------ADD TO LINEAR SYSTEM------------------------------
 	independent = np.zeros(grid.dimension*numberOfVertices)
-	ls_csr = ls.LinearSystemCSR(grid.stencil, 2)
+	ls_csr = LinearSystemCSR(grid.stencil, 2)
 	ls_csr.initialize()
 
 	U = lambda handle: handle + numberOfVertices * 0

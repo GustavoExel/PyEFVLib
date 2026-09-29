@@ -26,7 +26,9 @@ class XDMFReader:
 		return meshio.read("{}/{}".format(directory, filename))
 
 	def getDimension(self, mesh):
-		return len(mesh.points[0])
+		dimensions = {"vertex": 0, "line": 1, "triangle": 2, "quad": 2,
+			"tetra": 3, "hexahedron": 3, "wedge": 3, "pyramid": 3}
+		return max(dimensions[block.type] for block in mesh.cells)
 
 	def getVertices(self, mesh, gridDimension):
 		verticesFileData = []
@@ -41,15 +43,15 @@ class XDMFReader:
 	def getEntityConnectivities(self, setobj):
 		connectivities = []
 		for cellBlock in setobj.cells:
-			cellType = cellBlock[0]
-			cells = cellBlock[1]
+			cellType = cellBlock.type
+			cells = cellBlock.data
 			for cell in cells:
 				connectivities.append(cell.tolist())
 		return connectivities
 
 	def getRegionNames(self, setobj, setname):
 		setdict = {}
-		for i,index in enumerate(setobj.cell_data[setname][0]):
+		for i,index in enumerate(numpy.concatenate(setobj.cell_data[setname])):
 			if index not in setdict.keys():
 				setdict[index] = []
 			setdict[index].append(i)
@@ -60,7 +62,7 @@ class XDMFReader:
 
 	def getRegionIndexes(self, setobj, setname):
 		setdict = {}
-		for i,index in enumerate(setobj.cell_data[setname][0]):
+		for i,index in enumerate(numpy.concatenate(setobj.cell_data[setname])):
 			if index not in setdict.keys():
 				setdict[index] = []
 			setdict[index].append(i)
@@ -82,8 +84,9 @@ class XDMFReader:
 
 	def updateShapes(self, shapes, setobj, setname):
 		for i,cellBlock in enumerate(setobj.cells):
-			cellType = cellBlock[0]
-			cells = cellBlock[1]
+			aliases = {"quad": "quadrilateral", "tetra": "tetrahedron", "hexahedron": "hexahedron", "wedge": "prism"}
+			cellType = aliases.get(cellBlock.type, cellBlock.type)
+			cells = cellBlock.data
 			cellData = setobj.cell_data[setname][i]
 			for j,data in enumerate(cellData):
 				shapes[cellType].append((data, cells[j].tolist()))

@@ -15,3 +15,5 @@ dist/
 # Folders
 __pycache__/
 results/
+.pixi/
+.pytest_cache/

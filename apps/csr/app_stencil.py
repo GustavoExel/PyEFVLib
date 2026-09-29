@@ -1,6 +1,6 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
-from PyEFVLib import MSHReader, XDMFReader, Grid, ProblemData, CgnsSaver, CsvSaver
+from PyEFVLib import MSHReader, XDMFReader, Grid, ProblemData, CsvSaver
 
 
 if __name__ == "__main__":

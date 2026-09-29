@@ -1,0 +1,47 @@
+{% set version = "1.1.0" %}
+
+package:
+  name: pyefvlib
+  version: {{ version }}
+source:
+  path: ..
+build:
+  number: 0
+  noarch: python
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+requirements:
+  host:
+    - python >=3.11
+    - pip
+    - setuptools >=77
+    - wheel
+  run:
+    - python >=3.11
+    - numpy >=1.26,<3
+    - scipy >=1.11,<2
+    - meshio >=5.3,<6
+    - h5py >=3.10,<4
+    - xmltodict >=0.13,<2
+test:
+  imports:
+    - PyEFVLib
+  source_files:
+    - tests
+    - apps/heat_transfer.py
+    - meshes/msh/2D/3x3.msh
+    - meshes/msh/2D/3x3 tri.msh
+    - meshes/msh/2D/10x10.msh
+  requires:
+    - pytest >=8,<10
+    - pip
+  commands:
+    - python -m pip check
+    - python -m pytest tests
+about:
+  home: https://github.com/ThermoPhase-FCSRG/PyEFVLib
+  summary: Element-based finite volumes for conservation equations
+  license: MIT
+  license_file: LICENSE
+extra:
+  recipe-maintainers:
+    - lucscst

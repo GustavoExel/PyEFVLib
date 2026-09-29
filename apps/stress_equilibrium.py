@@ -168,7 +168,7 @@ class StressEquilibriumSolver(PyEFVLib.Solver):
 		boundaryConditions()
 
 	def solveLinearSystem(self):
-		self.matrix = sparse.csc_matrix( (self.matrixVals, zip(*self.coords)) )
+		self.matrix = sparse.csc_matrix( (self.matrixVals, tuple(zip(*self.coords))) )
 		self.inverseMatrix = sparse.linalg.inv( self.matrix )
 		self.displacements = self.inverseMatrix * self.independent
 

@@ -1,5 +1,5 @@
 import PyEFVLib
-from PyEFVLib.BoundaryConditions import DirichletBoundaryCondition, NeumannBoundaryCondition 
+from PyEFVLib.BoundaryConditions import DirichletBoundaryCondition, NeumannBoundaryCondition, getFunction
 import json, os, numpy as np
 
 class NumericalSettings:
@@ -33,7 +33,10 @@ class PropertyData:
 			if not regionName in self.propertiesDict.keys():
 				raise Exception(f"Error, must specify {regionName} properties.")
 
-	def get(self, handle, propertyName):
+	def get(self, propertyName, handle=0):
+		# Retain the historical get(region_handle, property_name) interface.
+		if isinstance(propertyName, (int, np.integer)) and isinstance(handle, str):
+			propertyName, handle = handle, propertyName
 		if handle in range(len(self.regions)):
 			if propertyName in self.properties:
 				return self.propertiesDict[self.regions[handle] ][propertyName]
@@ -72,11 +75,6 @@ class BoundaryConditions:
 		self.dirichletBoundaries = { variable : [] for variable in variables }
 		self.boundaryConditions  = [ dict() for boundary in self.problemData.grid.boundaries ]
 
-		def getFunction(expr):
-			from numpy import pi, sin, cos, tan, arcsin, arccos, arctan, sinh, cosh, tanh, arcsinh, arccosh, arctanh, sqrt, e , log, exp, inf, mod, floor
-			def function(x,y,z):
-				return eval( expr.replace('x',str(x)).replace('y',str(y)).replace('z',str(z)) )
-			return function
 		
 		self.initialValues = dict()
 		for variable in variables:
@@ -130,7 +128,7 @@ class ProblemData:
 		meshFilePath,
 		propertyData,
 		boundaryConditions=None,
-		numericalSettings=NumericalSettings(0.0),
+		numericalSettings=None,
 		outputFilePath=None,
 	):
 		self.meshFilePath		= meshFilePath
@@ -139,6 +137,8 @@ class ProblemData:
 
 		self.parsePaths()
 		self.createGrid()
+		if numericalSettings is None:
+			numericalSettings = NumericalSettings(0.0)
 		numericalSettings.init(self)
 		propertyData.init(self)
 		if boundaryConditions:
@@ -149,8 +149,9 @@ class ProblemData:
 		meshesPath = os.path.realpath( os.path.join(os.path.dirname(__file__), *(1*[os.path.pardir]), "meshes") )
 		resultsPath = os.path.realpath( os.path.join(os.path.dirname(__file__), *(1*[os.path.pardir]), "results") )
 
-		self.meshFilePath = os.path.join(*self.meshFilePath.replace("{MESHES}", meshesPath).split("/"))
-		self.outputFilePath = os.path.join(*self.outputFilePath.replace("{RESULTS}",resultsPath).split("/"))
+		self.meshFilePath = os.path.normpath(os.fspath(self.meshFilePath).replace("{MESHES}", meshesPath))
+		if self.outputFilePath is not None:
+			self.outputFilePath = os.path.normpath(os.fspath(self.outputFilePath).replace("{RESULTS}", resultsPath))
 
 	def createGrid(self):
 		self.grid = PyEFVLib.read(self.meshFilePath)

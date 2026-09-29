@@ -77,7 +77,7 @@ class HeatTransferSolver(Solver):
 
 		def invertMatrix():
 			# Invert Matrix
-			self.matrix = sparse.csc_matrix( (self.matrixVals, zip(*self.coords)), shape=(self.grid.numberOfVertices, self.grid.numberOfVertices) )
+			self.matrix = sparse.csc_matrix( (self.matrixVals, tuple(zip(*self.coords))), shape=(self.grid.numberOfVertices, self.grid.numberOfVertices) )
 			self.inverseMatrix = sparse.linalg.inv( self.matrix )
 
 		diffusionTerm()

@@ -2,8 +2,13 @@ import numpy as np
 from numpy import pi, sin, cos, tan, arcsin, arccos, arctan, sinh, cosh, tanh, arcsinh, arccosh, arctanh, sqrt, e , log, exp, inf, mod, floor
 
 def getFunction(expr):
-	def function(x,y,z,t):
-		return eval( expr.replace('x',str(x)).replace('y',str(y)).replace('z',str(z)).replace('t',str(t)) )
+	code = compile(expr, "<boundary expression>", "eval")
+	names = {name: getattr(np, name) for name in (
+		"pi", "sin", "cos", "tan", "arcsin", "arccos", "arctan", "sinh", "cosh", "tanh",
+		"arcsinh", "arccosh", "arctanh", "sqrt", "e", "log", "exp", "inf", "mod", "floor")}
+	names.update(np=np, abs=abs, min=min, max=max, __builtins__={})
+	def function(x,y,z,t=0.0):
+		return eval(code, names, dict(x=x, y=y, z=z, t=t))
 	return function
 
 class _BoundaryConditionBase:

@@ -1,6 +1,6 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
-from PyEFVLib import MSHReader, CgnsSaver, Grid
+from PyEFVLib import MSHReader, MeshioSaver, Grid
 import pandas as pd
 
 if "--help" in sys.argv:
@@ -22,7 +22,7 @@ except:
 data 	  = pd.read_csv(csvPath) 
 reader 	  = MSHReader(mshPath)
 grid   	  = Grid(reader.getData())
-saver = CgnsSaver(grid, outputPath, os.path.join(os.path.dirname(__file__),os.path.pardir))
+saver = MeshioSaver(grid, outputPath, os.path.join(os.path.dirname(__file__),os.path.pardir), "cgns")
 
 # First we'll assume that the data is ordered acording to the msh file
 for columnLabel in data.columns[3:]:

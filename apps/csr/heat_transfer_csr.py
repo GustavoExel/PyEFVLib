@@ -1,11 +1,6 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
-<<<<<<< HEAD:apps/heat_transfer.py
-from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver, VtuSaver, VtmSaver
-=======
-from PyEFVLib import MSHReader, Grid, ProblemData, CgnsSaver, CsvSaver
-from PyEFVLib.simulation import LinearSystem as ls
->>>>>>> herminio:apps/heat_transfer_csr.py
+from PyEFVLib import MSHReader, Grid, ProblemData, CsvSaver, VtuSaver, VtmSaver, LinearSystemCSR
 import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import spsolve
@@ -39,7 +34,7 @@ def heatTransfer(
 	dimension = grid.dimension
 	currentTime = 0.0
 
-	savers = {"cgns": CgnsSaver, "csv": CsvSaver, "vtu": VtuSaver, "vtm": VtmSaver}
+	savers = {"csv": CsvSaver, "vtu": VtuSaver, "vtm": VtmSaver}
 	saver = savers[extension](grid, outputPath, libraryPath, fileName=fileName)
 
 	temperatureField = np.repeat(0.0, grid.numberOfVertices)
@@ -54,7 +49,7 @@ def heatTransfer(
 
 
 
-	ls_csr = ls.LinearSystemCSR(grid.stencil, 1)
+	ls_csr = LinearSystemCSR(grid.stencil, 1)
 	ls_csr.initialize()
 
 	#-------------------------------------------------------------------------------
@@ -109,11 +104,7 @@ def heatTransfer(
 		for bCondition in neumannBoundaries["temperature"]:
 			for facet in bCondition.boundary.facets:
 				for outerFace in facet.outerFaces:
-<<<<<<< HEAD:apps/heat_transfer.py
-					independent[outerFace.vertex.handle] += bCondition.getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates())
-=======
-					ls_csr.addValueToRHS(outerFace.vertex.handle, -bCondition.getValue(outerFace.handle) * np.linalg.norm(outerFace.area.getCoordinates()))
->>>>>>> herminio:apps/heat_transfer_csr.py
+					ls_csr.addValueToRHS(outerFace.vertex.handle, -bCondition.getValue(outerFace.vertex.handle) * np.linalg.norm(outerFace.area.getCoordinates()))
 
 		# Dirichlet Boundary Condition
 		for bCondition in dirichletBoundaries["temperature"]:
@@ -123,15 +114,7 @@ def heatTransfer(
 					ls_csr.matZeroRow(vertex.handle, 1.0)
 
 		#-------------------------SOLVE LINEAR SYSTEM-------------------------------
-<<<<<<< HEAD:apps/heat_transfer.py
-		if iteration == 0:
-			matrix = sparse.coo_matrix( (matrixVals, zip(*coords)) )
-			matrix = sparse.csc_matrix( matrix )
-			inverseMatrix = sparse.linalg.inv( matrix )
-		temperatureField = inverseMatrix * independent
-=======
 		temperatureField = spsolve(ls_csr.matrix, ls_csr.rhs)
->>>>>>> herminio:apps/heat_transfer_csr.py
 
 		#-------------------------PRINT ITERATION DATA------------------------------
 		if iteration > 0 and verbosity:
@@ -213,18 +196,13 @@ if __name__ == "__main__":
 	heatTransfer(
 		libraryPath = problemData.libraryPath,
 		outputPath = problemData.outputFilePath,
-<<<<<<< HEAD:apps/heat_transfer.py
-		extension = "csv" if not [1 for arg in sys.argv if "--extension" in arg] else [arg.split('=')[1] for arg in sys.argv if "--extension" in arg][0],
-		
-=======
-		extension = "csv" if not "--extension=cgns" in sys.argv else "cgns",
+		extension = "csv",
 
->>>>>>> herminio:apps/heat_transfer_csr.py
 		grid 	  = grid,
 		propertyData = problemData.propertyData,
 
 		# initialValues = problemData.initialValues,
-		initialValues = { "temperature": np.repeat( problemData.initialValues["temperature"], grid.numberOfVertices ) },
+		initialValues = { "temperature": np.array(problemData.initialValues["temperature"], copy=True) },
 		neumannBoundaries = problemData.neumannBoundaries,
 		dirichletBoundaries = problemData.dirichletBoundaries,
 

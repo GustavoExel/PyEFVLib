@@ -1,13 +1,14 @@
 try:
 	from petsc4py import PETSc
-except:
-	# raise Exception("petsc4py is not avaliable")
-	pass
+except ImportError:
+	PETSc = None
 import numpy as np
 from scipy.sparse import csr_matrix
 
 
 def createPETScVector(size):
+	if PETSc is None:
+		raise ImportError("The PETSc backend requires petsc4py.")
 	vector = PETSc.Vec()
 	vector.create()
 	vector.setSizes(size)
@@ -16,6 +17,8 @@ def createPETScVector(size):
 	return vector
 
 def createPETScMatrix(size, mat_type='dense'):
+	if PETSc is None:
+		raise ImportError("The PETSc backend requires petsc4py.")
 	matrix = PETSc.Mat()
 	matrix.create()
 	matrix.setSizes([size, size])
@@ -137,7 +140,7 @@ class LinearSystemCSR(LinearSystem):
 		if aux_index[0].size != 0:
 			return pos1 + aux_index[0][0]
 		else:
-			print("New entries not allowed.")
+			raise ValueError(f"Entry ({row}, {col}) is not included in the CSR stencil.")
 
 	def addValueToMatrix(self, row, col, value):
 		if self.backend == 'numpy/scipy':
@@ -172,7 +175,7 @@ class LinearSystemCSR(LinearSystem):
 
 	def getDense(self):
 		if self.backend == 'numpy/scipy':
-			return self.matrix.todense()
+			return self.matrix.toarray()
 		elif self.backend == 'petsc':
 			return self.matrix.convert('dense').getDenseArray()
 

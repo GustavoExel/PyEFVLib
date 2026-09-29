@@ -20,6 +20,7 @@ class Grid:
 		self.buildElements()
 		self.buildRegions()
 		self.buildBoundaries()
+		self.buildStencil()
 
 	def buildVertices(self):
 		handle = 0
@@ -64,7 +65,15 @@ class Grid:
 			self.boundaries = np.append(self.boundaries, boundary)
 			handle += 1
 
-	# def buildStencil(self):
+	def buildStencil(self):
+		neighbors = [set([vertex.handle]) for vertex in self.vertices]
+		for element in self.elements:
+			handles = [vertex.handle for vertex in element.vertices]
+			for handle in handles:
+				neighbors[handle].update(handles)
+		self.stencil = [sorted(group) for group in neighbors]
+
+	# Historical implementation retained below for reference.
 	# 	nVertices = len(self.vertices)
 	# 	self.stencil = [[] for i in range(nVertices)]
 	# 	for element in self.elements:

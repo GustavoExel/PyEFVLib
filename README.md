@@ -12,11 +12,15 @@ PyEFVLib is a Python library that provides tools to support the solution of syst
 8. **bellbird**
 
 ## 1. Installation
-Install PyEFVLib using pip, by typing in the command line:
+This ThermoPhase fork requires Python 3.11 or newer. Use an isolated Pixi environment:
 
 ```bash
-pip install PyEFVLib
+pixi install
+pixi run check
+pixi run -e minimum check
 ```
+
+For a pip installation of this checkout, use `python -m pip install .`. The upstream PyPI package is not necessarily this fork. See [development and simulator integration](docs/development.md) and [conda-forge release preparation](docs/releasing.md).
 
 ## 2. Numerical Method
 

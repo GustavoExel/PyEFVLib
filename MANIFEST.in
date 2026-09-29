@@ -1,5 +1,11 @@
 include *.in
 include LICENSE
+include CHANGELOG.md
+include pyproject.toml
+include pixi.lock
+recursive-include tests *.py
+recursive-include docs *.md
+recursive-include recipe *.yaml
 recursive-include PyEFVLib *.py
 recursive-include apps *.py
 recursive-include meshes *.geo

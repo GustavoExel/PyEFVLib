@@ -1,6 +1,7 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
-from PyEFVLib.simulation import LinearSystem
+import importlib
+LinearSystem = importlib.import_module("PyEFVLib.LinearSystem")
 import matplotlib.pyplot as plt
 
 stencil = [	[0, 1, 5, 4], [0, 1, 5, 2, 6], [1, 2, 6, 3, 7], [2, 3, 7], [4, 5, 9, 0, 8], [0, 1, 5, 4, 9, 6, 10], [1, 2, 6, 5, 10, 7, 11],
